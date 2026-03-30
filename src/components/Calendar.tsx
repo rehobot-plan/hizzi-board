@@ -318,51 +318,41 @@ export default function Calendar() {
   }
 
   return (
-    <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-2 w-full mx-auto text-sm">
-      {/* 상단: 네비게이션 */}
-      <div className="flex items-center justify-center gap-1 mb-1 select-none">
-        {/* 맨 왼쪽: 이전 달 */}
-        <button onClick={() => moveMonth(-1)} className="px-1 py-0.5 text-base">‹</button>
-        {/* 년도 직접입력 + 증감 */}
-        <button onClick={() => changeYear(-1)} className="px-0.5 text-base">‹</button>
-        {editYear ? (
-          <input
-            type="text"
-            value={navYear}
-            onChange={handleYearInput}
-            onBlur={handleYearInputBlur}
-            onKeyDown={handleYearInputKey}
-            className="border rounded px-1 py-0.5 w-12 text-center text-sm"
-            autoFocus
-          />
+    <div className="bg-white border-2 border-[#EDE5DC] rounded-lg p-2 w-full mx-auto text-sm">
+      {/* 상단: 네비게이션 (‹ 2026년 03월 › 한 줄) */}
+      <div className="flex items-center justify-center gap-2 mb-1 select-none">
+        <button onClick={() => moveMonth(-1)} className="px-2 py-0.5 text-lg">‹</button>
+        {editYear || editMonth ? (
+          <>
+            <input
+              type="text"
+              value={navYear}
+              onChange={handleYearInput}
+              onBlur={handleYearInputBlur}
+              onKeyDown={handleYearInputKey}
+              className="border rounded px-1 py-0.5 w-12 text-center text-sm mr-1"
+              autoFocus={editYear}
+            />
+            <input
+              type="text"
+              value={navMonth}
+              onChange={handleMonthInput}
+              onBlur={handleMonthInputBlur}
+              onKeyDown={handleMonthInputKey}
+              className="border rounded px-1 py-0.5 w-8 text-center text-sm"
+              autoFocus={editMonth}
+            />
+            <span className="ml-1">월</span>
+          </>
         ) : (
           <span
-            className="w-12 text-center text-sm font-bold cursor-pointer hover:bg-gray-100 rounded px-0.5"
-            onClick={() => setEditYear(true)}
-          >{current.year}</span>
+            className="text-base font-bold cursor-pointer hover:bg-gray-100 rounded px-1"
+            onClick={() => { setEditYear(true); }}
+          >
+            {current.year}년 {String(current.month + 1).padStart(2, '0')}월
+          </span>
         )}
-        <button onClick={() => changeYear(1)} className="px-0.5 text-base">›</button>
-        {/* 월: < 03월 > + 직접입력 */}
-        <button onClick={() => changeMonth(-1)} className="px-0.5 text-base">‹</button>
-        {editMonth ? (
-          <input
-            type="text"
-            value={navMonth}
-            onChange={handleMonthInput}
-            onBlur={handleMonthInputBlur}
-            onKeyDown={handleMonthInputKey}
-            className="border rounded px-1 py-0.5 w-8 text-center text-sm"
-            autoFocus
-          />
-        ) : (
-          <span
-            className="w-8 text-center text-sm font-bold cursor-pointer hover:bg-gray-100 rounded px-0.5"
-            onClick={() => setEditMonth(true)}
-          >{(current.month + 1).toString().padStart(2, '0')}월</span>
-        )}
-        <button onClick={() => changeMonth(1)} className="px-0.5 text-base">›</button>
-        {/* 맨 오른쪽: 다음 달 */}
-        <button onClick={() => moveMonth(1)} className="px-1 py-0.5 text-base">›</button>
+        <button onClick={() => moveMonth(1)} className="px-2 py-0.5 text-lg">›</button>
       </div>
       {/* 두 달력 가로 배치 */}
       <div className="flex w-full gap-4">
@@ -401,8 +391,8 @@ export default function Calendar() {
                   key={idx}
                   className={`relative min-h-[90px] border rounded p-2 flex flex-col items-start overflow-hidden transition-all
                     ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
-                    ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
-                    ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
+                    ${isToday ? "border-[#EDE5DC] ring-2 ring-[#EDE5DC]" : ""}
+                    ${isHighlighted ? "bg-[#f8f5f2] border-[#EDE5DC]" : ""}
                     cursor-pointer
                   `}
                   onMouseDown={e => { if (isCurrentMonth && e.button === 0) handleDragStart(date); }}
@@ -504,8 +494,8 @@ export default function Calendar() {
                   key={idx}
                   className={`relative min-h-[90px] border rounded p-2 flex flex-col items-start overflow-hidden transition-all
                     ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
-                    ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
-                    ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
+                    ${isToday ? "border-[#EDE5DC] ring-2 ring-[#EDE5DC]" : ""}
+                    ${isHighlighted ? "bg-[#f8f5f2] border-[#EDE5DC]" : ""}
                     cursor-pointer
                   `}
                   onMouseDown={e => { if (isCurrentMonth && e.button === 0) handleDragStart(date); }}

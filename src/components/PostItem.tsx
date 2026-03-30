@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Post, usePostStore } from '@/store/postStore';
 import { usePanelStore } from '@/store/panelStore';
 import { useAuthStore } from '@/store/authStore';
+import { useUserStore } from '@/store/userStore';
 
 interface PostItemProps {
   post: Post;
@@ -12,38 +13,52 @@ interface PostItemProps {
 export default function PostItem({ post }: PostItemProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuthStore();
   const { updatePost, deletePost } = usePostStore();
   const { panels } = usePanelStore();
-  const panel = panels.find(p => p.id === post.panelId);
-  const categories = panel?.categories || ['공지', '결재', '메모'];
+  const { users } = useUserStore();
 
-  // 권한 확인: 본인 또는 관리자만 편집/삭제 가능
+  const panel = panels.find(p => p.id === post.panelId);
+  const categories = panel?.categories || ['공지', '메모', '첨부파일'];
   const canEdit = user && (user.email === post.author || user.role === 'admin');
 
-  // 우클릭 컨텍스트 메뉴 (웹)
-  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+  const getAuthorName = (email: string) => {
+    const u = users.find(u => u.email === email);
+    if (u?.name) return u.name;
+    return email?.split('@')[0] || email;
+  };
+
+  const formatDate = (date: Date) => {
+    if (!date) return '';
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' });
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
     if (!canEdit) return;
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
 
-  // 길게 누르기 시작 (모바일)
   const handleTouchStart = () => {
     if (!canEdit) return;
     longPressTimer.current = setTimeout(() => {
-      setContextMenu({ x: 0, y: 0 }); // 모바일은 위치 대신 모달로 표시
+      setContextMenu({ x: 0, y: 0 });
     }, 500);
   };
 
-  // 길게 누르기 취소
   const handleTouchEnd = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -51,142 +66,161 @@ export default function PostItem({ post }: PostItemProps) {
     }
   };
 
-  // 외부 클릭 시 메뉴 닫기
-  const handleClickOutside = () => {
-    setContextMenu(null);
-  };
-
-  // 편집 처리
-  const handleEdit = async () => {
-    if (!editContent.trim()) {
-      alert('내용을 입력해주세요.');
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      await updatePost(post.id, { content: editContent.trim() });
-      setIsEditOpen(false);
-      setContextMenu(null);
-    } catch (error) {
-      console.error('Error updating post:', error);
-      alert('게시물 수정에 실패했습니다.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  // 삭제 처리
   const handleDelete = async () => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
-
     setIsDeleting(true);
     try {
       await deletePost(post.id);
       setContextMenu(null);
-    } catch (error) {
-      console.error('Error deleting post:', error);
-      alert('게시물 삭제에 실패했습니다.');
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsDeleting(false);
     }
   };
 
+  const handleEdit = async () => {
+    if (!editContent.trim()) return;
+    setIsUpdating(true);
+    try {
+      await updatePost(post.id, { content: editContent.trim() });
+      setIsEditOpen(false);
+      setContextMenu(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom(prev => Math.min(5, Math.max(0.5, prev - e.deltaY * 0.001)));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - dragPos.x, y: e.clientY - dragPos.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setDragPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
   const renderContent = () => {
     switch (post.type) {
-      case 'text':
-        return <p className="text-gray-800">{post.content}</p>;
-      case 'image': {
-        // content가 URL이면 이미지, 아니면 텍스트 fallback
-        const isUrl = typeof post.content === 'string' && /^https?:\/\//.test(post.content);
-        if (imageError) {
-          return <p className="text-gray-500 italic">이미지 로드에 실패했습니다.</p>;
-        }
-        if (isUrl) {
-          return (
-            <img
-              src={post.content}
-              alt="Post image"
-              className="max-w-full h-auto rounded cursor-pointer hover:opacity-90"
-              onClick={() => setIsModalOpen(true)}
-              onError={() => setImageError(true)}
-            />
-          );
-        }
-        return <p className="text-gray-500 italic">이미지 URL이 올바르지 않습니다.</p>;
-      }
+      case 'image':
+        if (imageError) return <p style={{ fontSize: 12, color: '#9E8880', fontStyle: 'italic' }}>이미지를 불러올 수 없습니다</p>;
+        return (
+          <img
+            src={post.content}
+            alt="게시물 이미지"
+            style={{ maxWidth: '100%', height: 'auto', cursor: 'pointer', display: 'block' }}
+            onClick={() => setIsModalOpen(true)}
+            onError={() => setImageError(true)}
+          />
+        );
       case 'link':
         return (
-          <a href={post.content} target="_blank" rel="noopener noreferrer" className="text-[#81D8D0] hover:underline">
+          <a href={post.content} target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 13, color: '#C17B6B', wordBreak: 'break-all' }}>
             {post.content}
           </a>
         );
+      case 'file':
+        return (
+          <a href={post.content} target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 13, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
+              <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
+            </svg>
+            {post.content?.split('/').pop()?.split('?')[0] || '첨부파일'}
+          </a>
+        );
       default:
-        return null;
+        return <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post.content}</p>;
     }
   };
 
   return (
-    <div
-      className="relative px-0 py-0"
-      onContextMenu={handleContextMenu}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div className="flex items-center gap-2">
-        {/* ...기존 아이콘/카테고리 등... */}
-        <span className="flex-1 text-sm text-gray-800 leading-relaxed">{post.content}</span>
+    <>
+      <div
+        onContextMenu={handleContextMenu}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={() => setContextMenu(null)}
+        style={{
+          padding: '12px 0',
+          borderBottom: '1px solid #EDE5DC',
+          borderLeft: isHovered ? '2px solid #C17B6B' : '2px solid transparent',
+          paddingLeft: isHovered ? 8 : 0,
+          transition: 'all 0.15s ease',
+          cursor: 'default',
+        }}
+      >
+        {renderContent()}
+        <div style={{ fontSize: 11, color: '#9E8880', marginTop: 4, display: 'flex', gap: 8 }}>
+          <span>{getAuthorName(post.author)}</span>
+          <span>{formatDate(post.createdAt)}</span>
+        </div>
       </div>
-      <div className="flex items-center gap-2 mt-1">
-        <span className="text-xs text-gray-500">{post.author}</span>
-        <span className="text-xs text-gray-400">{post.createdAt.toLocaleDateString()}</span>
-      </div>
-      {/* 우클릭/길게 누르기 컨텍스트 메뉴 */}
+
+      {/* 컨텍스트 메뉴 */}
       {contextMenu && canEdit && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={handleClickOutside}
-        >
+        <div className="fixed inset-0 z-40" onClick={() => setContextMenu(null)}>
           <div
-            className="fixed bg-white rounded shadow-lg border border-gray-300 z-50 min-w-max text-xs"
             style={{
-              top: contextMenu.x === 0 ? '50%' : `${contextMenu.y}px`,
-              left: contextMenu.x === 0 ? '50%' : `${contextMenu.x}px`,
-              transform: contextMenu.x === 0 ? 'translate(-50%, -50%)' : 'translate(0, 0)',
+              position: 'fixed',
+              top: contextMenu.x === 0 ? '50%' : contextMenu.y,
+              left: contextMenu.x === 0 ? '50%' : contextMenu.x,
+              transform: contextMenu.x === 0 ? 'translate(-50%,-50%)' : 'none',
+              background: '#fff',
+              border: '1px solid #EDE5DC',
+              zIndex: 50,
+              minWidth: 160,
             }}
+            onClick={e => e.stopPropagation()}
           >
             <button
-              onClick={() => {
-                setEditContent(post.content);
-                setIsEditOpen(true);
-                setContextMenu(null);
-              }}
-              className="block w-full px-2 py-1 text-left text-gray-800 hover:bg-gray-100"
+              onClick={() => { setEditContent(post.content); setIsEditOpen(true); setContextMenu(null); }}
+              style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
               편집
             </button>
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="block w-full px-2 py-1 text-left text-red-600 hover:bg-gray-100 disabled:opacity-50"
+              style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
               {isDeleting ? '삭제 중...' : '삭제'}
             </button>
-            {/* 바인더(탭) 이동 */}
-            <div className="border-t border-gray-200 my-0.5" />
-            <div className="px-2 py-1 text-[10px] text-gray-400">다른 탭으로 이동</div>
-            {categories.filter(cat => cat !== post.category).map(cat => (
-              <button
-                key={cat}
-                onClick={async () => {
-                  await updatePost(post.id, { category: cat });
-                  setContextMenu(null);
-                }}
-                className="block w-full px-2 py-1 text-left text-[#81D8D0] hover:bg-gray-100"
-              >
-                {cat}로 이동
-              </button>
-            ))}
+            {categories.filter(c => c !== post.category).length > 0 && (
+              <>
+                <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
+                <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
+                {categories.filter(c => c !== post.category).map(cat => (
+                  <button
+                    key={cat}
+                    onClick={async () => { await updatePost(post.id, { category: cat }); setContextMenu(null); }}
+                    style={{ display: 'block', width: '100%', padding: '6px 14px', textAlign: 'left', fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
         </div>
       )}
@@ -194,24 +228,39 @@ export default function PostItem({ post }: PostItemProps) {
       {/* 이미지 확대 모달 */}
       {isModalOpen && post.type === 'image' && !imageError && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70"
-          onClick={() => setIsModalOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => { setIsModalOpen(false); setZoom(1); setDragPos({ x: 0, y: 0 }); }}
         >
-          <div className="relative max-h-[90vh] max-w-[90vw]">
+          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{Math.round(zoom * 100)}%</span>
             <button
-              className="absolute top-2 right-2 z-10 text-white bg-black bg-opacity-30 rounded-full px-2 py-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsModalOpen(false);
-              }}
+              onClick={e => { e.stopPropagation(); setZoom(1); setDragPos({ x: 0, y: 0 }); }}
+              style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', border: 'none', padding: '4px 8px', fontSize: 11, cursor: 'pointer' }}
             >
-              닫기
+              초기화
             </button>
+          </div>
+          <div
+            style={{ overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh' }}
+            onWheel={handleWheel}
+            onClick={e => e.stopPropagation()}
+          >
             <img
               src={post.content}
-              alt="Post image enlarged"
-              className="max-h-[90vh] max-w-[90vw] rounded"
-              onClick={(e) => e.stopPropagation()}
+              alt="확대 이미지"
+              style={{
+                transform: `scale(${zoom}) translate(${dragPos.x / zoom}px, ${dragPos.y / zoom}px)`,
+                transition: isDragging ? 'none' : 'transform 0.1s',
+                cursor: isDragging ? 'grabbing' : 'grab',
+                display: 'block',
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              draggable={false}
             />
           </div>
         </div>
@@ -219,35 +268,33 @@ export default function PostItem({ post }: PostItemProps) {
 
       {/* 편집 모달 */}
       {isEditOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">게시물 편집</h3>
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#81D8D0] focus:border-[#81D8D0]"
-              rows={4}
-              disabled={isUpdating}
-            />
-            <div className="flex justify-end space-x-2 mt-4">
-              <button
-                onClick={() => setIsEditOpen(false)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 편집</span>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              <textarea
+                value={editContent}
+                onChange={e => setEditContent(e.target.value)}
+                rows={4}
+                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
                 disabled={isUpdating}
-              >
-                취소
-              </button>
+              />
+            </div>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
+              <button onClick={() => setIsEditOpen(false)} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
               <button
                 onClick={handleEdit}
-                className="px-4 py-2 bg-[#81D8D0] text-white rounded-md hover:bg-[#6BC4BB] disabled:opacity-50"
                 disabled={isUpdating}
+                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}
               >
-                {isUpdating ? '수정 중...' : '수정'}
+                {isUpdating ? '수정 중...' : '저장'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

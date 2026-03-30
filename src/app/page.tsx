@@ -58,12 +58,7 @@ export default function Home() {
   };
 
   // 사이드바 메뉴
-  const sidebarMenus = [
-    { label: '대시보드', icon: '🏠' },
-    { label: '게시판', icon: '📝' },
-    { label: '일정', icon: '📅' },
-    { label: '설정', icon: '⚙️' },
-  ];
+  // 사이드바 메뉴 제거, 브랜드명/사용자 정보만 유지
 
   if (authLoading || panelLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-[#FDF8F4]">Loading...</div>;
@@ -75,25 +70,11 @@ export default function Home() {
   return (
     <div className="min-h-screen flex bg-[#FDF8F4]">
       {/* 사이드바 */}
-      <aside className="flex flex-col justify-between h-screen w-[200px] bg-[#5C1F1F] py-8 px-6">
+      <aside className="flex flex-col justify-between min-h-screen w-[200px] bg-[#5C1F1F] py-8 px-6">
         <div>
           <div className="mb-12 select-none">
             <span className="block text-white text-2xl font-extrabold tracking-[0.15em] uppercase text-center" style={{ letterSpacing: '0.15em' }}>HIZZI BOARD</span>
           </div>
-          <nav className="flex flex-col gap-3">
-            {sidebarMenus.map((menu) => (
-              <button
-                key={menu.label}
-                className="flex items-center gap-2 px-3 py-2 rounded text-white text-sm font-medium uppercase hover:bg-[#7A2B2B] transition"
-                style={{ letterSpacing: '0.08em' }}
-                type="button"
-                tabIndex={-1}
-              >
-                <span>{menu.icon}</span>
-                {menu.label}
-              </button>
-            ))}
-          </nav>
         </div>
         {/* 아바타+이름 */}
         <div className="flex items-center gap-3 mt-8 px-2">

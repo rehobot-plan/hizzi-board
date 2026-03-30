@@ -18,7 +18,7 @@ export default function NoticeArea() {
   if (notices.length === 0) return null;
 
   return (
-    <div className="bg-yellow-50 border border-yellow-300 rounded px-0 py-6 mb-4">
+    <div className="bg-yellow-50 border border-yellow-300 rounded px-0 py-6 mb-4 mt-6">
       <div className="flex items-center justify-between mb-3 px-6">
         <span className="font-bold text-xs text-yellow-800 uppercase tracking-widest">공지사항</span>
         <button
