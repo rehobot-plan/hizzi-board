@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/userStore';
 import { useToastStore } from '@/store/toastStore';
 import { initPostListener } from '@/store/postStore';
 import Panel from '@/components/Panel';
+import Calendar from '@/components/Calendar';
 
 export default function Home() {
   const { user, loading: authLoading, signOut } = useAuthStore();
@@ -112,6 +113,13 @@ export default function Home() {
           {panels.map((panel) => (
             <Panel key={panel.id} id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} />
           ))}
+        </div>
+        {/* 공유 달력: 게시판 3칸 너비(절반)로 하단에 배치 */}
+        <div className="flex justify-center mt-8">
+          <div className="w-[50%] min-w-[400px] max-w-2xl">
+            {/* Calendar 컴포넌트 */}
+            <Calendar />
+          </div>
         </div>
       </div>
 
