@@ -18,11 +18,11 @@ export default function NoticeArea() {
   if (notices.length === 0) return null;
 
   return (
-    <div className="bg-yellow-50 border border-yellow-300 rounded p-2 mb-4">
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-bold text-xs text-yellow-800">공지사항</span>
+    <div className="bg-yellow-50 border border-yellow-300 rounded px-0 py-6 mb-4">
+      <div className="flex items-center justify-between mb-3 px-6">
+        <span className="font-bold text-xs text-yellow-800 uppercase tracking-widest">공지사항</span>
         <button
-          className="text-xs text-yellow-700 underline"
+          className="text-xs text-yellow-700 underline ml-auto"
           onClick={() => setExpanded(e => !e)}
         >
           {expanded ? '접기' : '더보기'}
@@ -30,15 +30,15 @@ export default function NoticeArea() {
       </div>
       <ul className="divide-y divide-yellow-200">
         {notices.map(notice => (
-          <li key={notice.id} className="py-1 cursor-pointer hover:bg-yellow-100 rounded text-xs flex justify-between items-center">
-            <span onClick={() => setDetail(notice.id)} className="flex-1 truncate">
+          <li key={notice.id} className="py-3 px-6 cursor-pointer hover:bg-yellow-100 text-xs flex justify-between items-center">
+            <span onClick={() => setDetail(notice.id)} className="flex-1 truncate leading-relaxed">
               [{notice.panelId}] {notice.content.slice(0, 30)}
             </span>
-            <span className="ml-2 text-[10px] text-yellow-700">{notice.author}</span>
-            <span className="ml-2 text-[10px] text-yellow-500">{notice.createdAt.toLocaleDateString()}</span>
+            <span className="ml-2 text-[11px] text-yellow-700 mt-1">{notice.author}</span>
+            <span className="ml-2 text-[11px] text-yellow-500 mt-1">{notice.createdAt.toLocaleDateString()}</span>
             {user?.role === 'admin' && (
               <button
-                className="ml-2 text-[10px] text-red-400 hover:text-red-600"
+                className="ml-2 text-[11px] text-red-400 hover:text-red-600 mt-1"
                 onClick={e => { e.stopPropagation(); usePostStore.getState().deletePost(notice.id); }}
               >삭제</button>
             )}

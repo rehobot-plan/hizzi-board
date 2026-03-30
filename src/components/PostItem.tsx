@@ -12,7 +12,7 @@ interface PostItemProps {
 export default function PostItem({ post }: PostItemProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -128,59 +128,20 @@ export default function PostItem({ post }: PostItemProps) {
   };
 
   return (
-    <>
-      <div
-        className="bg-gray-50 p-2 rounded mb-1 border relative cursor-default text-sm"
-        onContextMenu={handleContextMenu}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onClick={handleClickOutside}
-      >
-        {renderContent()}
-        {/* 첨부파일 표시 */}
-        {post.attachments && post.attachments.length > 0 && (
-          <div className="mt-1 space-y-0.5">
-            {post.attachments.map((att, i) => {
-              let icon, color;
-              if (att.type.includes('pdf')) {
-                icon = '📕'; color = 'text-red-500';
-              } else if (att.type.includes('spreadsheet') || att.name.match(/\.xlsx?$/i)) {
-                icon = '📗'; color = 'text-green-600';
-              } else if (att.type.includes('word') || att.name.match(/\.docx?$/i)) {
-                icon = '📘'; color = 'text-blue-600';
-              } else if (att.type.includes('presentation') || att.name.match(/\.pptx?$/i)) {
-                icon = '📙'; color = 'text-orange-500';
-              } else {
-                icon = '📎'; color = 'text-gray-500';
-              }
-              return (
-                <div key={i} className="flex items-center gap-1 text-xs">
-                  <span className={color}>{icon}</span>
-                  <span className="truncate max-w-[120px]" title={att.name}>{att.name}</span>
-                  <span className="text-gray-400">({(att.size/1024/1024).toFixed(2)}MB)</span>
-                  <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">다운로드</a>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <div className="text-[10px] text-gray-400 mt-0.5">
-          {/* 작성자 이름 표시 (이메일이 아닌 이름) */}
-          {(() => {
-            // userStore에서 사용자 이름을 찾아 표시
-            try {
-              // @ts-ignore
-              const userStore = require('@/store/userStore');
-              const users = userStore.useUserStore.getState().users;
-              const found = users.find((u: any) => u.email === post.author);
-              return found ? `${found.name} (${found.email})` : post.author;
-            } catch {
-              return post.author;
-            }
-          })()} • {post.createdAt.toLocaleString()}
-        </div>
+    <div
+      className="relative px-0 py-0"
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="flex items-center gap-2">
+        {/* ...기존 아이콘/카테고리 등... */}
+        <span className="flex-1 text-sm text-gray-800 leading-relaxed">{post.content}</span>
       </div>
-
+      <div className="flex items-center gap-2 mt-1">
+        <span className="text-xs text-gray-500">{post.author}</span>
+        <span className="text-xs text-gray-400">{post.createdAt.toLocaleDateString()}</span>
+      </div>
       {/* 우클릭/길게 누르기 컨텍스트 메뉴 */}
       {contextMenu && canEdit && (
         <div
@@ -288,6 +249,6 @@ export default function PostItem({ post }: PostItemProps) {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

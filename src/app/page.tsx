@@ -18,7 +18,7 @@ export default function Home() {
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null); // <-- moved up
+  const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -49,133 +49,171 @@ export default function Home() {
   const handlePanelDrop = async (e: React.DragEvent<HTMLDivElement>, targetPanelId: string) => {
     e.preventDefault();
     if (!draggedPanelId || draggedPanelId === targetPanelId) return;
-    // 패널 순서 스왑 (position 필드 활용)
     const draggedPanel = panels.find(p => p.id === draggedPanelId);
     const targetPanel = panels.find(p => p.id === targetPanelId);
     if (!draggedPanel || !targetPanel) return;
-    // position 값 스왑
     await updatePanel(draggedPanel.id, { position: targetPanel.position });
     await updatePanel(targetPanel.id, { position: draggedPanel.position });
     setDraggedPanelId(null);
   };
 
-  if (authLoading || panelLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-white">Loading...</div>;
-  }
+  // 사이드바 메뉴
+  const sidebarMenus = [
+    { label: '대시보드', icon: '🏠' },
+    { label: '게시판', icon: '📝' },
+    { label: '일정', icon: '📅' },
+    { label: '설정', icon: '⚙️' },
+  ];
 
+  if (authLoading || panelLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#FDF8F4]">Loading...</div>;
+  }
   if (!user) {
-    return null; // Will redirect
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-white p-4 relative">
-      <div className="max-w-7xl mx-auto">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Hizzi Board</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600">Welcome, {user?.displayName || user?.email}</span>
+    <div className="min-h-screen flex bg-[#FDF8F4]">
+      {/* 사이드바 */}
+      <aside className="flex flex-col justify-between h-screen w-[200px] bg-[#5C1F1F] py-8 px-6">
+        <div>
+          <div className="mb-12 select-none">
+            <span className="block text-white text-2xl font-extrabold tracking-[0.15em] uppercase text-center" style={{ letterSpacing: '0.15em' }}>HIZZI BOARD</span>
+          </div>
+          <nav className="flex flex-col gap-3">
+            {sidebarMenus.map((menu) => (
+              <button
+                key={menu.label}
+                className="flex items-center gap-2 px-3 py-2 rounded text-white text-sm font-medium uppercase hover:bg-[#7A2B2B] transition"
+                style={{ letterSpacing: '0.08em' }}
+                type="button"
+                tabIndex={-1}
+              >
+                <span>{menu.icon}</span>
+                {menu.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+        {/* 아바타+이름 */}
+        <div className="flex items-center gap-3 mt-8 px-2">
+          <div className="w-9 h-9 rounded-full bg-[#C17B6B] flex items-center justify-center text-white font-bold text-lg uppercase">
+            {user?.displayName?.[0] || user?.email?.[0] || 'U'}
+          </div>
+          <div className="text-white text-xs font-medium truncate max-w-[100px]">
+            {user?.displayName || user?.email}
+          </div>
+        </div>
+      </aside>
+
+      {/* 메인 컨텐츠 */}
+      <main className="flex-1 flex flex-col min-h-screen">
+        {/* 헤더 */}
+        <header className="flex items-center px-8 border-b border-[#EDE5DC] bg-transparent py-6 min-h-[72px]">
+          <div className="flex-1" />
+          <div className="flex items-center gap-3">
             {user?.role === 'admin' && (
               <button
                 onClick={() => setAdminMode((prev) => !prev)}
-                className="px-4 py-2 bg-[#FFB703] text-black rounded hover:bg-[#f4a700] transition-colors"
+                className="px-3 py-1 border border-[#C17B6B] text-[#C17B6B] bg-white rounded outline-none hover:bg-[#FDF8F4] text-xs uppercase tracking-widest transition"
               >
                 {adminMode ? '관리 모드 종료' : '관리 모드'}
               </button>
             )}
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-[#81D8D0] text-white rounded hover:bg-[#6BC4BB] transition-colors"
+              className="px-3 py-1 border border-[#C17B6B] text-[#C17B6B] bg-white rounded outline-none hover:bg-[#FDF8F4] text-xs uppercase tracking-widest transition"
             >
               로그아웃
             </button>
           </div>
         </header>
 
-        {adminMode && (
-          <div className="border border-red-300 bg-red-50 rounded p-4 mb-4">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">관리자 - 사용자 관리</h2>
-            {deleteError && <p className="text-sm text-red-600 mb-2">{deleteError}</p>}
-            {userLoading ? (
-              <p>로딩 중...</p>
-            ) : (
-              <div className="space-y-2">
-                {users.map((u) => {
-                  const userPanel = panels.find((p) => p.ownerEmail === u.email);
-                  const isCurrentAdmin = user?.email === u.email && user?.role === 'admin';
-                  return (
-                    <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded">
-                      <div>
-                        <p className="text-sm font-medium">{u.name} ({u.email})</p>
-                        <p className="text-xs text-gray-500">담당 패널: {userPanel?.name || '없음'}</p>
+        <div className="flex-1 overflow-y-auto px-8 py-8">
+          {adminMode && (
+            <div className="border border-red-300 bg-red-50 rounded p-4 mb-4">
+              <h2 className="text-xl font-semibold text-red-600 mb-2">관리자 - 사용자 관리</h2>
+              {deleteError && <p className="text-sm text-red-600 mb-2">{deleteError}</p>}
+              {userLoading ? (
+                <p>로딩 중...</p>
+              ) : (
+                <div className="space-y-2">
+                  {users.map((u) => {
+                    const userPanel = panels.find((p) => p.ownerEmail === u.email);
+                    const isCurrentAdmin = user?.email === u.email && user?.role === 'admin';
+                    return (
+                      <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded">
+                        <div>
+                          <p className="text-sm font-medium">{u.name} ({u.email})</p>
+                          <p className="text-xs text-gray-500">담당 패널: {userPanel?.name || '없음'}</p>
+                        </div>
+                        <button
+                          disabled={isCurrentAdmin}
+                          onClick={async () => {
+                            if (isCurrentAdmin) return;
+                            try {
+                              const panel = panels.find((p) => p.ownerEmail === u.email);
+                              if (panel) await updatePanel(panel.id, { ownerEmail: null });
+                              await deleteUser(u.id);
+                            } catch (err: any) {
+                              console.error(err);
+                              setDeleteError('삭제 중 오류가 발생했습니다.');
+                            }
+                          }}
+                          className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300"
+                        >
+                          삭제
+                        </button>
                       </div>
-                      <button
-                        disabled={isCurrentAdmin}
-                        onClick={async () => {
-                          if (isCurrentAdmin) return;
-                          try {
-                            const panel = panels.find((p) => p.ownerEmail === u.email);
-                            if (panel) await updatePanel(panel.id, { ownerEmail: null });
-                            await deleteUser(u.id);
-                          } catch (err: any) {
-                            console.error(err);
-                            setDeleteError('삭제 중 오류가 발생했습니다.');
-                          }
-                        }}
-                        className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
-        <div className="grid grid-cols-3 grid-rows-2 gap-4 h-[calc(100vh-120px)]">
-          {panels
-            .slice()
-            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-            .map((panel) => (
-              <div
-                key={panel.id}
-                draggable
-                onDragStart={e => handlePanelDragStart(e, panel.id)}
-                onDragOver={handlePanelDragOver}
-                onDrop={e => handlePanelDrop(e, panel.id)}
-                className="h-full"
+          <div className="grid grid-cols-3 gap-6">
+            {panels
+              .slice()
+              .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+              .map((panel) => (
+                <div
+                  key={panel.id}
+                  draggable
+                  onDragStart={e => handlePanelDragStart(e, panel.id)}
+                  onDragOver={handlePanelDragOver}
+                  onDrop={e => handlePanelDrop(e, panel.id)}
+                  className="h-full"
+                >
+                  <Panel id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} position={panel.position} color={panel.color} />
+                </div>
+              ))}
+          </div>
+
+          <NoticeArea />
+          <div className="flex justify-center mt-8">
+            <div className="w-full">
+              <Calendar />
+            </div>
+          </div>
+        </div>
+
+        <div className="fixed right-4 bottom-4 z-50 flex flex-col gap-2">
+          {toasts.map((toast) => (
+            <div key={toast.id} className="px-4 py-2 bg-gray-800 text-white rounded shadow-lg text-sm flex items-center gap-2 min-w-[200px]">
+              <span className="flex-1">{toast.message}</span>
+              <button
+                className="ml-2 text-white text-lg hover:text-red-300 focus:outline-none"
+                aria-label="알림 닫기"
+                onClick={() => useToastStore.getState().removeToast(toast.id)}
+                tabIndex={0}
               >
-                <Panel id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} position={panel.position} color={panel.color} />
-              </div>
-            ))}
+                ×
+              </button>
+            </div>
+          ))}
         </div>
-        {/* 공지사항 영역 */}
-        <NoticeArea />
-        {/* 공유 달력: 게시판 3칸 너비(절반)로 하단에 배치 */}
-        <div className="flex justify-center mt-8">
-          <div className="w-full">
-            {/* Calendar 컴포넌트 */}
-            <Calendar />
-          </div>
-        </div>
-      </div>
-
-      <div className="fixed right-4 bottom-4 z-50 flex flex-col gap-2">
-        {toasts.map((toast) => (
-          <div key={toast.id} className="px-4 py-2 bg-gray-800 text-white rounded shadow-lg text-sm flex items-center gap-2 min-w-[200px]">
-            <span className="flex-1">{toast.message}</span>
-            <button
-              className="ml-2 text-white text-lg hover:text-red-300 focus:outline-none"
-              aria-label="알림 닫기"
-              onClick={() => useToastStore.getState().removeToast(toast.id)}
-              tabIndex={0}
-            >
-              ×
-            </button>
-          </div>
-        ))}
-      </div>
+      </main>
     </div>
   );
 }
