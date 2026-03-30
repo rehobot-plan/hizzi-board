@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { usePostStore } from '@/store/postStore';
+import { useState, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { usePostStore } from '@/store/postStore';
 import { useUserStore } from '@/store/userStore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/lib/firebase';
 
 interface CreatePostProps {
   panelId: string;
@@ -12,282 +13,300 @@ interface CreatePostProps {
   categories?: string[];
 }
 
+const BASE_CATEGORIES = ['공지', '메모', '첨부파일'];
+
 export default function CreatePost({ panelId, onClose, categories }: CreatePostProps) {
-  const [type, setType] = useState<'text' | 'image' | 'link'>('text');
-  const [category, setCategory] = useState<string>('');
-  const [content, setContent] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [droppedFilename, setDroppedFilename] = useState('');
-  const [visibleTo, setVisibleTo] = useState<string[]>(['all']);
-  const { users } = useUserStore();
-  const { addPost } = usePostStore();
   const { user } = useAuthStore();
+  const { addPost } = usePostStore();
+  const { users } = useUserStore();
 
-  const [attachments, setAttachments] = useState<{ name: string; url: string; size: number; type: string }[]>([]);
-  const [fileError, setFileError] = useState('');
+  const [type, setType] = useState<'text' | 'image' | 'link' | 'file'>('text');
+  const [category, setCategory] = useState('');
+  const [visibility, setVisibility] = useState<'all' | 'me' | 'specific'>('all');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [content, setContent] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 파일 처리 함수 (이미지/첨부파일 모두 처리)
-  const handleFile = async (file: File) => {
-    setFileError('');
-    const ALLOWED_TYPES = [
-      'image/', 'application/pdf',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    ];
-    const MAX_FILE_SIZE = 20 * 1024 * 1024;
-    if (type === 'image') {
-      if (!file.type.startsWith('image/')) {
-        setFileError('이미지 파일만 업로드 가능합니다.');
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        setFileError('최대 20MB까지 업로드 가능합니다.');
-        return;
-      }
-      setLoading(true);
+  const allCategories = categories || BASE_CATEGORIES;
+  const nonAdminUsers = users.filter(u => u.email !== user?.email && u.role !== 'admin');
+
+  const toggleUser = (email: string) => {
+    setSelectedUsers(prev =>
+      prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
+    );
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) setFile(f);
+  };
+
+  const handleSubmit = async () => {
+    if (!user) return;
+    if (!content.trim() && type === 'text') return;
+    if ((type === 'image' || type === 'file') && !file && !content.trim()) return;
+
+    let finalContent = content.trim();
+
+    if (file && (type === 'image' || type === 'file')) {
+      setUploading(true);
       try {
-        const storage = getStorage();
-        const ext = file.name.split('.').pop();
-        const storageRef = ref(storage, `images/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
+        const storageRef = ref(storage, `uploads/${panelId}/${Date.now()}_${file.name}`);
         await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        setType('image');
-        setContent(url);
-        setDroppedFilename(file.name);
-      } catch (e) {
-        setFileError('이미지 업로드 실패');
-      } finally {
-        setLoading(false);
+        finalContent = await getDownloadURL(storageRef);
+      } catch (err) {
+        console.error('Upload error:', err);
+        setUploading(false);
+        return;
       }
-      return;
+      setUploading(false);
     }
-    // 첨부파일 (PDF, 엑셀, 워드, PPTX)
-    if (!ALLOWED_TYPES.some(t => file.type.startsWith(t) || file.type === t)) {
-      setFileError('지원하지 않는 파일 형식입니다.');
-      return;
+
+    const visibleTo: string[] = [];
+    if (visibility === 'me') {
+      visibleTo.push(user.email!);
+    } else if (visibility === 'specific') {
+      visibleTo.push(...selectedUsers);
     }
-    if (file.size > MAX_FILE_SIZE) {
-      setFileError('최대 20MB까지 업로드 가능합니다.');
-      return;
-    }
-    try {
-      const storage = getStorage();
-      const ext = file.name.split('.').pop();
-      const storageRef = ref(storage, `attachments/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setAttachments(prev => [...prev, { name: file.name, url, size: file.size, type: file.type }]);
-    } catch (e) {
-      setFileError('파일 업로드 실패');
-    }
+
+    await addPost({
+      panelId,
+      type,
+      content: finalContent,
+      author: user.email!,
+      category: category || '전체',
+      visibleTo: visibility === 'all' ? [] : visibleTo,
+    });
+
+    onClose();
   };
 
-  // 드래그&드롭 파일 처리
-  const onDrop = async (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setDragActive(false);
-    const file = event.dataTransfer.files?.[0];
-    if (file) await handleFile(file);
-  };
-
-  // 파일 선택 input 처리
-  const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) await handleFile(file);
-  };
-
-  // 게시물 작성 제출
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || (!content.trim() && attachments.length === 0) || loading) return;
-    setLoading(true);
-    try {
-      await addPost({
-        panelId,
-        type,
-        content: content.trim(),
-        author: user.email || 'Anonymous',
-        category: category || undefined,
-        visibleTo: visibleTo.length > 0 ? visibleTo : ['all'],
-        attachments: attachments.length > 0 ? attachments : undefined,
-      });
-      setContent('');
-      setCategory('');
-      setVisibleTo(['all']);
-      setAttachments([]);
-      onClose();
-    } catch (error) {
-      console.error('Error creating post:', error);
-      alert('게시물 작성에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-	
-
+  const typeCards = [
+    { key: 'text', label: '텍스트', icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 5h12M4 9h12M4 13h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    )},
+    { key: 'image', label: '이미지', icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="1" stroke="currentColor" strokeWidth="1.5"/><path d="M2 13l5-5 4 4 2-2 5 5" stroke="currentColor" strokeWidth="1.5"/></svg>
+    )},
+    { key: 'file', label: '파일', icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 2h7l4 4v12H5V2z" stroke="currentColor" strokeWidth="1.5"/><path d="M12 2v4h4" stroke="currentColor" strokeWidth="1.5"/></svg>
+    )},
+    { key: 'link', label: '링크', icon: (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 12s-2-2-2-4a4 4 0 018 0c0 2-2 4-2 4M12 8s2 2 2 4a4 4 0 01-8 0c0-2 2-4 2-4" stroke="currentColor" strokeWidth="1.5"/></svg>
+    )},
+  ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">새 게시물 작성</h3>
-        <form onSubmit={handleSubmit}>
-          {/* 카테고리 선택 */}
-          {categories && categories.length > 0 && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
-              <select
-                value={category}
-                onChange={e => setCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#81D8D0] focus:border-[#81D8D0]"
-                disabled={loading}
-                required
-              >
-                <option value="">카테고리 선택</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-          )}
-          {/* 공개범위 선택 */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">공개 범위</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              <button
-                type="button"
-                className={`px-3 py-1 rounded border ${visibleTo.includes('all') ? 'bg-[#81D8D0] text-white border-[#81D8D0]' : 'bg-white text-gray-700 border-gray-300'} transition`}
-                onClick={() => setVisibleTo(['all'])}
-                disabled={loading}
-              >
-                전체 공개
-              </button>
-              <button
-                type="button"
-                className={`px-3 py-1 rounded border ${visibleTo.includes('me') ? 'bg-[#81D8D0] text-white border-[#81D8D0]' : 'bg-white text-gray-700 border-gray-300'} transition`}
-                onClick={() => setVisibleTo(['me'])}
-                disabled={loading}
-              >
-                나만 보기
-              </button>
-            </div>
-            <div className="mb-1 text-xs text-gray-500">또는 특정인 선택:</div>
-            <div className="flex flex-wrap gap-2">
-              {users.filter(u => u.email !== user?.email && u.role !== 'admin').map(u => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(44,20,16,0.4)' }}>
+      <div className="w-full max-w-lg" style={{ background: '#fff', border: '1px solid #EDE5DC' }}>
+
+        {/* 헤더 */}
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid #EDE5DC' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>
+            새 게시물
+          </span>
+        </div>
+
+        {/* 바디 */}
+        <div style={{ padding: '20px 24px' }}>
+
+          {/* 타입 선택 */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>타입</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+              {typeCards.map(t => (
                 <button
-                  key={u.id}
-                  type="button"
-                  className={`px-3 py-1 rounded border ${visibleTo.includes(u.email) ? 'bg-[#81D8D0] text-white border-[#81D8D0]' : 'bg-white text-gray-700 border-gray-300'} transition`}
-                  onClick={() => {
-                    let next: string[];
-                    if (visibleTo.includes('all')) next = [u.email];
-                    else if (visibleTo.includes(u.email)) next = visibleTo.filter(v => v !== u.email);
-                    else next = [...visibleTo.filter(v => v !== 'all' && v !== 'me'), u.email];
-                    setVisibleTo(next.length === 0 ? ['all'] : next);
+                  key={t.key}
+                  onClick={() => { setType(t.key as any); setFile(null); setContent(''); }}
+                  style={{
+                    border: `1px solid ${type === t.key ? '#C17B6B' : '#EDE5DC'}`,
+                    background: type === t.key ? '#FDF8F4' : '#fff',
+                    padding: '10px 6px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
                   }}
-                  disabled={loading}
                 >
-                  {u.name}
-                  {visibleTo.includes(u.email) && ' ✓'}
+                  <div style={{ color: type === t.key ? '#C17B6B' : '#9E8880', display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+                    {t.icon}
+                  </div>
+                  <div style={{ fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: type === t.key ? '#C17B6B' : '#9E8880' }}>
+                    {t.label}
+                  </div>
                 </button>
               ))}
             </div>
-            <div className="text-xs text-gray-400 mt-1">(클릭 시 민트색 활성화, 여러 명 선택 가능)</div>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">타입</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as 'text' | 'image' | 'link')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#81D8D0] focus:border-[#81D8D0]"
-              disabled={loading}
-            >
-              <option value="text">텍스트</option>
-              <option value="image">이미지</option>
-              <option value="link">링크</option>
-            </select>
-            {loading && type === 'image' && (
-              <div className="text-xs text-gray-500 mt-2">이미지 업로드 중...</div>
-            )}
+
+          {/* 카테고리 탭 */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>카테고리</div>
+            <div style={{ display: 'flex', borderBottom: '1px solid #EDE5DC' }}>
+              {['전체', ...allCategories].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat === '전체' ? '' : cat)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 10,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: (category === '' && cat === '전체') || category === cat ? '#2C1810' : '#9E8880',
+                    borderBottom: (category === '' && cat === '전체') || category === cat ? '1.5px solid #C17B6B' : '1.5px solid transparent',
+                    marginBottom: -1,
+                    background: 'none',
+                    border: 'none',
+                    borderBottomStyle: 'solid',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
-          <div
-            className={`mb-4 ${type === 'image' ? 'border border-dashed border-[#81D8D0] p-3' : ''}`}
-            onDragOver={(e) => {
-              if (type === 'image') {
-                e.preventDefault();
-                setDragActive(true);
-              }
-            }}
-            onDragLeave={(e) => {
-              if (type === 'image') {
-                e.preventDefault();
-                setDragActive(false);
-              }
-            }}
-            onDrop={(e) => type === 'image' && onDrop(e)}
-          >
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {type === 'text' ? '내용' : type === 'image' ? '이미지 URL 또는 파일' : '링크 URL'}
-            </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#81D8D0] focus:border-[#81D8D0]"
-              rows={4}
-              placeholder={
-                type === 'text'
-                  ? '텍스트를 입력하세요'
-                  : type === 'image'
-                  ? '이미지 URL을 붙여넣거나 파일을 드래그 앤 드롭하세요.'
-                  : 'URL을 입력하세요'
-              }
-              required
-              disabled={loading}
-            />
-            {type === 'image' && (
-              <>
-                <div className="my-2 text-xs text-gray-500">
-                  {dragActive ? '파일을 여기로 놓으세요...' : '드래그 앤 드롭 또는 아래에서 선택'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="imageUpload"
-                    type="file"
-                    accept="image/*"
-                    onChange={onFileChange}
-                    disabled={loading}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="imageUpload"
-                    className="px-3 py-2 bg-[#81D8D0] text-white rounded cursor-pointer hover:bg-[#6BC4BB]"
+
+          {/* 공개 범위 */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(['all', 'me', 'specific'] as const).map((v) => {
+                const labels = { all: '전체 공개', me: '나만 보기', specific: '특정인' };
+                return (
+                  <button
+                    key={v}
+                    onClick={() => setVisibility(v)}
+                    style={{
+                      padding: '5px 12px',
+                      border: `1px solid ${visibility === v ? '#2C1810' : '#EDE5DC'}`,
+                      background: visibility === v ? '#FDF8F4' : '#fff',
+                      fontSize: 10,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      color: visibility === v ? '#2C1810' : '#9E8880',
+                      cursor: 'pointer',
+                    }}
                   >
-                    파일 선택
-                  </label>
-                  {droppedFilename && <span className="text-sm text-gray-600">선택됨: {droppedFilename}</span>}
-                </div>
-              </>
+                    {labels[v]}
+                  </button>
+                );
+              })}
+            </div>
+            {visibility === 'specific' && nonAdminUsers.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                {nonAdminUsers.map(u => (
+                  <button
+                    key={u.email}
+                    onClick={() => toggleUser(u.email)}
+                    style={{
+                      padding: '4px 10px',
+                      border: `1px solid ${selectedUsers.includes(u.email) ? '#C17B6B' : '#EDE5DC'}`,
+                      background: selectedUsers.includes(u.email) ? '#FFF5F2' : '#fff',
+                      fontSize: 10,
+                      color: selectedUsers.includes(u.email) ? '#C17B6B' : '#9E8880',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {u.name || u.email}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
-          <div className="flex justify-end space-x-2">
+
+          {/* 내용 입력 */}
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>내용</div>
+            {(type === 'image' || type === 'file') ? (
+              <div>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    border: '1px dashed #EDE5DC',
+                    padding: 24,
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    marginBottom: 8,
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: '#9E8880', letterSpacing: '0.04em' }}>
+                    {file ? file.name : '파일을 클릭하거나 드래그해서 업로드'}
+                  </div>
+                  {!file && <div style={{ fontSize: 10, color: '#C4B8B0', marginTop: 3 }}>최대 20MB</div>}
+                </div>
+                <input ref={fileInputRef} type="file" accept={type === 'image' ? 'image/*' : '*'} onChange={handleFileChange} style={{ display: 'none' }} />
+              </div>
+            ) : type === 'link' ? (
+              <input
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                placeholder="https://"
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #EDE5DC',
+                  padding: '8px 0',
+                  fontSize: 13,
+                  color: '#2C1810',
+                  outline: 'none',
+                  background: 'transparent',
+                }}
+              />
+            ) : (
+              <textarea
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                placeholder="내용을 입력하세요..."
+                rows={4}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #EDE5DC',
+                  padding: '8px 0',
+                  fontSize: 13,
+                  color: '#2C1810',
+                  outline: 'none',
+                  background: 'transparent',
+                  resize: 'none',
+                  fontFamily: 'inherit',
+                }}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* 푸터 */}
+        <div style={{ padding: '14px 24px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            onClick={onClose}
+            style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            취소
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {type === 'text' && (
+              <span style={{ fontSize: 10, color: '#C4B8B0' }}>{content.length} / 500</span>
+            )}
             <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-              disabled={loading}
+              onClick={handleSubmit}
+              disabled={uploading}
+              style={{
+                fontSize: 10,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                padding: '8px 20px',
+                background: uploading ? '#9E8880' : '#2C1810',
+                color: '#FDF8F4',
+                border: 'none',
+                cursor: uploading ? 'not-allowed' : 'pointer',
+              }}
             >
-              취소
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-[#81D8D0] text-white rounded-md hover:bg-[#6BC4BB] disabled:opacity-50"
-              disabled={loading}
-            >
-              {loading ? '작성 중...' : '작성'}
+              {uploading ? '업로드 중...' : '게시하기'}
             </button>
           </div>
-        </form>
+        </div>
+
       </div>
     </div>
   );

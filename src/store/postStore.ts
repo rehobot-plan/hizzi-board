@@ -14,7 +14,7 @@ export interface PostAttachment {
 export interface Post {
   id: string;
   panelId: string;
-  type: 'text' | 'image' | 'link';
+  type: 'text' | 'image' | 'link' | 'file';
   content: string;
   author: string;
   createdAt: Date;
