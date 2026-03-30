@@ -8,6 +8,7 @@ interface Panel {
   ownerEmail?: string | null;
   position?: number;
   categories?: string[];
+  color?: string;
 }
 
 interface PanelState {

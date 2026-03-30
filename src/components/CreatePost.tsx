@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { usePostStore } from '@/store/postStore';
 import { useAuthStore } from '@/store/authStore';
+import { useUserStore } from '@/store/userStore';
 
 interface CreatePostProps {
   panelId: string;
@@ -18,6 +19,7 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
   const [dragActive, setDragActive] = useState(false);
   const [droppedFilename, setDroppedFilename] = useState('');
   const [visibleTo, setVisibleTo] = useState<string[]>(['all']);
+  const { users } = useUserStore();
   const { addPost } = usePostStore();
   const { user } = useAuthStore();
 
@@ -102,22 +104,47 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
           )}
           {/* 공개범위 선택 */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">공개범위</label>
-            <select
-              multiple
-              value={visibleTo}
-              onChange={e => {
-                const selected = Array.from(e.target.selectedOptions).map(opt => opt.value);
-                setVisibleTo(selected);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#81D8D0] focus:border-[#81D8D0]"
-              disabled={loading}
-            >
-              <option value="all">전체 공개</option>
-              <option value="me">나만 보기</option>
-              {/* 필요시 추가 옵션 */}
-            </select>
-            <div className="text-xs text-gray-500 mt-1">Ctrl(또는 Cmd) 클릭으로 다중 선택</div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">공개 범위</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              <button
+                type="button"
+                className={`px-3 py-1 rounded border ${visibleTo.includes('all') ? 'bg-[#81D8D0] text-white border-[#81D8D0]' : 'bg-white text-gray-700 border-gray-300'} transition`}
+                onClick={() => setVisibleTo(['all'])}
+                disabled={loading}
+              >
+                전체 공개
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-1 rounded border ${visibleTo.includes('me') ? 'bg-[#81D8D0] text-white border-[#81D8D0]' : 'bg-white text-gray-700 border-gray-300'} transition`}
+                onClick={() => setVisibleTo(['me'])}
+                disabled={loading}
+              >
+                나만 보기
+              </button>
+            </div>
+            <div className="mb-1 text-xs text-gray-500">또는 특정인 선택:</div>
+            <div className="flex flex-wrap gap-2">
+              {users.filter(u => u.email !== user?.email).map(u => (
+                <button
+                  key={u.id}
+                  type="button"
+                  className={`px-3 py-1 rounded border ${visibleTo.includes(u.email) ? 'bg-[#81D8D0] text-white border-[#81D8D0]' : 'bg-white text-gray-700 border-gray-300'} transition`}
+                  onClick={() => {
+                    let next: string[];
+                    if (visibleTo.includes('all')) next = [u.email];
+                    else if (visibleTo.includes(u.email)) next = visibleTo.filter(v => v !== u.email);
+                    else next = [...visibleTo.filter(v => v !== 'all' && v !== 'me'), u.email];
+                    setVisibleTo(next.length === 0 ? ['all'] : next);
+                  }}
+                  disabled={loading}
+                >
+                  {u.name}
+                  {visibleTo.includes(u.email) && ' ✓'}
+                </button>
+              ))}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">(클릭 시 민트색 활성화, 여러 명 선택 가능)</div>
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">타입</label>

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Post, usePostStore } from '@/store/postStore';
+import { usePanelStore } from '@/store/panelStore';
 import { useAuthStore } from '@/store/authStore';
 
 interface PostItemProps {
@@ -20,6 +21,9 @@ export default function PostItem({ post }: PostItemProps) {
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuthStore();
   const { updatePost, deletePost } = usePostStore();
+  const { panels } = usePanelStore();
+  const panel = panels.find(p => p.id === post.panelId);
+  const categories = panel?.categories || ['공지', '결재', '메모'];
 
   // 권한 확인: 본인 또는 관리자만 편집/삭제 가능
   const canEdit = user && (user.email === post.author || user.role === 'admin');
@@ -168,6 +172,21 @@ export default function PostItem({ post }: PostItemProps) {
             >
               {isDeleting ? '삭제 중...' : '삭제'}
             </button>
+            {/* 바인더(탭) 이동 */}
+            <div className="border-t border-gray-200 my-1" />
+            <div className="px-4 py-2 text-xs text-gray-500">다른 탭으로 이동</div>
+            {categories.filter(cat => cat !== post.category).map(cat => (
+              <button
+                key={cat}
+                onClick={async () => {
+                  await updatePost(post.id, { category: cat });
+                  setContextMenu(null);
+                }}
+                className="block w-full px-4 py-2 text-left text-[#81D8D0] hover:bg-gray-100"
+              >
+                {cat}로 이동
+              </button>
+            ))}
           </div>
         </div>
       )}
