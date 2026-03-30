@@ -81,6 +81,11 @@ export default function Calendar() {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
   });
+  // 네비게이션 입력 상태
+  const [editYear, setEditYear] = useState(false);
+  const [editMonth, setEditMonth] = useState(false);
+  const [navYear, setNavYear] = useState(current.year.toString());
+  const [navMonth, setNavMonth] = useState((current.month + 1).toString().padStart(2, '0'));
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -110,8 +115,67 @@ export default function Calendar() {
       let y = cur.year;
       while (m < 0) { m += 12; y--; }
       while (m > 11) { m -= 12; y++; }
+      setNavYear(y.toString());
+      setNavMonth((m + 1).toString().padStart(2, '0'));
       return { year: y, month: m };
     });
+  };
+
+  // 년도 증감
+  const changeYear = (diff: number) => {
+    setCurrent((cur) => {
+      const y = cur.year + diff;
+      setNavYear(y.toString());
+      return { ...cur, year: y };
+    });
+  };
+  // 월 증감 (1~12 순환)
+  const changeMonth = (diff: number) => {
+    setCurrent((cur) => {
+      let m = cur.month + diff;
+      let y = cur.year;
+      while (m < 0) { m += 12; y--; }
+      while (m > 11) { m -= 12; y++; }
+      setNavYear(y.toString());
+      setNavMonth((m + 1).toString().padStart(2, '0'));
+      return { year: y, month: m };
+    });
+  };
+
+  // 년도 직접입력
+  const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNavYear(e.target.value.replace(/[^0-9]/g, ''));
+  };
+  const handleYearInputBlur = () => {
+    const y = parseInt(navYear, 10);
+    if (!isNaN(y) && y > 1900 && y < 2100) {
+      setCurrent(cur => ({ ...cur, year: y }));
+    } else {
+      setNavYear(current.year.toString());
+    }
+    setEditYear(false);
+  };
+  const handleYearInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleYearInputBlur();
+  };
+
+  // 월 직접입력
+  const handleMonthInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/[^0-9]/g, '');
+    if (val.length > 2) val = val.slice(0, 2);
+    setNavMonth(val);
+  };
+  const handleMonthInputBlur = () => {
+    let m = parseInt(navMonth, 10);
+    if (!isNaN(m) && m >= 1 && m <= 12) {
+      setCurrent(cur => ({ ...cur, month: m - 1 }));
+    } else {
+      setNavMonth((current.month + 1).toString().padStart(2, '0'));
+    }
+    setEditMonth(false);
+  };
+  const handleMonthInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleMonthInputBlur();
   };
 
   // 날짜 직접 입력 (왼쪽 달력 기준)
@@ -255,15 +319,49 @@ export default function Calendar() {
 
   return (
     <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-4 w-full mx-auto">
-      {/* 상단: 월 이동, 입력 */}
-      <div className="flex items-center justify-between mb-2">
+      {/* 상단: 네비게이션 */}
+      <div className="flex items-center justify-center gap-2 mb-2 select-none">
+        {/* 맨 왼쪽: 이전 달 */}
         <button onClick={() => moveMonth(-1)} className="px-2 py-1 text-lg">‹</button>
-        <input
-          type="month"
-          value={leftMonthStr}
-          onChange={handleInputMonth}
-          className="border rounded px-2 py-1 w-32 text-center"
-        />
+        {/* 년도 직접입력 + 증감 */}
+        <button onClick={() => changeYear(-1)} className="px-1 text-lg">‹</button>
+        {editYear ? (
+          <input
+            type="text"
+            value={navYear}
+            onChange={handleYearInput}
+            onBlur={handleYearInputBlur}
+            onKeyDown={handleYearInputKey}
+            className="border rounded px-2 py-1 w-16 text-center text-base"
+            autoFocus
+          />
+        ) : (
+          <span
+            className="w-16 text-center text-base font-bold cursor-pointer hover:bg-gray-100 rounded px-1"
+            onClick={() => setEditYear(true)}
+          >{current.year}</span>
+        )}
+        <button onClick={() => changeYear(1)} className="px-1 text-lg">›</button>
+        {/* 월: < 03월 > + 직접입력 */}
+        <button onClick={() => changeMonth(-1)} className="px-1 text-lg">‹</button>
+        {editMonth ? (
+          <input
+            type="text"
+            value={navMonth}
+            onChange={handleMonthInput}
+            onBlur={handleMonthInputBlur}
+            onKeyDown={handleMonthInputKey}
+            className="border rounded px-2 py-1 w-10 text-center text-base"
+            autoFocus
+          />
+        ) : (
+          <span
+            className="w-10 text-center text-base font-bold cursor-pointer hover:bg-gray-100 rounded px-1"
+            onClick={() => setEditMonth(true)}
+          >{(current.month + 1).toString().padStart(2, '0')}월</span>
+        )}
+        <button onClick={() => changeMonth(1)} className="px-1 text-lg">›</button>
+        {/* 맨 오른쪽: 다음 달 */}
         <button onClick={() => moveMonth(1)} className="px-2 py-1 text-lg">›</button>
       </div>
       {/* 두 달력 가로 배치 */}
@@ -277,7 +375,7 @@ export default function Calendar() {
             ))}
           </div>
           <div
-            className="grid grid-cols-7 gap-2 select-none"
+            className="grid grid-cols-7 gap-0 select-none"
             onMouseUp={isDragging ? handleDragEnd : undefined}
             onTouchEnd={isDragging ? handleDragEnd : undefined}
           >
@@ -327,17 +425,33 @@ export default function Calendar() {
                 >
                   <div className={`text-base font-bold mb-2 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
                   {holiday && <div className="text-xs text-red-400 font-semibold mb-1">{holiday.name}</div>}
-                  <div className="flex flex-col gap-1 w-full">
+                  <div className="flex flex-col gap-0 w-full">
                     {showEvents.map(ev => {
-                      const isStart = ev.startDate === toDateString(date);
+                      // 기간 일정 블락 연결 스타일 계산
+                      const evStart = new Date(ev.startDate);
+                      const evEnd = new Date(ev.endDate);
+                      const isStart = toDateString(date) === ev.startDate;
+                      const isEnd = toDateString(date) === ev.endDate;
+                      const isSingle = ev.startDate === ev.endDate;
+                      // 주의 시작/끝(일요일/토요일)
+                      const dayIdx = date.getDay();
+                      let borderRadius = '';
+                      if (isSingle) borderRadius = 'rounded-full';
+                      else if (isStart && isEnd) borderRadius = 'rounded-full';
+                      else if (isStart) borderRadius = 'rounded-l-full';
+                      else if (isEnd) borderRadius = 'rounded-r-full';
+                      else borderRadius = '';
+                      // 주가 바뀌면(일요일/토요일) 강제 끊김
+                      if (dayIdx === 0 && !isStart) borderRadius = 'rounded-l-full';
+                      if (dayIdx === 6 && !isEnd) borderRadius = 'rounded-r-full';
                       return (
                         <div
                           key={ev.id}
-                          className={`w-full h-6 rounded text-[13px] px-2 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
-                          style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color, marginBottom: 2 }}
+                          className={`w-full h-6 ${borderRadius} text-[11px] px-2 truncate cursor-pointer border-0`}
+                          style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, marginBottom: 0, minHeight: 22 }}
                           onClick={e => { e.stopPropagation(); onEventClick(ev); }}
                         >
-                          {isStart && <span className="font-bold">{ev.title}</span>}
+                          {(isStart || isSingle) && <span className="font-bold">{ev.title}</span>}
                         </div>
                       );
                     })}
@@ -364,7 +478,7 @@ export default function Calendar() {
             ))}
           </div>
           <div
-            className="grid grid-cols-7 gap-2 select-none"
+            className="grid grid-cols-7 gap-0 select-none"
             onMouseUp={isDragging ? handleDragEnd : undefined}
             onTouchEnd={isDragging ? handleDragEnd : undefined}
           >
@@ -414,17 +528,33 @@ export default function Calendar() {
                 >
                   <div className={`text-base font-bold mb-2 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
                   {holiday && <div className="text-xs text-red-400 font-semibold mb-1">{holiday.name}</div>}
-                  <div className="flex flex-col gap-1 w-full">
+                  <div className="flex flex-col gap-0 w-full">
                     {showEvents.map(ev => {
-                      const isStart = ev.startDate === toDateString(date);
+                      // 기간 일정 블락 연결 스타일 계산
+                      const evStart = new Date(ev.startDate);
+                      const evEnd = new Date(ev.endDate);
+                      const isStart = toDateString(date) === ev.startDate;
+                      const isEnd = toDateString(date) === ev.endDate;
+                      const isSingle = ev.startDate === ev.endDate;
+                      // 주의 시작/끝(일요일/토요일)
+                      const dayIdx = date.getDay();
+                      let borderRadius = '';
+                      if (isSingle) borderRadius = 'rounded-full';
+                      else if (isStart && isEnd) borderRadius = 'rounded-full';
+                      else if (isStart) borderRadius = 'rounded-l-full';
+                      else if (isEnd) borderRadius = 'rounded-r-full';
+                      else borderRadius = '';
+                      // 주가 바뀌면(일요일/토요일) 강제 끊김
+                      if (dayIdx === 0 && !isStart) borderRadius = 'rounded-l-full';
+                      if (dayIdx === 6 && !isEnd) borderRadius = 'rounded-r-full';
                       return (
                         <div
                           key={ev.id}
-                          className={`w-full h-6 rounded text-[13px] px-2 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
-                          style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color, marginBottom: 2 }}
+                          className={`w-full h-6 ${borderRadius} text-[11px] px-2 truncate cursor-pointer border-0`}
+                          style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, marginBottom: 0, minHeight: 22 }}
                           onClick={e => { e.stopPropagation(); onEventClick(ev); }}
                         >
-                          {isStart && <span className="font-bold">{ev.title}</span>}
+                          {(isStart || isSingle) && <span className="font-bold">{ev.title}</span>}
                         </div>
                       );
                     })}

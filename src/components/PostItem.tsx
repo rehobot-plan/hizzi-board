@@ -137,6 +137,33 @@ export default function PostItem({ post }: PostItemProps) {
         onClick={handleClickOutside}
       >
         {renderContent()}
+        {/* 첨부파일 표시 */}
+        {post.attachments && post.attachments.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {post.attachments.map((att, i) => {
+              let icon, color;
+              if (att.type.includes('pdf')) {
+                icon = '📕'; color = 'text-red-500';
+              } else if (att.type.includes('spreadsheet') || att.name.match(/\.xlsx?$/i)) {
+                icon = '📗'; color = 'text-green-600';
+              } else if (att.type.includes('word') || att.name.match(/\.docx?$/i)) {
+                icon = '📘'; color = 'text-blue-600';
+              } else if (att.type.includes('presentation') || att.name.match(/\.pptx?$/i)) {
+                icon = '📙'; color = 'text-orange-500';
+              } else {
+                icon = '📎'; color = 'text-gray-500';
+              }
+              return (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <span className={color}>{icon}</span>
+                  <span className="truncate max-w-[160px]" title={att.name}>{att.name}</span>
+                  <span className="text-gray-400">({(att.size/1024/1024).toFixed(2)}MB)</span>
+                  <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">다운로드</a>
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="text-xs text-gray-500 mt-1">
           {/* 작성자 이름 표시 (이메일이 아닌 이름) */}
           {(() => {

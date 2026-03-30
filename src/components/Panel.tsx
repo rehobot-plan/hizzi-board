@@ -64,14 +64,15 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
     if (activeCategory !== '전체') {
       if (!post.category || post.category !== activeCategory) return false;
     }
-    if (post.visibleTo && Array.isArray(post.visibleTo)) {
-      if (!user) return false;
-      const userEmail = user.email ?? '';
-      if (post.visibleTo.includes('all')) return true;
-      if (post.visibleTo.includes('me')) return post.author === userEmail || user.role === 'admin';
-      if (!post.visibleTo.includes(userEmail) && user.role !== 'admin') return false;
-    }
-    return true;
+    if (!user) return false;
+    // 공개범위 필터링: undefined/빈배열=전체공개, 내 이메일/작성자/관리자=항상 표시
+    const userEmail = user.email ?? '';
+    const visibleTo = post.visibleTo;
+    if (!visibleTo || visibleTo.length === 0) return true;
+    if (user.role === 'admin') return true;
+    if (post.author === userEmail) return true;
+    if (visibleTo.includes(userEmail)) return true;
+    return false;
   });
 
   const isOwner = user && ownerEmail === user?.email;

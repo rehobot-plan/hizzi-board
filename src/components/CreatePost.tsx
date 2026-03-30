@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { usePostStore } from '@/store/postStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
@@ -23,40 +24,78 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
   const { addPost } = usePostStore();
   const { user } = useAuthStore();
 
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      alert('이미지 파일만 업로드 가능합니다.');
+  const [attachments, setAttachments] = useState<{ name: string; url: string; size: number; type: string }[]>([]);
+  const [fileError, setFileError] = useState('');
+
+  // 파일 처리 함수 (이미지/첨부파일 모두 처리)
+  const handleFile = async (file: File) => {
+    setFileError('');
+    const ALLOWED_TYPES = [
+      'image/', 'application/pdf',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    ];
+    const MAX_FILE_SIZE = 20 * 1024 * 1024;
+    if (type === 'image') {
+      if (!file.type.startsWith('image/')) {
+        setFileError('이미지 파일만 업로드 가능합니다.');
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setFileError('최대 20MB까지 업로드 가능합니다.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setType('image');
+          setContent(reader.result);
+          setDroppedFilename(file.name);
+        }
+      };
+      reader.readAsDataURL(file);
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setType('image');
-        setContent(reader.result);
-        setDroppedFilename(file.name);
-      }
-    };
-    reader.readAsDataURL(file);
+    // 첨부파일 (PDF, 엑셀, 워드, PPTX)
+    if (!ALLOWED_TYPES.some(t => file.type.startsWith(t) || file.type === t)) {
+      setFileError('지원하지 않는 파일 형식입니다.');
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError('최대 20MB까지 업로드 가능합니다.');
+      return;
+    }
+    try {
+      const storage = getStorage();
+      const ext = file.name.split('.').pop();
+      const storageRef = ref(storage, `attachments/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setAttachments(prev => [...prev, { name: file.name, url, size: file.size, type: file.type }]);
+    } catch (e) {
+      setFileError('파일 업로드 실패');
+    }
   };
 
-  const onDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  // 드래그&드롭 파일 처리
+  const onDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setDragActive(false);
-
     const file = event.dataTransfer.files?.[0];
-    if (file) handleFile(file);
+    if (file) await handleFile(file);
   };
 
-  const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // 파일 선택 input 처리
+  const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) handleFile(file);
+    if (file) await handleFile(file);
   };
 
+  // 게시물 작성 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !content.trim() || loading) return;
-
+    if (!user || (!content.trim() && attachments.length === 0) || loading) return;
     setLoading(true);
     try {
       await addPost({
@@ -66,10 +105,12 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
         author: user.email || 'Anonymous',
         category: category || undefined,
         visibleTo: visibleTo.length > 0 ? visibleTo : ['all'],
+        attachments: attachments.length > 0 ? attachments : undefined,
       });
       setContent('');
       setCategory('');
       setVisibleTo(['all']);
+      setAttachments([]);
       onClose();
     } catch (error) {
       console.error('Error creating post:', error);
@@ -78,6 +119,8 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
       setLoading(false);
     }
   };
+	
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

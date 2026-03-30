@@ -160,8 +160,16 @@ export default function Home() {
 
       <div className="fixed right-4 bottom-4 z-50 flex flex-col gap-2">
         {toasts.map((toast) => (
-          <div key={toast.id} className="px-4 py-2 bg-gray-800 text-white rounded shadow-lg text-sm">
-            {toast.message}
+          <div key={toast.id} className="px-4 py-2 bg-gray-800 text-white rounded shadow-lg text-sm flex items-center gap-2 min-w-[200px]">
+            <span className="flex-1">{toast.message}</span>
+            <button
+              className="ml-2 text-white text-lg hover:text-red-300 focus:outline-none"
+              aria-label="알림 닫기"
+              onClick={() => useToastStore.getState().removeToast(toast.id)}
+              tabIndex={0}
+            >
+              ×
+            </button>
           </div>
         ))}
       </div>

@@ -4,6 +4,13 @@ import { db } from '@/lib/firebase';
 import { usePanelStore } from '@/store/panelStore';
 import { useToastStore } from '@/store/toastStore';
 
+export interface PostAttachment {
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+}
+
 export interface Post {
   id: string;
   panelId: string;
@@ -14,6 +21,7 @@ export interface Post {
   updatedAt?: Date;
   category?: string;
   visibleTo?: string[];
+  attachments?: PostAttachment[];
 }
 
 interface PostState {
