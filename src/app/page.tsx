@@ -9,6 +9,7 @@ import { useToastStore } from '@/store/toastStore';
 import { initPostListener } from '@/store/postStore';
 import Panel from '@/components/Panel';
 import Calendar from '@/components/Calendar';
+import NoticeArea from '@/components/NoticeArea';
 
 export default function Home() {
   const { user, loading: authLoading, signOut } = useAuthStore();
@@ -149,6 +150,8 @@ export default function Home() {
               </div>
             ))}
         </div>
+        {/* 공지사항 영역 */}
+        <NoticeArea />
         {/* 공유 달력: 게시판 3칸 너비(절반)로 하단에 배치 */}
         <div className="flex justify-center mt-8">
           <div className="w-full">

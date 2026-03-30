@@ -118,7 +118,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
 
   return (
     <div
-      className="rounded-lg p-4 flex flex-col h-full panel-draggable"
+      className="rounded-lg p-2 flex flex-col h-full panel-draggable"
       draggable="true"
       data-panel-id={id}
       style={{
@@ -129,14 +129,14 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
       }}
     >
       {/* 바인더 탭 */}
-      <div className="flex gap-2 mb-2">
+      <div className="flex gap-1 mb-1">
         {['전체', ...categoryList].map((cat) => {
           const isBase = BASE_CATEGORIES.includes(cat);
           return (
             <div key={cat} className="relative flex items-center group">
               {editingTab === cat ? (
                 <input
-                  className={`px-2 py-1 rounded-t-lg border-b-2 text-sm focus:outline-none`}
+                  className={`px-1 py-0.5 rounded-t-lg border-b-2 text-xs focus:outline-none`}
                   value={tabNameDraft}
                   autoFocus
                   onChange={e => setTabNameDraft(e.target.value)}
@@ -151,7 +151,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
                 />
               ) : (
                 <button
-                  className={`px-3 py-1 rounded-t-lg border-b-2 text-sm ${activeCategory === cat ? 'font-bold' : ''}`}
+                  className={`px-2 py-0.5 rounded-t-lg border-b-2 text-xs ${activeCategory === cat ? 'font-bold' : ''}`}
                   style={{
                     borderBottom: activeCategory === cat ? `2px solid ${panelColor}` : '2px solid transparent',
                     background: activeCategory === cat ? withAlpha(panelColor, 0.15) : '#f3f4f6',
@@ -172,7 +172,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
               )}
               {canAddCategory && !isBase && (
                 <button
-                  className="ml-1 text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
+                  className="ml-0.5 text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
                   title="탭 삭제"
                   onClick={() => { setDeleteTarget(cat); setShowDeleteModal(true); }}
                   type="button"
@@ -185,7 +185,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
         })}
         {canAddCategory && (
           <button
-            className="px-3 py-1 rounded-t-lg border-b-2 border-transparent text-sm"
+            className="px-2 py-0.5 rounded-t-lg border-b-2 border-transparent text-xs"
             style={{ background: '#f3f4f6' }}
             onClick={() => setShowCategoryModal(true)}
           >
@@ -196,12 +196,12 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
             {/* 카테고리 삭제 확인 모달 */}
             {showDeleteModal && deleteTarget && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white p-6 rounded-lg w-full max-w-xs">
-                  <h3 className="text-lg font-semibold mb-4">⚠️ &quot;{deleteTarget}&quot; 탭을 삭제하면 해당 탭의 모든 게시물이 함께 삭제됩니다. 정말 삭제하시겠습니까?</h3>
-                  <div className="flex justify-end gap-2">
+                <div className="bg-white p-3 rounded-lg w-full max-w-xs">
+                  <h3 className="text-base font-semibold mb-2">⚠️ &quot;{deleteTarget}&quot; 탭을 삭제하면 해당 탭의 모든 게시물이 함께 삭제됩니다. 정말 삭제하시겠습니까?</h3>
+                  <div className="flex justify-end gap-1">
                     <button
                       onClick={() => { setShowDeleteModal(false); setDeleteTarget(null); }}
-                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                      className="px-2 py-1 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 text-xs"
                     >
                       취소
                     </button>
@@ -220,7 +220,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
                         setDeleteTarget(null);
                         if (activeCategory === deleteTarget) setActiveCategory('전체');
                       }}
-                      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                      className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 text-xs"
                     >
                       삭제
                     </button>
@@ -230,12 +230,12 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
             )}
       {/* 패널 헤더 */}
       <div
-        className="flex justify-between items-center mb-4"
-        style={{ background: withAlpha(panelColor, 0.10), borderRadius: 8, padding: '0.5rem 1rem' }}
+        className="flex justify-between items-center mb-2"
+        style={{ background: withAlpha(panelColor, 0.10), borderRadius: 8, padding: '0.25rem 0.5rem' }}
       >
         {!isEditing ? (
           <h3
-            className={`text-xl font-semibold text-gray-800 ${canRename ? 'cursor-pointer hover:text-[#81D8D0]' : ''}`}
+            className={`text-base font-semibold text-gray-800 ${canRename ? 'cursor-pointer hover:text-[#81D8D0]' : ''}`}
             onClick={() => canRename && setIsEditing(true)}
             style={{ color: panelColor }}
             tabIndex={0}
@@ -259,16 +259,16 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
                 savePanelName();
               }
             }}
-            className="border rounded px-2 py-1 mr-2"
+            className="border rounded px-1 py-0.5 mr-1 text-xs"
             autoFocus
-            style={{ minWidth: 80 }}
+            style={{ minWidth: 60 }}
           />
         )}
         {/* 색상 변경 버튼: 본인/관리자만 */}
         {canRename && (
           <button
             onClick={() => setShowColorPicker(v => !v)}
-            className="ml-1 text-xl"
+            className="ml-1 text-base"
             title="패널 색상 변경"
             type="button"
           >
@@ -334,7 +334,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
         {canCreate && (
           <button
             onClick={() => setShowCreate(true)}
-            className="px-3 py-1 text-white text-sm rounded transition-colors"
+            className="px-2 py-0.5 text-white text-xs rounded transition-colors"
             style={{ background: panelColor, boxShadow: `0 1px 4px 0 ${withAlpha(panelColor, 0.10)}` }}
           >
             + 게시물
@@ -350,7 +350,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
         }}
       >
         {filteredPosts.length === 0 ? (
-          <p className="text-gray-500 text-center">게시물이 없습니다</p>
+          <p className="text-gray-400 text-center text-xs">게시물이 없습니다</p>
         ) : (
           filteredPosts.map(post => (
             <PostItem key={post.id} post={post} />
@@ -378,25 +378,25 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
       {/* 카테고리 추가 모달 */}
       {showCategoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-xs">
-            <h3 className="text-lg font-semibold mb-4">새 카테고리 추가</h3>
+          <div className="bg-white p-3 rounded-lg w-full max-w-xs">
+            <h3 className="text-base font-semibold mb-2">새 카테고리 추가</h3>
             <input
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4"
+              className="w-full px-2 py-1 border border-gray-300 rounded-md mb-2 text-xs"
               placeholder="카테고리명 입력"
               autoFocus
             />
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-1">
               <button
                 onClick={() => setShowCategoryModal(false)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-2 py-1 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 text-xs"
               >
                 취소
               </button>
               <button
                 onClick={handleAddCategory}
-                className="px-4 py-2 bg-[#81D8D0] text-white rounded-md hover:bg-[#6BC4BB]"
+                className="px-2 py-1 bg-[#81D8D0] text-white rounded-md hover:bg-[#6BC4BB] text-xs"
               >
                 추가
               </button>

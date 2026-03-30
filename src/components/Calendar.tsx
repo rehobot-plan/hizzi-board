@@ -318,13 +318,13 @@ export default function Calendar() {
   }
 
   return (
-    <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-4 w-full mx-auto">
+    <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-2 w-full mx-auto text-sm">
       {/* 상단: 네비게이션 */}
-      <div className="flex items-center justify-center gap-2 mb-2 select-none">
+      <div className="flex items-center justify-center gap-1 mb-1 select-none">
         {/* 맨 왼쪽: 이전 달 */}
-        <button onClick={() => moveMonth(-1)} className="px-2 py-1 text-lg">‹</button>
+        <button onClick={() => moveMonth(-1)} className="px-1 py-0.5 text-base">‹</button>
         {/* 년도 직접입력 + 증감 */}
-        <button onClick={() => changeYear(-1)} className="px-1 text-lg">‹</button>
+        <button onClick={() => changeYear(-1)} className="px-0.5 text-base">‹</button>
         {editYear ? (
           <input
             type="text"
@@ -332,18 +332,18 @@ export default function Calendar() {
             onChange={handleYearInput}
             onBlur={handleYearInputBlur}
             onKeyDown={handleYearInputKey}
-            className="border rounded px-2 py-1 w-16 text-center text-base"
+            className="border rounded px-1 py-0.5 w-12 text-center text-sm"
             autoFocus
           />
         ) : (
           <span
-            className="w-16 text-center text-base font-bold cursor-pointer hover:bg-gray-100 rounded px-1"
+            className="w-12 text-center text-sm font-bold cursor-pointer hover:bg-gray-100 rounded px-0.5"
             onClick={() => setEditYear(true)}
           >{current.year}</span>
         )}
-        <button onClick={() => changeYear(1)} className="px-1 text-lg">›</button>
+        <button onClick={() => changeYear(1)} className="px-0.5 text-base">›</button>
         {/* 월: < 03월 > + 직접입력 */}
-        <button onClick={() => changeMonth(-1)} className="px-1 text-lg">‹</button>
+        <button onClick={() => changeMonth(-1)} className="px-0.5 text-base">‹</button>
         {editMonth ? (
           <input
             type="text"
@@ -351,25 +351,25 @@ export default function Calendar() {
             onChange={handleMonthInput}
             onBlur={handleMonthInputBlur}
             onKeyDown={handleMonthInputKey}
-            className="border rounded px-2 py-1 w-10 text-center text-base"
+            className="border rounded px-1 py-0.5 w-8 text-center text-sm"
             autoFocus
           />
         ) : (
           <span
-            className="w-10 text-center text-base font-bold cursor-pointer hover:bg-gray-100 rounded px-1"
+            className="w-8 text-center text-sm font-bold cursor-pointer hover:bg-gray-100 rounded px-0.5"
             onClick={() => setEditMonth(true)}
           >{(current.month + 1).toString().padStart(2, '0')}월</span>
         )}
-        <button onClick={() => changeMonth(1)} className="px-1 text-lg">›</button>
+        <button onClick={() => changeMonth(1)} className="px-0.5 text-base">›</button>
         {/* 맨 오른쪽: 다음 달 */}
-        <button onClick={() => moveMonth(1)} className="px-2 py-1 text-lg">›</button>
+        <button onClick={() => moveMonth(1)} className="px-1 py-0.5 text-base">›</button>
       </div>
       {/* 두 달력 가로 배치 */}
       <div className="flex w-full gap-4">
         {/* 왼쪽: 현재 월 */}
         <div className="flex-1">
-          <div className="text-center font-bold mb-2 text-lg">{leftMonthStr}</div>
-          <div className="grid grid-cols-7 text-center font-bold mb-2 text-base">
+          <div className="text-center font-bold mb-1 text-base">{leftMonthStr}</div>
+          <div className="grid grid-cols-7 text-center font-bold mb-1 text-sm">
             {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
               <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
             ))}
@@ -471,8 +471,8 @@ export default function Calendar() {
         </div>
         {/* 오른쪽: 다음 월 */}
         <div className="flex-1">
-          <div className="text-center font-bold mb-2 text-lg">{rightMonthStr}</div>
-          <div className="grid grid-cols-7 text-center font-bold mb-2 text-base">
+          <div className="text-center font-bold mb-1 text-base">{rightMonthStr}</div>
+          <div className="grid grid-cols-7 text-center font-bold mb-1 text-sm">
             {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
               <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
             ))}

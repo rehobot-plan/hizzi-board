@@ -130,7 +130,7 @@ export default function PostItem({ post }: PostItemProps) {
   return (
     <>
       <div
-        className="bg-gray-50 p-3 rounded mb-2 border relative cursor-default"
+        className="bg-gray-50 p-2 rounded mb-1 border relative cursor-default text-sm"
         onContextMenu={handleContextMenu}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -139,7 +139,7 @@ export default function PostItem({ post }: PostItemProps) {
         {renderContent()}
         {/* 첨부파일 표시 */}
         {post.attachments && post.attachments.length > 0 && (
-          <div className="mt-2 space-y-1">
+          <div className="mt-1 space-y-0.5">
             {post.attachments.map((att, i) => {
               let icon, color;
               if (att.type.includes('pdf')) {
@@ -154,9 +154,9 @@ export default function PostItem({ post }: PostItemProps) {
                 icon = '📎'; color = 'text-gray-500';
               }
               return (
-                <div key={i} className="flex items-center gap-2 text-sm">
+                <div key={i} className="flex items-center gap-1 text-xs">
                   <span className={color}>{icon}</span>
-                  <span className="truncate max-w-[160px]" title={att.name}>{att.name}</span>
+                  <span className="truncate max-w-[120px]" title={att.name}>{att.name}</span>
                   <span className="text-gray-400">({(att.size/1024/1024).toFixed(2)}MB)</span>
                   <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">다운로드</a>
                 </div>
@@ -164,7 +164,7 @@ export default function PostItem({ post }: PostItemProps) {
             })}
           </div>
         )}
-        <div className="text-xs text-gray-500 mt-1">
+        <div className="text-[10px] text-gray-400 mt-0.5">
           {/* 작성자 이름 표시 (이메일이 아닌 이름) */}
           {(() => {
             // userStore에서 사용자 이름을 찾아 표시
@@ -188,7 +188,7 @@ export default function PostItem({ post }: PostItemProps) {
           onClick={handleClickOutside}
         >
           <div
-            className="fixed bg-white rounded shadow-lg border border-gray-300 z-50 min-w-max"
+            className="fixed bg-white rounded shadow-lg border border-gray-300 z-50 min-w-max text-xs"
             style={{
               top: contextMenu.x === 0 ? '50%' : `${contextMenu.y}px`,
               left: contextMenu.x === 0 ? '50%' : `${contextMenu.x}px`,
@@ -201,20 +201,20 @@ export default function PostItem({ post }: PostItemProps) {
                 setIsEditOpen(true);
                 setContextMenu(null);
               }}
-              className="block w-full px-4 py-2 text-left text-gray-800 hover:bg-gray-100"
+              className="block w-full px-2 py-1 text-left text-gray-800 hover:bg-gray-100"
             >
               편집
             </button>
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100 disabled:opacity-50"
+              className="block w-full px-2 py-1 text-left text-red-600 hover:bg-gray-100 disabled:opacity-50"
             >
               {isDeleting ? '삭제 중...' : '삭제'}
             </button>
             {/* 바인더(탭) 이동 */}
-            <div className="border-t border-gray-200 my-1" />
-            <div className="px-4 py-2 text-xs text-gray-500">다른 탭으로 이동</div>
+            <div className="border-t border-gray-200 my-0.5" />
+            <div className="px-2 py-1 text-[10px] text-gray-400">다른 탭으로 이동</div>
             {categories.filter(cat => cat !== post.category).map(cat => (
               <button
                 key={cat}
@@ -222,7 +222,7 @@ export default function PostItem({ post }: PostItemProps) {
                   await updatePost(post.id, { category: cat });
                   setContextMenu(null);
                 }}
-                className="block w-full px-4 py-2 text-left text-[#81D8D0] hover:bg-gray-100"
+                className="block w-full px-2 py-1 text-left text-[#81D8D0] hover:bg-gray-100"
               >
                 {cat}로 이동
               </button>
