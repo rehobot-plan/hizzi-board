@@ -45,10 +45,13 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     if (activeCategory !== '전체') {
       if (!post.category || post.category !== activeCategory) return false;
     }
-    // 공개범위: visibleTo가 없으면 전체, 있으면 본인 또는 관리자만
+    // 공개범위: visibleTo가 없으면 전체, 있으면 본인/관리자/특정인만
     if (post.visibleTo && Array.isArray(post.visibleTo)) {
       if (!user) return false;
       const userEmail = user.email ?? '';
+      // 'all'이면 모두 볼 수 있음, 'me'면 본인만, 아니면 배열에 포함된 이메일만
+      if (post.visibleTo.includes('all')) return true;
+      if (post.visibleTo.includes('me')) return post.author === userEmail || user.role === 'admin';
       if (!post.visibleTo.includes(userEmail) && user.role !== 'admin') return false;
     }
     return true;
@@ -97,8 +100,11 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     await updatePanel(id, { categories: updated });
   };
 
+  // drag-and-drop 패널 스왑 지원 (버그픽스 #3, page.tsx와 연동 필요)
+  // (여기서는 UI/핸들러만 준비, 실제 스왑 로직은 page.tsx에서 처리)
+
   return (
-    <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-4 flex flex-col h-full">
+    <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-4 flex flex-col h-full panel-draggable" draggable="true" data-panel-id={id}>
       {/* 바인더 탭 */}
       <div className="flex gap-2 mb-2">
         {['전체', ...categoryList].map((cat) => {

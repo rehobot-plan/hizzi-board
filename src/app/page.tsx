@@ -17,6 +17,7 @@ export default function Home() {
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null); // <-- moved up
   const router = useRouter();
 
   useEffect(() => {
@@ -33,6 +34,28 @@ export default function Home() {
   const handleLogout = async () => {
     await signOut();
     router.push('/login');
+  };
+
+  const handlePanelDragStart = (e: React.DragEvent<HTMLDivElement>, panelId: string) => {
+    setDraggedPanelId(panelId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', panelId);
+  };
+  const handlePanelDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+  const handlePanelDrop = async (e: React.DragEvent<HTMLDivElement>, targetPanelId: string) => {
+    e.preventDefault();
+    if (!draggedPanelId || draggedPanelId === targetPanelId) return;
+    // 패널 순서 스왑 (position 필드 활용)
+    const draggedPanel = panels.find(p => p.id === draggedPanelId);
+    const targetPanel = panels.find(p => p.id === targetPanelId);
+    if (!draggedPanel || !targetPanel) return;
+    // position 값 스왑
+    await updatePanel(draggedPanel.id, { position: targetPanel.position });
+    await updatePanel(targetPanel.id, { position: draggedPanel.position });
+    setDraggedPanelId(null);
   };
 
   if (authLoading || panelLoading) {
@@ -110,9 +133,21 @@ export default function Home() {
         )}
 
         <div className="grid grid-cols-3 grid-rows-2 gap-4 h-[calc(100vh-120px)]">
-          {panels.map((panel) => (
-            <Panel key={panel.id} id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} />
-          ))}
+          {panels
+            .slice()
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+            .map((panel) => (
+              <div
+                key={panel.id}
+                draggable
+                onDragStart={e => handlePanelDragStart(e, panel.id)}
+                onDragOver={handlePanelDragOver}
+                onDrop={e => handlePanelDrop(e, panel.id)}
+                className="h-full"
+              >
+                <Panel id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} position={panel.position} />
+              </div>
+            ))}
         </div>
         {/* 공유 달력: 게시판 3칸 너비(절반)로 하단에 배치 */}
         <div className="flex justify-center mt-8">

@@ -125,7 +125,7 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
             </div>
             <div className="mb-1 text-xs text-gray-500">또는 특정인 선택:</div>
             <div className="flex flex-wrap gap-2">
-              {users.filter(u => u.email !== user?.email).map(u => (
+              {users.filter(u => u.email !== user?.email && u.role !== 'admin').map(u => (
                 <button
                   key={u.id}
                   type="button"

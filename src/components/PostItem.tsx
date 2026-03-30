@@ -96,7 +96,7 @@ export default function PostItem({ post }: PostItemProps) {
     switch (post.type) {
       case 'text':
         return <p className="text-gray-800">{post.content}</p>;
-      case 'image':
+      case 'image': {
         const imageSrc =
           post.content?.trim() && post.content !== 'Post image'
             ? post.content
@@ -115,6 +115,7 @@ export default function PostItem({ post }: PostItemProps) {
             onError={() => setImageError(true)}
           />
         );
+      }
       case 'link':
         return (
           <a href={post.content} target="_blank" rel="noopener noreferrer" className="text-[#81D8D0] hover:underline">
@@ -137,7 +138,19 @@ export default function PostItem({ post }: PostItemProps) {
       >
         {renderContent()}
         <div className="text-xs text-gray-500 mt-1">
-          {post.author} • {post.createdAt.toLocaleString()}
+          {/* 작성자 이름 표시 (이메일이 아닌 이름) */}
+          {(() => {
+            // userStore에서 사용자 이름을 찾아 표시
+            try {
+              // @ts-ignore
+              const userStore = require('@/store/userStore');
+              const users = userStore.useUserStore.getState().users;
+              const found = users.find((u: any) => u.email === post.author);
+              return found ? `${found.name} (${found.email})` : post.author;
+            } catch {
+              return post.author;
+            }
+          })()} • {post.createdAt.toLocaleString()}
         </div>
       </div>
 

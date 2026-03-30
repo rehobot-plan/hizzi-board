@@ -86,6 +86,10 @@ export default function Calendar() {
   const [showDetail, setShowDetail] = useState<CalendarEvent | null>(null);
   const [form, setForm] = useState({ title: '', startDate: '', endDate: '', color: COLORS[0] });
   const [loading, setLoading] = useState(false);
+  // 드래그 상태
+  const [dragStart, setDragStart] = useState<Date | null>(null);
+  const [dragEnd, setDragEnd] = useState<Date | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // 일정 실시간 구독
   useEffect(() => {
@@ -173,7 +177,7 @@ export default function Calendar() {
     setLoading(false);
   };
 
-  // 날짜 클릭 시 일정 추가 모달
+  // 날짜 클릭/드래그 시 일정 추가 모달
   const onDateClick = (date: Date) => {
     setSelectedDate(date);
     setForm({
@@ -183,6 +187,34 @@ export default function Calendar() {
       color: COLORS[0],
     });
     setShowAddModal(true);
+  };
+
+  // 드래그 시작
+  const handleDragStart = (date: Date) => {
+    setDragStart(date);
+    setDragEnd(date);
+    setIsDragging(true);
+  };
+  // 드래그 중
+  const handleDragEnter = (date: Date) => {
+    if (isDragging) setDragEnd(date);
+  };
+  // 드래그 끝
+  const handleDragEnd = () => {
+    if (dragStart && dragEnd) {
+      const start = dragStart < dragEnd ? dragStart : dragEnd;
+      const end = dragStart > dragEnd ? dragStart : dragEnd;
+      setForm({
+        title: '',
+        startDate: toDateString(start),
+        endDate: toDateString(end),
+        color: COLORS[0],
+      });
+      setShowAddModal(true);
+    }
+    setIsDragging(false);
+    setDragStart(null);
+    setDragEnd(null);
   };
 
   // 일정 클릭 시 상세
@@ -234,31 +266,56 @@ export default function Calendar() {
         ))}
       </div>
       {/* 날짜 셀 */}
-      <div className="grid grid-cols-7 gap-1">
+      <div
+        className="grid grid-cols-7 gap-1 select-none"
+        onMouseUp={isDragging ? handleDragEnd : undefined}
+        onTouchEnd={isDragging ? handleDragEnd : undefined}
+      >
         {matrix.flat().map((date, idx) => {
           if (!date) return <div key={idx} className="h-16" />;
           const isCurrentMonth = date.getMonth() === current.month;
           const isToday = isSameDay(date, today);
           const holiday = getHoliday(date);
           const dayEvents = getEventsForDay(date);
+          // 드래그 하이라이트
+          let isHighlighted = false;
+          if (isDragging && dragStart && dragEnd) {
+            const start = dragStart < dragEnd ? dragStart : dragEnd;
+            const end = dragStart > dragEnd ? dragStart : dragEnd;
+            isHighlighted = date >= start && date <= end;
+          }
           return (
             <div
               key={idx}
-              className={`relative h-16 border rounded p-1 cursor-pointer flex flex-col items-start overflow-hidden transition-all
+              className={`relative h-16 border rounded p-1 flex flex-col items-start overflow-hidden transition-all
                 ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
                 ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
+                ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
+                cursor-pointer
               `}
-              onClick={() => isCurrentMonth && onDateClick(date)}
+              onMouseDown={e => { if (isCurrentMonth && e.button === 0) handleDragStart(date); }}
+              onMouseEnter={e => { if (isDragging && isCurrentMonth && e.buttons === 1) handleDragEnter(date); }}
+              onTouchStart={e => { if (isCurrentMonth) handleDragStart(date); }}
+              onTouchMove={e => {
+                if (isDragging && isCurrentMonth && e.touches.length === 1) {
+                  const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                  if (target && target instanceof HTMLElement && target.dataset.date) {
+                    handleDragEnter(new Date(target.dataset.date));
+                  }
+                }
+              }}
+              onMouseUp={e => { if (isDragging) handleDragEnd(); }}
+              onTouchEnd={e => { if (isDragging) handleDragEnd(); }}
+              onClick={e => {
+                if (!isDragging && isCurrentMonth) onDateClick(date);
+              }}
+              data-date={toDateString(date)}
             >
               <div className={`text-xs font-bold mb-1 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
-              {/* 공휴일명 */}
               {holiday && <div className="text-[10px] text-red-400 font-semibold">{holiday.name}</div>}
-              {/* 일정 블록 */}
               <div className="flex flex-col gap-[2px] w-full">
                 {dayEvents.map(ev => {
-                  // 시작일~종료일: 가로 블록, 단일일정도 지원
                   const isStart = ev.startDate === toDateString(date);
-                  const isEnd = ev.endDate === toDateString(date);
                   return (
                     <div
                       key={ev.id}
@@ -276,53 +333,62 @@ export default function Calendar() {
         })}
       </div>
 
-      {/* 일정 추가 모달 */}
+      {/* 일정 추가 모달 - 디자인 개선 */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-xs">
-            <h3 className="text-lg font-semibold mb-4">일정 추가</h3>
-            <input
-              className="w-full px-3 py-2 border border-gray-300 rounded mb-2"
-              placeholder="제목"
-              value={form.title}
-              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              autoFocus
-            />
-            <div className="flex gap-2 mb-2">
+          <div className="bg-white p-8 rounded-2xl w-full max-w-md shadow-lg">
+            <h3 className="text-2xl font-bold mb-6 text-center">일정 추가</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">제목</label>
               <input
-                type="date"
-                className="border rounded px-2 py-1 w-full"
-                value={form.startDate}
-                onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-              />
-              <span className="self-center">~</span>
-              <input
-                type="date"
-                className="border rounded px-2 py-1 w-full"
-                value={form.endDate}
-                onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base mb-2"
+                placeholder="제목을 입력하세요"
+                value={form.title}
+                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                autoFocus
               />
             </div>
-            <div className="flex gap-2 mb-4">
-              {COLORS.map(c => (
-                <button
-                  key={c}
-                  className={`w-6 h-6 rounded-full border-2 ${form.color === c ? "border-[#222]" : "border-gray-200"}`}
-                  style={{ background: c }}
-                  onClick={() => setForm(f => ({ ...f, color: c }))}
-                  type="button"
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">날짜 범위</label>
+              <div className="flex gap-3 items-center">
+                <input
+                  type="date"
+                  className="border rounded-lg px-3 py-2 w-full text-base"
+                  value={form.startDate}
+                  onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
                 />
-              ))}
+                <span className="text-gray-500">~</span>
+                <input
+                  type="date"
+                  className="border rounded-lg px-3 py-2 w-full text-base"
+                  value={form.endDate}
+                  onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                />
+              </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="mb-6">
+              <label className="block text-sm font-semibold mb-1">색상</label>
+              <div className="flex gap-4 flex-wrap mt-2">
+                {COLORS.map(c => (
+                  <button
+                    key={c}
+                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${form.color === c ? "border-[#222] scale-110" : "border-gray-200"}`}
+                    style={{ background: c }}
+                    onClick={() => setForm(f => ({ ...f, color: c }))}
+                    type="button"
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-4 mt-6">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-base"
                 disabled={loading}
               >취소</button>
               <button
                 onClick={handleAddEvent}
-                className="px-4 py-2 bg-[#81D8D0] text-white rounded hover:bg-[#6BC4BB]"
+                className="px-6 py-2 bg-[#81D8D0] text-white rounded-lg hover:bg-[#6BC4BB] text-base font-semibold"
                 disabled={loading}
               >추가</button>
             </div>
