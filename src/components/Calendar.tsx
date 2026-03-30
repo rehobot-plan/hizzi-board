@@ -76,6 +76,7 @@ export default function Calendar() {
   const { user } = useAuthStore();
   const { addToast } = useToastStore();
   const today = new Date();
+  // current: 왼쪽 달력(기준), 오른쪽은 +1달
   const [current, setCurrent] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -102,18 +103,18 @@ export default function Calendar() {
     return unsub;
   }, []);
 
-  // 월 이동
+  // 월 이동 (두 달력 동시 이동)
   const moveMonth = (diff: number) => {
     setCurrent((cur) => {
       let m = cur.month + diff;
       let y = cur.year;
-      if (m < 0) { m = 11; y--; }
-      if (m > 11) { m = 0; y++; }
+      while (m < 0) { m += 12; y--; }
+      while (m > 11) { m -= 12; y++; }
       return { year: y, month: m };
     });
   };
 
-  // 날짜 직접 입력
+  // 날짜 직접 입력 (왼쪽 달력 기준)
   const handleInputMonth = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (/^\d{4}-\d{2}$/.test(val)) {
@@ -228,11 +229,16 @@ export default function Calendar() {
     });
   };
 
-  // 달력 행렬
-  const matrix = getMonthMatrix(current.year, current.month);
-  const monthStr = `${current.year}-${String(current.month + 1).padStart(2, '0')}`;
+  // 두 달력 행렬
+  const leftMatrix = getMonthMatrix(current.year, current.month);
+  // 오른쪽 달력: 다음 달(연도/월 보정)
+  let nextYear = current.year, nextMonth = current.month + 1;
+  if (nextMonth > 11) { nextMonth = 0; nextYear++; }
+  const rightMatrix = getMonthMatrix(nextYear, nextMonth);
+  const leftMonthStr = `${current.year}-${String(current.month + 1).padStart(2, '0')}`;
+  const rightMonthStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}`;
 
-  // 날짜별 일정 필터
+  // 날짜별 일정 필터 (기간 포함)
   function getEventsForDay(date: Date) {
     return events.filter(ev => (
       ev.startDate <= toDateString(date) && ev.endDate >= toDateString(date)
@@ -251,99 +257,191 @@ export default function Calendar() {
     <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-4 w-full mx-auto">
       {/* 상단: 월 이동, 입력 */}
       <div className="flex items-center justify-between mb-2">
-        <button onClick={() => moveMonth(-1)} className="px-2 py-1 text-lg">◀</button>
+        <button onClick={() => moveMonth(-1)} className="px-2 py-1 text-lg">‹</button>
         <input
           type="month"
-          value={monthStr}
+          value={leftMonthStr}
           onChange={handleInputMonth}
           className="border rounded px-2 py-1 w-32 text-center"
         />
-        <button onClick={() => moveMonth(1)} className="px-2 py-1 text-lg">▶</button>
+        <button onClick={() => moveMonth(1)} className="px-2 py-1 text-lg">›</button>
       </div>
-      {/* 요일 헤더 */}
-      <div className="grid grid-cols-7 text-center font-bold mb-1">
-        {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
-          <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
-        ))}
-      </div>
-      {/* 날짜 셀 */}
-      <div
-        className="grid grid-cols-7 gap-1 select-none"
-        onMouseUp={isDragging ? handleDragEnd : undefined}
-        onTouchEnd={isDragging ? handleDragEnd : undefined}
-      >
-        {matrix.flat().map((date, idx) => {
-          if (!date) return <div key={idx} className="min-h-[100px]" />;
-          const isCurrentMonth = date.getMonth() === current.month;
-          const isToday = isSameDay(date, today);
-          const holiday = getHoliday(date);
-          const dayEvents = getEventsForDay(date);
-          // 드래그 하이라이트
-          let isHighlighted = false;
-          if (isDragging && dragStart && dragEnd) {
-            const start = dragStart < dragEnd ? dragStart : dragEnd;
-            const end = dragStart > dragEnd ? dragStart : dragEnd;
-            isHighlighted = date >= start && date <= end;
-          }
-          // 일정 최대 3개, 초과 시 +N개 더보기
-          const maxShow = 3;
-          const showEvents = dayEvents.slice(0, maxShow);
-          const moreCount = dayEvents.length - maxShow;
-          return (
-            <div
-              key={idx}
-              className={`relative min-h-[100px] border rounded p-1 flex flex-col items-start overflow-hidden transition-all
-                ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
-                ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
-                ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
-                cursor-pointer
-              `}
-              onMouseDown={e => { if (isCurrentMonth && e.button === 0) handleDragStart(date); }}
-              onMouseEnter={e => { if (isDragging && isCurrentMonth && e.buttons === 1) handleDragEnter(date); }}
-              onTouchStart={e => { if (isCurrentMonth) handleDragStart(date); }}
-              onTouchMove={e => {
-                if (isDragging && isCurrentMonth && e.touches.length === 1) {
-                  const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-                  if (target && target instanceof HTMLElement && target.dataset.date) {
-                    handleDragEnter(new Date(target.dataset.date));
-                  }
-                }
-              }}
-              onMouseUp={e => { if (isDragging) handleDragEnd(); }}
-              onTouchEnd={e => { if (isDragging) handleDragEnd(); }}
-              onClick={e => {
-                if (!isDragging && isCurrentMonth) onDateClick(date);
-              }}
-              data-date={toDateString(date)}
-            >
-              <div className={`text-xs font-bold mb-1 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
-              {holiday && <div className="text-[10px] text-red-400 font-semibold">{holiday.name}</div>}
-              <div className="flex flex-col gap-[2px] w-full">
-                {showEvents.map(ev => {
-                  const isStart = ev.startDate === toDateString(date);
-                  return (
-                    <div
-                      key={ev.id}
-                      className={`w-full h-5 rounded text-[11px] px-1 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
-                      style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color, marginBottom: 2 }}
-                      onClick={e => { e.stopPropagation(); onEventClick(ev); }}
-                    >
-                      {isStart && <span className="font-bold">{ev.title}</span>}
-                    </div>
-                  );
-                })}
-                {moreCount > 0 && (
-                  <button
-                    className="text-xs text-gray-500 underline mt-1"
-                    onClick={e => { e.stopPropagation(); setMoreEvents({ date, events: dayEvents }); }}
-                  >
-                    +{moreCount}개 더보기
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      {/* 두 달력 가로 배치 */}
+      <div className="flex w-full gap-4">
+        {/* 왼쪽: 현재 월 */}
+        <div className="w-1/2">
+          <div className="text-center font-bold mb-1">{leftMonthStr}</div>
+          <div className="grid grid-cols-7 text-center font-bold mb-1">
+            {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
+              <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
+            ))}
+          </div>
+          <div
+            className="grid grid-cols-7 gap-1 select-none"
+            onMouseUp={isDragging ? handleDragEnd : undefined}
+            onTouchEnd={isDragging ? handleDragEnd : undefined}
+          >
+            {leftMatrix.flat().map((date, idx) => {
+              if (!date) return <div key={idx} className="min-h-[100px]" />;
+              const isCurrentMonth = date.getMonth() === current.month;
+              const isToday = isSameDay(date, today);
+              const holiday = getHoliday(date);
+              const dayEvents = getEventsForDay(date);
+              // 드래그 하이라이트
+              let isHighlighted = false;
+              if (isDragging && dragStart && dragEnd) {
+                const start = dragStart < dragEnd ? dragStart : dragEnd;
+                const end = dragStart > dragEnd ? dragStart : dragEnd;
+                isHighlighted = date >= start && date <= end;
+              }
+              // 일정 최대 3개, 초과 시 +N개 더보기
+              const maxShow = 3;
+              const showEvents = dayEvents.slice(0, maxShow);
+              const moreCount = dayEvents.length - maxShow;
+              return (
+                <div
+                  key={idx}
+                  className={`relative min-h-[100px] border rounded p-1 flex flex-col items-start overflow-hidden transition-all
+                    ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
+                    ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
+                    ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
+                    cursor-pointer
+                  `}
+                  onMouseDown={e => { if (isCurrentMonth && e.button === 0) handleDragStart(date); }}
+                  onMouseEnter={e => { if (isDragging && isCurrentMonth && e.buttons === 1) handleDragEnter(date); }}
+                  onTouchStart={e => { if (isCurrentMonth) handleDragStart(date); }}
+                  onTouchMove={e => {
+                    if (isDragging && isCurrentMonth && e.touches.length === 1) {
+                      const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                      if (target && target instanceof HTMLElement && target.dataset.date) {
+                        handleDragEnter(new Date(target.dataset.date));
+                      }
+                    }
+                  }}
+                  onMouseUp={e => { if (isDragging) handleDragEnd(); }}
+                  onTouchEnd={e => { if (isDragging) handleDragEnd(); }}
+                  onClick={e => {
+                    if (!isDragging && isCurrentMonth) onDateClick(date);
+                  }}
+                  data-date={toDateString(date)}
+                >
+                  <div className={`text-xs font-bold mb-1 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
+                  {holiday && <div className="text-[10px] text-red-400 font-semibold">{holiday.name}</div>}
+                  <div className="flex flex-col gap-[2px] w-full">
+                    {showEvents.map(ev => {
+                      const isStart = ev.startDate === toDateString(date);
+                      return (
+                        <div
+                          key={ev.id}
+                          className={`w-full h-5 rounded text-[11px] px-1 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
+                          style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color, marginBottom: 2 }}
+                          onClick={e => { e.stopPropagation(); onEventClick(ev); }}
+                        >
+                          {isStart && <span className="font-bold">{ev.title}</span>}
+                        </div>
+                      );
+                    })}
+                    {moreCount > 0 && (
+                      <button
+                        className="text-xs text-gray-500 underline mt-1"
+                        onClick={e => { e.stopPropagation(); setMoreEvents({ date, events: dayEvents }); }}
+                      >
+                        +{moreCount}개 더보기
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* 오른쪽: 다음 월 */}
+        <div className="w-1/2">
+          <div className="text-center font-bold mb-1">{rightMonthStr}</div>
+          <div className="grid grid-cols-7 text-center font-bold mb-1">
+            {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
+              <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
+            ))}
+          </div>
+          <div
+            className="grid grid-cols-7 gap-1 select-none"
+            onMouseUp={isDragging ? handleDragEnd : undefined}
+            onTouchEnd={isDragging ? handleDragEnd : undefined}
+          >
+            {rightMatrix.flat().map((date, idx) => {
+              if (!date) return <div key={idx} className="min-h-[100px]" />;
+              const isCurrentMonth = date.getMonth() === nextMonth && date.getFullYear() === nextYear;
+              const isToday = isSameDay(date, today);
+              const holiday = getHoliday(date);
+              const dayEvents = getEventsForDay(date);
+              // 드래그 하이라이트
+              let isHighlighted = false;
+              if (isDragging && dragStart && dragEnd) {
+                const start = dragStart < dragEnd ? dragStart : dragEnd;
+                const end = dragStart > dragEnd ? dragStart : dragEnd;
+                isHighlighted = date >= start && date <= end;
+              }
+              // 일정 최대 3개, 초과 시 +N개 더보기
+              const maxShow = 3;
+              const showEvents = dayEvents.slice(0, maxShow);
+              const moreCount = dayEvents.length - maxShow;
+              return (
+                <div
+                  key={idx}
+                  className={`relative min-h-[100px] border rounded p-1 flex flex-col items-start overflow-hidden transition-all
+                    ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
+                    ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
+                    ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
+                    cursor-pointer
+                  `}
+                  onMouseDown={e => { if (isCurrentMonth && e.button === 0) handleDragStart(date); }}
+                  onMouseEnter={e => { if (isDragging && isCurrentMonth && e.buttons === 1) handleDragEnter(date); }}
+                  onTouchStart={e => { if (isCurrentMonth) handleDragStart(date); }}
+                  onTouchMove={e => {
+                    if (isDragging && isCurrentMonth && e.touches.length === 1) {
+                      const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+                      if (target && target instanceof HTMLElement && target.dataset.date) {
+                        handleDragEnter(new Date(target.dataset.date));
+                      }
+                    }
+                  }}
+                  onMouseUp={e => { if (isDragging) handleDragEnd(); }}
+                  onTouchEnd={e => { if (isDragging) handleDragEnd(); }}
+                  onClick={e => {
+                    if (!isDragging && isCurrentMonth) onDateClick(date);
+                  }}
+                  data-date={toDateString(date)}
+                >
+                  <div className={`text-xs font-bold mb-1 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
+                  {holiday && <div className="text-[10px] text-red-400 font-semibold">{holiday.name}</div>}
+                  <div className="flex flex-col gap-[2px] w-full">
+                    {showEvents.map(ev => {
+                      const isStart = ev.startDate === toDateString(date);
+                      return (
+                        <div
+                          key={ev.id}
+                          className={`w-full h-5 rounded text-[11px] px-1 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
+                          style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color, marginBottom: 2 }}
+                          onClick={e => { e.stopPropagation(); onEventClick(ev); }}
+                        >
+                          {isStart && <span className="font-bold">{ev.title}</span>}
+                        </div>
+                      );
+                    })}
+                    {moreCount > 0 && (
+                      <button
+                        className="text-xs text-gray-500 underline mt-1"
+                        onClick={e => { e.stopPropagation(); setMoreEvents({ date, events: dayEvents }); }}
+                      >
+                        +{moreCount}개 더보기
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* 일정 더보기 팝업 */}
