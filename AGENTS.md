@@ -1,203 +1,47 @@
----
-name: Hizzi Board Next.js Agent
-type: agent
-description: AI assistant for Hizzi Board Next.js project development
----
+# hizzi-Board AGENTS.md
 
-# Hizzi Board - Next.js Development Guide
+## 역할
+실행 담당 AI — 코드 작성·실행·Git·에러 수정
+기획/설계는 Claude.ai에서 완료됨
 
-## Project Overview
-Hizzi Board is a task management platform built with **Next.js 14**, **TypeScript**, **Tailwind CSS**, and **App Router**. The project uses **Zustand** for state management and **Firebase** for backend services.
+## 앱 개요
+사내 온라인 게시판 (3×2 그리드 6분할)
+담당자는 본인 칸에만 게시 / 관리자는 전체 관리
+콘텐츠: 텍스트·이미지·링크
 
-## Tech Stack
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
-- **Backend**: Firebase
-- **Linting**: ESLint
+## 기술 스택
+Next.js (App Router) + TypeScript + Tailwind CSS
+Zustand / Firebase (Firestore + Auth + Storage) / Vercel
+작업 경로: D:\Dropbox\Dropbox\hizzi-board
 
-## Project Structure
-```
-hizzi-Board/
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx          # Root layout with metadata
-│   │   ├── page.tsx            # Home page
-│   │   ├── globals.css         # Global styles with Tailwind
-│   │   └── [other routes]
-│   ├── components/             # Reusable UI components
-│   ├── hooks/                  # Custom React hooks
-│   ├── store/                  # Zustand stores for state management
-│   ├── lib/                    # Utility functions and helpers
-│   └── types/                  # TypeScript type definitions
-├── public/                     # Static assets
-├── tailwind.config.ts          # Tailwind CSS configuration
-├── tsconfig.json               # TypeScript configuration
-├── next.config.ts              # Next.js configuration
-├── postcss.config.mjs          # PostCSS configuration
-├── .eslintrc.json              # ESLint configuration
-├── package.json                # Project dependencies
-└── .env.local                  # Environment variables
-```
+## 핵심 원칙
+- 코드 전 계획 설명 → 승인 후 구현
+- 컴포넌트 하나씩 작은 단위로
+- `any` 타입 절대 금지
+- 데스크톱 풀사이즈 우선 (1920px)
+- Firebase 키: NEXT_PUBLIC_FIREBASE_* / 서버 전용 키: NEXT_PUBLIC 금지
 
-## Key Directories to Understand
+## 보고 방식 (필수)
+- 중간 보고 금지
+- 최종 결과 한 줄만: `✅ [기능] 완료 - [확인방법]`
+- 빌드 순서: lint → npm run build → 동작 확인 → 커밋 → 보고
 
-### `/src/app`
-- **location.tsx**: Root layout component that wraps all pages
-- **page.tsx**: Home page component
-- **globals.css**: Global CSS with Tailwind directives
-- Route files follow Next.js App Router conventions
+## 토큰 절약 규칙
+- 세션 1개 = 작업 1개. 완료 후 커밋 → /clear
+- 요청은 파일명/함수명까지 구체적으로
+- 같은 버그 3회 반복 시 접근 방식 전면 재검토
+- 빈 catch 블록 절대 금지
 
-### `/src/components`
-- Reusable React components for UI
-- Should follow component naming conventions (PascalCase)
-- Keep components focused and single-responsibility
+## ⚠️ 알려진 이슈
+- next.config.ts → next.config.js 로 생성
+- Firestore orderBy + where → 클라이언트 정렬로 대체
+- Firestore 리스너 → useEffect 반환값으로 반드시 unsubscribe
+- npm run build 성공 ≠ 동작 정상. 실제 동작까지 확인
+- Windows 한글 경로 → npm 오류. 영문 경로 유지
 
-### `/src/store`
-- Zustand store files for global state management
-- Each store should handle a specific domain (e.g., userStore, taskStore)
-
-### `/src/lib`
-- Utility functions and Firebase initialization
-- API call helpers and data formatting functions
-
-## Development Commands
-
-```bash
-# Install dependencies
-npm install
-
-# Development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Run linting
-npm run lint
-
-# Fix linting errors
-npm run lint -- --fix
-```
-
-## Firebase Integration
-
-### Setup
-1. Create a Firebase project at https://firebase.google.com
-2. Add configuration to `.env.local`:
-   ```
-   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-   ```
-
-### File: `src/lib/firebase.ts`
-```typescript
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-```
-
-## State Management with Zustand
-
-### Example Store: `src/store/taskStore.ts`
-```typescript
-import { create } from 'zustand';
-
-interface Task {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-
-interface TaskStore {
-  tasks: Task[];
-  addTask: (task: Task) => void;
-  removeTask: (id: string) => void;
-  toggleTask: (id: string) => void;
-}
-
-export const useTaskStore = create<TaskStore>((set) => ({
-  tasks: [],
-  addTask: (task) =>
-    set((state) => ({
-      tasks: [...state.tasks, task],
-    })),
-  removeTask: (id) =>
-    set((state) => ({
-      tasks: state.tasks.filter((task) => task.id !== id),
-    })),
-  toggleTask: (id) =>
-    set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      ),
-    })),
-}));
-```
-
-## Styling with Tailwind CSS
-
-- All global styles are in `src/app/globals.css`
-- Use Tailwind utility classes for component styling
-- Available custom breakpoints and colors in `tailwind.config.ts`
-
-## TypeScript Best Practices
-
-1. **Type Definitions**: Keep types in `src/types/`
-2. **Component Props**: Always type component props:
-   ```typescript
-   interface ButtonProps {
-     label: string;
-     onClick: () => void;
-     variant?: 'primary' | 'secondary';
-   }
-   ```
-3. **API Responses**: Type all API responses and Firebase queries
-
-## Code Generation Commands
-
-When building new features, AI agents should:
-1. Follow the project structure
-2. Use TypeScript for all files
-3. Add type definitions for new data structures
-4. Use Zustand for global state
-5. Use Tailwind CSS for styling
-
-## Environment Setup
-
-### Required Node Version
-- Node.js 18.17 or later
-
-### IDE Configuration
-- VS Code is recommended
-- Install ESLint and Prettier extensions
-
-## Important Notes for AI Agents
-
-- Always maintain TypeScript strict mode
-- Follow existing code patterns and conventions
-- Use `src/` directory structure consistently
+## 커밋 규칙
+feat / fix / refactor / style / chore
+기능 하나 완성마다 즉시 커밋
 - Keep components functional and use hooks
 - Prefer composition over inheritance
 - Mirror existing file organization when adding new features
