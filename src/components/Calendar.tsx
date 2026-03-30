@@ -269,20 +269,20 @@ export default function Calendar() {
       {/* 두 달력 가로 배치 */}
       <div className="flex w-full gap-4">
         {/* 왼쪽: 현재 월 */}
-        <div className="w-1/2">
-          <div className="text-center font-bold mb-1">{leftMonthStr}</div>
-          <div className="grid grid-cols-7 text-center font-bold mb-1">
+        <div className="flex-1">
+          <div className="text-center font-bold mb-2 text-lg">{leftMonthStr}</div>
+          <div className="grid grid-cols-7 text-center font-bold mb-2 text-base">
             {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
               <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
             ))}
           </div>
           <div
-            className="grid grid-cols-7 gap-1 select-none"
+            className="grid grid-cols-7 gap-2 select-none"
             onMouseUp={isDragging ? handleDragEnd : undefined}
             onTouchEnd={isDragging ? handleDragEnd : undefined}
           >
             {leftMatrix.flat().map((date, idx) => {
-              if (!date) return <div key={idx} className="min-h-[100px]" />;
+              if (!date) return <div key={idx} className="min-h-[90px]" />;
               const isCurrentMonth = date.getMonth() === current.month;
               const isToday = isSameDay(date, today);
               const holiday = getHoliday(date);
@@ -301,7 +301,7 @@ export default function Calendar() {
               return (
                 <div
                   key={idx}
-                  className={`relative min-h-[100px] border rounded p-1 flex flex-col items-start overflow-hidden transition-all
+                  className={`relative min-h-[90px] border rounded p-2 flex flex-col items-start overflow-hidden transition-all
                     ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
                     ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
                     ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
@@ -325,15 +325,15 @@ export default function Calendar() {
                   }}
                   data-date={toDateString(date)}
                 >
-                  <div className={`text-xs font-bold mb-1 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
-                  {holiday && <div className="text-[10px] text-red-400 font-semibold">{holiday.name}</div>}
-                  <div className="flex flex-col gap-[2px] w-full">
+                  <div className={`text-base font-bold mb-2 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
+                  {holiday && <div className="text-xs text-red-400 font-semibold mb-1">{holiday.name}</div>}
+                  <div className="flex flex-col gap-1 w-full">
                     {showEvents.map(ev => {
                       const isStart = ev.startDate === toDateString(date);
                       return (
                         <div
                           key={ev.id}
-                          className={`w-full h-5 rounded text-[11px] px-1 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
+                          className={`w-full h-6 rounded text-[13px] px-2 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
                           style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color, marginBottom: 2 }}
                           onClick={e => { e.stopPropagation(); onEventClick(ev); }}
                         >
@@ -356,20 +356,20 @@ export default function Calendar() {
           </div>
         </div>
         {/* 오른쪽: 다음 월 */}
-        <div className="w-1/2">
-          <div className="text-center font-bold mb-1">{rightMonthStr}</div>
-          <div className="grid grid-cols-7 text-center font-bold mb-1">
+        <div className="flex-1">
+          <div className="text-center font-bold mb-2 text-lg">{rightMonthStr}</div>
+          <div className="grid grid-cols-7 text-center font-bold mb-2 text-base">
             {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
               <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
             ))}
           </div>
           <div
-            className="grid grid-cols-7 gap-1 select-none"
+            className="grid grid-cols-7 gap-2 select-none"
             onMouseUp={isDragging ? handleDragEnd : undefined}
             onTouchEnd={isDragging ? handleDragEnd : undefined}
           >
             {rightMatrix.flat().map((date, idx) => {
-              if (!date) return <div key={idx} className="min-h-[100px]" />;
+              if (!date) return <div key={idx} className="min-h-[90px]" />;
               const isCurrentMonth = date.getMonth() === nextMonth && date.getFullYear() === nextYear;
               const isToday = isSameDay(date, today);
               const holiday = getHoliday(date);
@@ -388,7 +388,7 @@ export default function Calendar() {
               return (
                 <div
                   key={idx}
-                  className={`relative min-h-[100px] border rounded p-1 flex flex-col items-start overflow-hidden transition-all
+                  className={`relative min-h-[90px] border rounded p-2 flex flex-col items-start overflow-hidden transition-all
                     ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
                     ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
                     ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
@@ -412,15 +412,15 @@ export default function Calendar() {
                   }}
                   data-date={toDateString(date)}
                 >
-                  <div className={`text-xs font-bold mb-1 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
-                  {holiday && <div className="text-[10px] text-red-400 font-semibold">{holiday.name}</div>}
-                  <div className="flex flex-col gap-[2px] w-full">
+                  <div className={`text-base font-bold mb-2 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
+                  {holiday && <div className="text-xs text-red-400 font-semibold mb-1">{holiday.name}</div>}
+                  <div className="flex flex-col gap-1 w-full">
                     {showEvents.map(ev => {
                       const isStart = ev.startDate === toDateString(date);
                       return (
                         <div
                           key={ev.id}
-                          className={`w-full h-5 rounded text-[11px] px-1 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
+                          className={`w-full h-6 rounded text-[13px] px-2 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
                           style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color, marginBottom: 2 }}
                           onClick={e => { e.stopPropagation(); onEventClick(ev); }}
                         >

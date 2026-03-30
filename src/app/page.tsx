@@ -151,7 +151,7 @@ export default function Home() {
         </div>
         {/* 공유 달력: 게시판 3칸 너비(절반)로 하단에 배치 */}
         <div className="flex justify-center mt-8">
-          <div className="w-[50%] min-w-[400px] max-w-2xl">
+          <div className="w-full">
             {/* Calendar 컴포넌트 */}
             <Calendar />
           </div>
