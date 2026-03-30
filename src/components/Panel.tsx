@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { HexColorPicker } from 'react-colorful';
+// import { HexColorPicker } from 'react-colorful';
 import { usePostStore } from '@/store/postStore';
 import { usePanelStore } from '@/store/panelStore';
 import { useAuthStore } from '@/store/authStore';
@@ -237,8 +237,31 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           </button>
         )}
         {showColorPicker && canRename && (
-          <div className="absolute z-50 mt-2 bg-white p-4 rounded shadow-lg border">
-            <HexColorPicker color={panelColor} onChange={setPanelColor} />
+          <div className="absolute z-50 mt-2 bg-white p-4 rounded shadow-lg border flex flex-col items-center">
+            {/* 스와치 팔레트 */}
+            <div className="flex gap-2 mb-2">
+              {[
+                { color: '#81D8D0', name: '티파니 민트' },
+                { color: '#F4C0D1', name: '파스텔 핑크' },
+                { color: '#B5D4F4', name: '하늘 블루' },
+                { color: '#C0DD97', name: '라임 그린' },
+                { color: '#FAC775', name: '골드' },
+                { color: '#F0997B', name: '코랄' },
+                { color: '#AFA9EC', name: '라벤더' },
+                { color: '#D3D1C7', name: '웜 그레이' },
+              ].map(swatch => (
+                <button
+                  key={swatch.color}
+                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center focus:outline-none transition ${panelColor === swatch.color ? 'border-[#222] shadow' : 'border-gray-200'}`}
+                  style={{ background: swatch.color }}
+                  title={swatch.name}
+                  onClick={() => setPanelColor(swatch.color)}
+                  type="button"
+                >
+                  {panelColor === swatch.color && <span className="w-3 h-3 bg-white rounded-full border border-[#222]" />}
+                </button>
+              ))}
+            </div>
             <div className="flex gap-2 mt-2">
               <button
                 className="px-3 py-1 bg-[#81D8D0] text-white rounded"
@@ -268,9 +291,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             </div>
           </div>
         )}
-        {canRename && !isEditing && (
-          <button onClick={() => setIsEditing(true)} className="text-xs text-gray-500 hover:underline ml-2">이름 변경</button>
-        )}
+        {/* 이름 변경 텍스트 완전 제거, 🎨 버튼만 남김 */}
         {canCreate && (
           <button
             onClick={() => setShowCreate(true)}
