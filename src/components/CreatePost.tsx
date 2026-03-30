@@ -46,15 +46,21 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
         setFileError('최대 20MB까지 업로드 가능합니다.');
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setType('image');
-          setContent(reader.result);
-          setDroppedFilename(file.name);
-        }
-      };
-      reader.readAsDataURL(file);
+      setLoading(true);
+      try {
+        const storage = getStorage();
+        const ext = file.name.split('.').pop();
+        const storageRef = ref(storage, `images/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        setType('image');
+        setContent(url);
+        setDroppedFilename(file.name);
+      } catch (e) {
+        setFileError('이미지 업로드 실패');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     // 첨부파일 (PDF, 엑셀, 워드, PPTX)
@@ -201,6 +207,9 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
               <option value="image">이미지</option>
               <option value="link">링크</option>
             </select>
+            {loading && type === 'image' && (
+              <div className="text-xs text-gray-500 mt-2">이미지 업로드 중...</div>
+            )}
           </div>
           <div
             className={`mb-4 ${type === 'image' ? 'border border-dashed border-[#81D8D0] p-3' : ''}`}

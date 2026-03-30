@@ -185,7 +185,7 @@ export default function Home() {
                   onDrop={e => handlePanelDrop(e, panel.id)}
                   className="h-full"
                 >
-                  <Panel id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} position={panel.position} color={panel.color} />
+                  <Panel id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} position={panel.position} />
                 </div>
               ))}
           </div>

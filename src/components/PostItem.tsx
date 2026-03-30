@@ -97,24 +97,23 @@ export default function PostItem({ post }: PostItemProps) {
       case 'text':
         return <p className="text-gray-800">{post.content}</p>;
       case 'image': {
-        const imageSrc =
-          post.content?.trim() && post.content !== 'Post image'
-            ? post.content
-            : '/time-pad.jpg';
-
+        // content가 URL이면 이미지, 아니면 텍스트 fallback
+        const isUrl = typeof post.content === 'string' && /^https?:\/\//.test(post.content);
         if (imageError) {
           return <p className="text-gray-500 italic">이미지 로드에 실패했습니다.</p>;
         }
-
-        return (
-          <img
-            src={imageSrc}
-            alt="Post image"
-            className="max-w-full h-auto rounded cursor-pointer hover:opacity-90"
-            onClick={() => setIsModalOpen(true)}
-            onError={() => setImageError(true)}
-          />
-        );
+        if (isUrl) {
+          return (
+            <img
+              src={post.content}
+              alt="Post image"
+              className="max-w-full h-auto rounded cursor-pointer hover:opacity-90"
+              onClick={() => setIsModalOpen(true)}
+              onError={() => setImageError(true)}
+            />
+          );
+        }
+        return <p className="text-gray-500 italic">이미지 URL이 올바르지 않습니다.</p>;
       }
       case 'link':
         return (

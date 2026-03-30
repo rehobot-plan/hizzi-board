@@ -8,7 +8,7 @@ interface Panel {
   ownerEmail?: string | null;
   position?: number;
   categories?: string[];
-  color?: string;
+  // color 필드 제거
 }
 
 interface PanelState {
@@ -66,10 +66,12 @@ export const usePanelStore = create<PanelState>((set) => ({
 try {
   const unsubscribe = onSnapshot(collection(db, 'panels'), (snapshot) => {
     const panels = snapshot.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Panel[];
+      .map(doc => {
+        const data = doc.data();
+        // color 필드 무시
+        const { color, ...rest } = data;
+        return { id: doc.id, ...rest };
+      }) as Panel[];
     panels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     usePanelStore.setState({ panels, loading: false });
   }, (error) => {

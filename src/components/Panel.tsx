@@ -16,35 +16,13 @@ interface PanelProps {
   color?: string;
 }
 
-const DEFAULT_CATEGORIES = ["공지", "결재", "메모"];
+// [마이그레이션 필요] 기존 Firestore 카테고리: 결재 → 첨부파일로 변경 필요
+const DEFAULT_CATEGORIES = ["공지", "메모", "첨부파일"];
 const BASE_CATEGORIES = ["전체", ...DEFAULT_CATEGORIES];
-const COLOR_SWATCHES = [
-  { color: "#81D8D0", name: "티파니 민트" },
-  { color: "#F4C0D1", name: "파스텔 핑크" },
-  { color: "#B5D4F4", name: "하늘 블루" },
-  { color: "#C0DD97", name: "라임 그린" },
-  { color: "#FAC775", name: "골드" },
-  { color: "#F0997B", name: "코랄" },
-  { color: "#AFA9EC", name: "라벤더" },
-  { color: "#D3D1C7", name: "웜 그레이" },
-];
 
-function withAlpha(hex: string, alpha: number = 0.1) {
-  if (!hex.startsWith("#") || (hex.length !== 7 && hex.length !== 4)) return hex;
-  let r, g, b;
-  if (hex.length === 7) {
-    r = parseInt(hex.slice(1, 3), 16);
-    g = parseInt(hex.slice(3, 5), 16);
-    b = parseInt(hex.slice(5, 7), 16);
-  } else {
-    r = parseInt(hex[1] + hex[1], 16);
-    g = parseInt(hex[2] + hex[2], 16);
-    b = parseInt(hex[3] + hex[3], 16);
-  }
-  return `rgba(${r},${g},${b},${alpha})`;
-}
 
-export default function Panel({ id, name, ownerEmail, position, categories, color }: PanelProps) {
+
+export default function Panel({ id, name, ownerEmail, position, categories }: PanelProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [panelName, setPanelName] = useState(name);
@@ -55,8 +33,6 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState("");
   const [categoryList, setCategoryList] = useState<string[]>(categories || DEFAULT_CATEGORIES);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [panelColor, setPanelColor] = useState<string>(color || "#81D8D0");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
@@ -64,14 +40,14 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
   const { user } = useAuthStore();
   const { updatePanel } = usePanelStore();
 
-  useEffect(() => {
-    setPanelColor(color || "#81D8D0");
-  }, [color]);
 
-  // 게시물 필터링
+
+  // 게시물 필터링 (첨부파일 탭은 attachments 필드가 있는 게시물만)
   const filteredPosts = posts.filter((post) => {
     if (post.panelId !== id) return false;
-    if (activeCategory !== "전체") {
+    if (activeCategory === "첨부파일") {
+      if (!post.attachments || post.attachments.length === 0) return false;
+    } else if (activeCategory !== "전체") {
       if (!post.category || post.category !== activeCategory) return false;
     }
     if (!user) return false;
@@ -109,12 +85,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
     await updatePanel(id, { categories: updated });
   };
 
-  // 패널 색상 변경
-  const savePanelColor = async (color: string) => {
-    setPanelColor(color);
-    setShowColorPicker(false);
-    await updatePanel(id, { color });
-  };
+
 
   // 카테고리 추가
   const handleAddCategory = async () => {
@@ -234,16 +205,6 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
           />
         )}
         <div className="flex items-center gap-2">
-          {canRename && (
-            <button
-              onClick={() => setShowColorPicker((v) => !v)}
-              className="text-base text-[#C17B6B] hover:text-[#5C1F1F]"
-              title="패널 색상 변경"
-              type="button"
-            >
-              🎨
-            </button>
-          )}
           {canCreate && (
             <button
               onClick={() => setShowCreate(true)}
@@ -343,52 +304,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, colo
           </div>
         </div>
       )}
-      {/* 컬러 스와치 팔레트 */}
-      {showColorPicker && canRename && (
-        <div className="absolute z-50 mt-2 bg-white p-4 rounded shadow-lg border flex flex-col items-center">
-          <div className="flex gap-2 mb-2">
-            {COLOR_SWATCHES.map((swatch) => (
-              <button
-                key={swatch.color}
-                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center focus:outline-none transition ${panelColor === swatch.color ? "border-[#222] shadow" : "border-gray-200"}`}
-                style={{ background: swatch.color }}
-                title={swatch.name}
-                onClick={() => setPanelColor(swatch.color)}
-                type="button"
-              >
-                {panelColor === swatch.color && <span className="w-3 h-3 bg-white rounded-full border border-[#222]" />}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2 mt-2">
-            <button
-              className="px-3 py-1 bg-[#81D8D0] text-white rounded"
-              onClick={() => savePanelColor(panelColor)}
-              type="button"
-            >
-              색상 적용
-            </button>
-            <button
-              className="px-3 py-1 bg-gray-200 rounded"
-              onClick={() => setShowColorPicker(false)}
-              type="button"
-            >
-              취소
-            </button>
-            <button
-              className="px-3 py-1 bg-gray-100 border border-gray-300 rounded text-[#81D8D0] hover:bg-[#e0f7f5]"
-              onClick={async () => {
-                setPanelColor("#81D8D0");
-                setShowColorPicker(false);
-                await updatePanel(id, { color: undefined });
-              }}
-              type="button"
-            >
-              기본색으로 초기화
-            </button>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
