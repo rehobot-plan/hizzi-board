@@ -234,12 +234,13 @@ export default function Calendar() {
 
   // 날짜별 일정 필터
   function getEventsForDay(date: Date) {
-    return events.filter(ev => {
-      return (
-        ev.startDate <= toDateString(date) && ev.endDate >= toDateString(date)
-      );
-    });
+    return events.filter(ev => (
+      ev.startDate <= toDateString(date) && ev.endDate >= toDateString(date)
+    ));
   }
+
+  // 일정 더보기 팝업 상태
+  const [moreEvents, setMoreEvents] = useState<{date: Date, events: CalendarEvent[]} | null>(null);
 
   // 권한 체크
   function canEdit(event: CalendarEvent) {
@@ -247,7 +248,7 @@ export default function Calendar() {
   }
 
   return (
-    <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-4 w-full max-w-2xl mx-auto">
+    <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-4 w-full mx-auto">
       {/* 상단: 월 이동, 입력 */}
       <div className="flex items-center justify-between mb-2">
         <button onClick={() => moveMonth(-1)} className="px-2 py-1 text-lg">◀</button>
@@ -272,7 +273,7 @@ export default function Calendar() {
         onTouchEnd={isDragging ? handleDragEnd : undefined}
       >
         {matrix.flat().map((date, idx) => {
-          if (!date) return <div key={idx} className="h-16" />;
+          if (!date) return <div key={idx} className="min-h-[100px]" />;
           const isCurrentMonth = date.getMonth() === current.month;
           const isToday = isSameDay(date, today);
           const holiday = getHoliday(date);
@@ -284,10 +285,14 @@ export default function Calendar() {
             const end = dragStart > dragEnd ? dragStart : dragEnd;
             isHighlighted = date >= start && date <= end;
           }
+          // 일정 최대 3개, 초과 시 +N개 더보기
+          const maxShow = 3;
+          const showEvents = dayEvents.slice(0, maxShow);
+          const moreCount = dayEvents.length - maxShow;
           return (
             <div
               key={idx}
-              className={`relative h-16 border rounded p-1 flex flex-col items-start overflow-hidden transition-all
+              className={`relative min-h-[100px] border rounded p-1 flex flex-col items-start overflow-hidden transition-all
                 ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
                 ${isToday ? "border-[#81D8D0] ring-2 ring-[#81D8D0]" : ""}
                 ${isHighlighted ? "bg-[#e0f7f5] border-[#81D8D0]" : ""}
@@ -314,24 +319,57 @@ export default function Calendar() {
               <div className={`text-xs font-bold mb-1 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
               {holiday && <div className="text-[10px] text-red-400 font-semibold">{holiday.name}</div>}
               <div className="flex flex-col gap-[2px] w-full">
-                {dayEvents.map(ev => {
+                {showEvents.map(ev => {
                   const isStart = ev.startDate === toDateString(date);
                   return (
                     <div
                       key={ev.id}
-                      className={`w-full h-4 rounded text-[10px] px-1 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
-                      style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color }}
+                      className={`w-full h-5 rounded text-[11px] px-1 truncate cursor-pointer border ${isStart ? "border-l-4" : "border-l-2"}`}
+                      style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, borderColor: ev.color, marginBottom: 2 }}
                       onClick={e => { e.stopPropagation(); onEventClick(ev); }}
                     >
                       {isStart && <span className="font-bold">{ev.title}</span>}
                     </div>
                   );
                 })}
+                {moreCount > 0 && (
+                  <button
+                    className="text-xs text-gray-500 underline mt-1"
+                    onClick={e => { e.stopPropagation(); setMoreEvents({ date, events: dayEvents }); }}
+                  >
+                    +{moreCount}개 더보기
+                  </button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* 일정 더보기 팝업 */}
+      {moreEvents && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50" onClick={() => setMoreEvents(null)}>
+          <div className="bg-white p-6 rounded-lg w-full max-w-xs" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-2">{toDateString(moreEvents.date)} 일정 전체</h3>
+            <div className="flex flex-col gap-2">
+              {moreEvents.events.map(ev => (
+                <div
+                  key={ev.id}
+                  className="w-full rounded text-[13px] px-2 py-1 cursor-pointer border border-l-4"
+                  style={{ background: ev.color, borderColor: ev.color }}
+                  onClick={() => { setMoreEvents(null); onEventClick(ev); }}
+                >
+                  <span className="font-bold">{ev.title}</span>
+                  <span className="ml-2 text-xs">{ev.startDate}{ev.endDate !== ev.startDate ? `~${ev.endDate}` : ''}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end mt-4">
+              <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50" onClick={() => setMoreEvents(null)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 일정 추가 모달 - 디자인 개선 */}
       {showAddModal && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 // import { HexColorPicker } from 'react-colorful';
 import { usePostStore } from '@/store/postStore';
 import { usePanelStore } from '@/store/panelStore';
@@ -14,12 +14,13 @@ interface PanelProps {
   ownerEmail?: string | null;
   position?: number;
   categories?: string[];
+    color?: string;
 }
 
 const DEFAULT_CATEGORIES = ['공지', '결재', '메모'];
 const BASE_CATEGORIES = ['전체', ...DEFAULT_CATEGORIES];
 
-export default function Panel({ id, name, ownerEmail, position, categories }: PanelProps) {
+export default function Panel({ id, name, ownerEmail, position, categories, color }: PanelProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [panelName, setPanelName] = useState(name);
@@ -31,25 +32,41 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [newCategory, setNewCategory] = useState('');
   const [categoryList, setCategoryList] = useState<string[]>(categories || DEFAULT_CATEGORIES);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [panelColor, setPanelColor] = useState<string>(categories && categories.length && typeof categories[0] === 'string' ? '#81D8D0' : '#81D8D0');
+  const [panelColor, setPanelColor] = useState<string>(color || '#81D8D0');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPanelColor(color || '#81D8D0');
+  }, [color]);
+
+  function withAlpha(hex: string, alpha: number = 0.1) {
+    if (!hex.startsWith('#') || (hex.length !== 7 && hex.length !== 4)) return hex;
+    let r, g, b;
+    if (hex.length === 7) {
+      r = parseInt(hex.slice(1, 3), 16);
+      g = parseInt(hex.slice(3, 5), 16);
+      b = parseInt(hex.slice(5, 7), 16);
+    } else {
+      r = parseInt(hex[1] + hex[1], 16);
+      g = parseInt(hex[2] + hex[2], 16);
+      b = parseInt(hex[3] + hex[3], 16);
+    }
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
 
   const { posts, deletePost } = usePostStore();
   const { user } = useAuthStore();
   const { updatePanel } = usePanelStore();
 
-  // 게시물 필터링 (카테고리, 공개범위)
   const filteredPosts = posts.filter((post) => {
     if (post.panelId !== id) return false;
     if (activeCategory !== '전체') {
       if (!post.category || post.category !== activeCategory) return false;
     }
-    // 공개범위: visibleTo가 없으면 전체, 있으면 본인/관리자/특정인만
     if (post.visibleTo && Array.isArray(post.visibleTo)) {
       if (!user) return false;
       const userEmail = user.email ?? '';
-      // 'all'이면 모두 볼 수 있음, 'me'면 본인만, 아니면 배열에 포함된 이메일만
       if (post.visibleTo.includes('all')) return true;
       if (post.visibleTo.includes('me')) return post.author === userEmail || user.role === 'admin';
       if (!post.visibleTo.includes(userEmail) && user.role !== 'admin') return false;
@@ -62,13 +79,11 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const canRename = user && (user.role === 'admin' || isOwner);
   const canAddCategory = canCreate;
 
-  // 패널명 저장
   const savePanelName = async () => {
     setIsEditing(false);
     await updatePanel(id, { name: panelName, ownerEmail: (ownerEmail || user?.email) ?? undefined });
   };
 
-  // 탭 이름 저장
   const saveTabName = async (oldName: string, newName: string) => {
     if (!newName.trim() || oldName === newName) {
       setEditingTab(null);
@@ -80,17 +95,14 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     setEditingTab(null);
     setTabNameDraft('');
     await updatePanel(id, { categories: updated });
-    // 해당 카테고리의 게시물도 category 필드 업데이트 필요 (선택적 구현)
   };
 
-  // 패널 색상 저장
   const savePanelColor = async (color: string) => {
     setPanelColor(color);
     setShowColorPicker(false);
     await updatePanel(id, { color });
   };
 
-  // 카테고리 추가
   const handleAddCategory = async () => {
     if (!newCategory.trim()) return;
     const updated = [...categoryList, newCategory.trim()];
@@ -104,7 +116,17 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   // (여기서는 UI/핸들러만 준비, 실제 스왑 로직은 page.tsx에서 처리)
 
   return (
-    <div className="bg-white border-2 border-[#81D8D0] rounded-lg p-4 flex flex-col h-full panel-draggable" draggable="true" data-panel-id={id}>
+    <div
+      className="rounded-lg p-4 flex flex-col h-full panel-draggable"
+      draggable="true"
+      data-panel-id={id}
+      style={{
+        border: `2px solid ${panelColor}`,
+        background: withAlpha(panelColor, 0.10),
+        boxShadow: `0 2px 8px 0 ${withAlpha(panelColor, 0.08)}`,
+        transition: 'background 0.2s, border 0.2s',
+      }}
+    >
       {/* 바인더 탭 */}
       <div className="flex gap-2 mb-2">
         {['전체', ...categoryList].map((cat) => {
@@ -113,7 +135,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             <div key={cat} className="relative flex items-center group">
               {editingTab === cat ? (
                 <input
-                  className={`px-2 py-1 rounded-t-lg border-b-2 border-[#81D8D0] text-sm focus:outline-none`}
+                  className={`px-2 py-1 rounded-t-lg border-b-2 text-sm focus:outline-none`}
                   value={tabNameDraft}
                   autoFocus
                   onChange={e => setTabNameDraft(e.target.value)}
@@ -124,11 +146,17 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                       saveTabName(cat, tabNameDraft);
                     }
                   }}
-                  style={{ minWidth: 60 }}
+                  style={{ minWidth: 60, borderBottom: `2px solid ${panelColor}` }}
                 />
               ) : (
                 <button
-                  className={`px-3 py-1 rounded-t-lg border-b-2 ${activeCategory === cat ? 'border-[#81D8D0] bg-[#e0f7f5] font-bold' : 'border-transparent bg-gray-100'} text-sm`}
+                  className={`px-3 py-1 rounded-t-lg border-b-2 text-sm ${activeCategory === cat ? 'font-bold' : ''}`}
+                  style={{
+                    borderBottom: activeCategory === cat ? `2px solid ${panelColor}` : '2px solid transparent',
+                    background: activeCategory === cat ? withAlpha(panelColor, 0.15) : '#f3f4f6',
+                    color: activeCategory === cat ? panelColor : undefined,
+                    transition: 'background 0.2s, border 0.2s, color 0.2s',
+                  }}
                   onClick={() => setActiveCategory(cat)}
                   onDoubleClick={() => {
                     if (!isBase && canAddCategory) {
@@ -156,7 +184,8 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
         })}
         {canAddCategory && (
           <button
-            className="px-3 py-1 rounded-t-lg border-b-2 border-transparent bg-gray-100 text-sm"
+            className="px-3 py-1 rounded-t-lg border-b-2 border-transparent text-sm"
+            style={{ background: '#f3f4f6' }}
             onClick={() => setShowCategoryModal(true)}
           >
             +
@@ -199,7 +228,10 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
               </div>
             )}
       {/* 패널 헤더 */}
-      <div className="flex justify-between items-center mb-4">
+      <div
+        className="flex justify-between items-center mb-4"
+        style={{ background: withAlpha(panelColor, 0.10), borderRadius: 8, padding: '0.5rem 1rem' }}
+      >
         {!isEditing ? (
           <h3
             className={`text-xl font-semibold text-gray-800 ${canRename ? 'cursor-pointer hover:text-[#81D8D0]' : ''}`}
@@ -301,14 +333,21 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
         {canCreate && (
           <button
             onClick={() => setShowCreate(true)}
-            className="px-3 py-1 bg-[#81D8D0] text-white text-sm rounded hover:bg-[#6BC4BB] transition-colors"
+            className="px-3 py-1 text-white text-sm rounded transition-colors"
+            style={{ background: panelColor, boxShadow: `0 1px 4px 0 ${withAlpha(panelColor, 0.10)}` }}
           >
             + 게시물
           </button>
         )}
       </div>
       {/* 게시물 목록 */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{
+          scrollbarColor: `${panelColor} #e5e7eb`,
+          scrollbarWidth: 'thin',
+        }}
+      >
         {filteredPosts.length === 0 ? (
           <p className="text-gray-500 text-center">게시물이 없습니다</p>
         ) : (
@@ -316,6 +355,17 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             <PostItem key={post.id} post={post} />
           ))
         )}
+        {/* 스크롤바 커스텀 스타일 */}
+        <style>{`
+          .panel-draggable::-webkit-scrollbar {
+            width: 8px;
+            background: #e5e7eb;
+          }
+          .panel-draggable::-webkit-scrollbar-thumb {
+            background: ${panelColor};
+            border-radius: 4px;
+          }
+        `}</style>
       </div>
       {showCreate && (
         <CreatePost
