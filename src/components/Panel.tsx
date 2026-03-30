@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { usePostStore } from '@/store/postStore';
 import { usePanelStore } from '@/store/panelStore';
@@ -23,12 +23,15 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [showCreate, setShowCreate] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [panelName, setPanelName] = useState(name);
+  const panelNameInputRef = useRef<HTMLInputElement>(null);
+  const [editingTab, setEditingTab] = useState<string | null>(null);
+  const [tabNameDraft, setTabNameDraft] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('전체');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const [categoryList, setCategoryList] = useState<string[]>(categories || DEFAULT_CATEGORIES);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [panelColor, setPanelColor] = useState<string>('#81D8D0');
+  const [panelColor, setPanelColor] = useState<string>(categories && categories.length && typeof categories[0] === 'string' ? '#81D8D0' : '#81D8D0');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
@@ -62,6 +65,21 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     await updatePanel(id, { name: panelName, ownerEmail: (ownerEmail || user?.email) ?? undefined });
   };
 
+  // 탭 이름 저장
+  const saveTabName = async (oldName: string, newName: string) => {
+    if (!newName.trim() || oldName === newName) {
+      setEditingTab(null);
+      setTabNameDraft('');
+      return;
+    }
+    const updated = categoryList.map(cat => cat === oldName ? newName.trim() : cat);
+    setCategoryList(updated);
+    setEditingTab(null);
+    setTabNameDraft('');
+    await updatePanel(id, { categories: updated });
+    // 해당 카테고리의 게시물도 category 필드 업데이트 필요 (선택적 구현)
+  };
+
   // 패널 색상 저장
   const savePanelColor = async (color: string) => {
     setPanelColor(color);
@@ -87,12 +105,36 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           const isBase = BASE_CATEGORIES.includes(cat);
           return (
             <div key={cat} className="relative flex items-center group">
-              <button
-                className={`px-3 py-1 rounded-t-lg border-b-2 ${activeCategory === cat ? 'border-[#81D8D0] bg-[#e0f7f5] font-bold' : 'border-transparent bg-gray-100'} text-sm`}
-                onClick={() => setActiveCategory(cat)}
-              >
-                {cat}
-              </button>
+              {editingTab === cat ? (
+                <input
+                  className={`px-2 py-1 rounded-t-lg border-b-2 border-[#81D8D0] text-sm focus:outline-none`}
+                  value={tabNameDraft}
+                  autoFocus
+                  onChange={e => setTabNameDraft(e.target.value)}
+                  onBlur={() => saveTabName(cat, tabNameDraft)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      saveTabName(cat, tabNameDraft);
+                    }
+                  }}
+                  style={{ minWidth: 60 }}
+                />
+              ) : (
+                <button
+                  className={`px-3 py-1 rounded-t-lg border-b-2 ${activeCategory === cat ? 'border-[#81D8D0] bg-[#e0f7f5] font-bold' : 'border-transparent bg-gray-100'} text-sm`}
+                  onClick={() => setActiveCategory(cat)}
+                  onDoubleClick={() => {
+                    if (!isBase && canAddCategory) {
+                      setEditingTab(cat);
+                      setTabNameDraft(cat);
+                    }
+                  }}
+                  type="button"
+                >
+                  {cat}
+                </button>
+              )}
               {canAddCategory && !isBase && (
                 <button
                   className="ml-1 text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
@@ -157,16 +199,30 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             className={`text-xl font-semibold text-gray-800 ${canRename ? 'cursor-pointer hover:text-[#81D8D0]' : ''}`}
             onClick={() => canRename && setIsEditing(true)}
             style={{ color: panelColor }}
+            tabIndex={0}
+            onBlur={() => setIsEditing(false)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                savePanelName();
+              }
+            }}
           >
             {panelName}
           </h3>
         ) : (
           <input
+            ref={panelNameInputRef}
             value={panelName}
             onChange={e => setPanelName(e.target.value)}
             onBlur={savePanelName}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                savePanelName();
+              }
+            }}
             className="border rounded px-2 py-1 mr-2"
             autoFocus
+            style={{ minWidth: 80 }}
           />
         )}
         {/* 색상 변경 버튼: 본인/관리자만 */}
@@ -181,22 +237,35 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           </button>
         )}
         {showColorPicker && canRename && (
-          <div className="absolute z-50 mt-2">
+          <div className="absolute z-50 mt-2 bg-white p-4 rounded shadow-lg border">
             <HexColorPicker color={panelColor} onChange={setPanelColor} />
-            <button
-              className="mt-2 px-3 py-1 bg-[#81D8D0] text-white rounded"
-              onClick={() => savePanelColor(panelColor)}
-              type="button"
-            >
-              색상 적용
-            </button>
-            <button
-              className="ml-2 px-3 py-1 bg-gray-200 rounded"
-              onClick={() => setShowColorPicker(false)}
-              type="button"
-            >
-              취소
-            </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                className="px-3 py-1 bg-[#81D8D0] text-white rounded"
+                onClick={() => savePanelColor(panelColor)}
+                type="button"
+              >
+                색상 적용
+              </button>
+              <button
+                className="px-3 py-1 bg-gray-200 rounded"
+                onClick={() => setShowColorPicker(false)}
+                type="button"
+              >
+                취소
+              </button>
+              <button
+                className="px-3 py-1 bg-gray-100 border border-gray-300 rounded text-[#81D8D0] hover:bg-[#e0f7f5]"
+                onClick={async () => {
+                  setPanelColor('#81D8D0');
+                  setShowColorPicker(false);
+                  await updatePanel(id, { color: undefined });
+                }}
+                type="button"
+              >
+                기본색으로 초기화
+              </button>
+            </div>
           </div>
         )}
         {canRename && !isEditing && (
