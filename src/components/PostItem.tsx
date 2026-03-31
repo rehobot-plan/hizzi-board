@@ -31,8 +31,11 @@ export default function PostItem({ post }: PostItemProps) {
   const { users } = useUserStore();
 
   const panel = panels.find(p => p.id === post.panelId);
-  const categories = (panel?.categories?.length ? panel.categories : ['공지', '메모', '첨부파일'])
-    .filter(cat => cat !== post.category);
+  const REMOVED_TABS = ['결재', '전체'];
+  const DEFAULT_TABS = ['공지', '메모', '첨부파일'];
+  const rawCats = panel?.categories?.filter(c => !REMOVED_TABS.includes(c)) || [];
+  const validCats = rawCats.length > 0 ? rawCats : DEFAULT_TABS;
+  const movableCats = validCats.filter(c => c !== post.category);
   const canEdit = user && (user.email === post.author || user.role === 'admin');
 
   const getAuthorName = (email: string) => {
@@ -205,11 +208,11 @@ export default function PostItem({ post }: PostItemProps) {
             >
               {isDeleting ? '삭제 중...' : '삭제'}
             </button>
-            {categories.length > 0 && (
+            {movableCats.length > 0 && (
               <>
                 <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
                 <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
-                {categories.map(cat => (
+                {movableCats.map(cat => (
                   <button
                     key={cat}
                     onClick={async () => { await updatePost(post.id, { category: cat }); setContextMenu(null); }}

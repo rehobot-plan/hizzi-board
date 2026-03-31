@@ -71,8 +71,13 @@ try {
       const data = docSnap.data();
       // color 필드 무시
       const { color, ...rest } = data;
-      // categories 마이그레이션: 구버전이면 업데이트
-      if ((!rest.categories || !Array.isArray(rest.categories) || rest.categories.length < 3) && !migratedPanels.has(docSnap.id)) {
+      // categories 마이그레이션: 구버전이거나 '결재' 포함 시 업데이트
+      const needsMigration =
+        !rest.categories ||
+        !Array.isArray(rest.categories) ||
+        rest.categories.length < 3 ||
+        (Array.isArray(rest.categories) && rest.categories.includes('결재'));
+      if (needsMigration && !migratedPanels.has(docSnap.id)) {
         try {
           await updateDoc(doc(db, 'panels', docSnap.id), { categories: DEFAULT_CATEGORIES });
           migratedPanels.add(docSnap.id);
