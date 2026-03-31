@@ -1,11 +1,15 @@
 import { usePostStore } from '@/store/postStore';
 import { useAuthStore } from '@/store/authStore';
+import { usePanelStore } from '@/store/panelStore';
+import { useUserStore } from '@/store/userStore';
 import { useState } from 'react';
 import PostItem from './PostItem';
 
 export default function NoticeArea() {
   const { posts } = usePostStore();
   const { user } = useAuthStore();
+  const { panels } = usePanelStore();
+  const { users } = useUserStore();
   const [expanded, setExpanded] = useState(false);
   const [detail, setDetail] = useState(null as null | string);
 
@@ -29,21 +33,29 @@ export default function NoticeArea() {
         </button>
       </div>
       <ul className="divide-y divide-yellow-200">
-        {notices.map(notice => (
-          <li key={notice.id} className="py-3 px-6 cursor-pointer hover:bg-yellow-100 text-xs flex justify-between items-center">
-            <span onClick={() => setDetail(notice.id)} className="flex-1 truncate leading-relaxed">
-              [{notice.panelId}] {notice.content.slice(0, 30)}
-            </span>
-            <span className="ml-2 text-[11px] text-yellow-700 mt-1">{notice.author}</span>
-            <span className="ml-2 text-[11px] text-yellow-500 mt-1">{notice.createdAt.toLocaleDateString()}</span>
-            {user?.role === 'admin' && (
-              <button
-                className="ml-2 text-[11px] text-red-400 hover:text-red-600 mt-1"
-                onClick={e => { e.stopPropagation(); usePostStore.getState().deletePost(notice.id); }}
-              >삭제</button>
-            )}
-          </li>
-        ))}
+        {notices.map(notice => {
+          const panel = panels.find(p => p.id === notice.panelId);
+          const panelName = panel?.name || notice.panelId;
+          const userObj = users.find(u => u.email === notice.author);
+          const authorName = userObj?.name || (notice.author?.split('@')[0] || '');
+          const dateStr = notice.createdAt instanceof Date
+            ? notice.createdAt.toLocaleString('ko-KR', { year:'numeric', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
+            : '';
+          return (
+            <li key={notice.id} className="py-3 px-6 cursor-pointer hover:bg-yellow-100 text-xs flex justify-between items-center">
+              <span onClick={() => setDetail(notice.id)} className="flex-1 truncate leading-relaxed">
+                [{panelName}] {notice.content.slice(0, 30)}
+              </span>
+              <span className="ml-2 text-[11px] text-yellow-700 mt-1">{authorName} {dateStr}</span>
+              {user?.role === 'admin' && (
+                <button
+                  className="ml-2 text-[11px] text-red-400 hover:text-red-600 mt-1"
+                  onClick={e => { e.stopPropagation(); usePostStore.getState().deletePost(notice.id); }}
+                >삭제</button>
+              )}
+            </li>
+          );
+        })}
       </ul>
       {/* 상세 모달 */}
       {detail && (
