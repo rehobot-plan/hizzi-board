@@ -62,16 +62,27 @@ export const usePanelStore = create<PanelState>((set) => ({
   },
 }));
 
-// Real-time listener for panels
+// Real-time listener for panels + categories 마이그레이션
+const DEFAULT_CATEGORIES = ['공지', '메모', '첨부파일'];
+let migratedPanels: Set<string> = new Set();
 try {
-  const unsubscribe = onSnapshot(collection(db, 'panels'), (snapshot) => {
-    const panels = snapshot.docs
-      .map(doc => {
-        const data = doc.data();
-        // color 필드 무시
-        const { color, ...rest } = data;
-        return { id: doc.id, ...rest };
-      }) as Panel[];
+  const unsubscribe = onSnapshot(collection(db, 'panels'), async (snapshot) => {
+    const panels = await Promise.all(snapshot.docs.map(async docSnap => {
+      const data = docSnap.data();
+      // color 필드 무시
+      const { color, ...rest } = data;
+      // categories 마이그레이션: 구버전이면 업데이트
+      if ((!rest.categories || !Array.isArray(rest.categories) || rest.categories.length < 3) && !migratedPanels.has(docSnap.id)) {
+        try {
+          await updateDoc(doc(db, 'panels', docSnap.id), { categories: DEFAULT_CATEGORIES });
+          migratedPanels.add(docSnap.id);
+          rest.categories = DEFAULT_CATEGORIES;
+        } catch (e) {
+          // 무시
+        }
+      }
+      return { id: docSnap.id, ...rest };
+    })) as Panel[];
     panels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     usePanelStore.setState({ panels, loading: false });
   }, (error) => {

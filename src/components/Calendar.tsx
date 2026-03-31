@@ -1,34 +1,36 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 
-// 2026년 한국 공휴일 데이터
 const HOLIDAYS_2026 = [
-  { date: '2026-01-01', name: '신정' },
-  { date: '2026-01-28', name: '설날연휴' },
-  { date: '2026-01-29', name: '설날연휴' },
-  { date: '2026-01-30', name: '설날연휴' },
-  { date: '2026-03-01', name: '삼일절' },
-  { date: '2026-05-05', name: '어린이날' },
-  { date: '2026-05-15', name: '부처님오신날' },
-  { date: '2026-06-06', name: '현충일' },
-  { date: '2026-08-15', name: '광복절' },
-  { date: '2026-09-24', name: '추석연휴' },
-  { date: '2026-09-25', name: '추석연휴' },
-  { date: '2026-09-26', name: '추석연휴' },
-  { date: '2026-10-03', name: '개천절' },
-  { date: '2026-10-09', name: '한글날' },
-  { date: '2026-12-25', name: '크리스마스' },
+  '2026-01-01','2026-01-28','2026-01-29','2026-01-30',
+  '2026-03-01','2026-05-05','2026-05-15','2026-06-06',
+  '2026-08-15','2026-09-24','2026-09-25','2026-09-26',
+  '2026-10-03','2026-10-09','2026-12-25',
 ];
 
+const HOLIDAY_NAMES: Record<string, string> = {
+  '2026-01-01':'신정','2026-01-28':'설날연휴','2026-01-29':'설날연휴','2026-01-30':'설날연휴',
+  '2026-03-01':'삼일절','2026-05-05':'어린이날','2026-05-15':'부처님오신날','2026-06-06':'현충일',
+  '2026-08-15':'광복절','2026-09-24':'추석연휴','2026-09-25':'추석연휴','2026-09-26':'추석연휴',
+  '2026-10-03':'개천절','2026-10-09':'한글날','2026-12-25':'크리스마스',
+};
+
+const COLORS = ['#81D8D0','#F4C0D1','#B5D4F4','#C0DD97','#FAC775','#F0997B','#AFA9EC','#D3D1C7'];
+
+const DAY_NAMES = ['일','월','화','수','목','금','토'];
+const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
+const KOREAN_DAYS = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
 
 export interface CalendarEvent {
   id: string;
   title: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
+  startDate: string;
+  endDate: string;
   authorId: string;
   color: string;
   createdAt: any;
@@ -36,98 +38,75 @@ export interface CalendarEvent {
   repeatGroupId?: string;
 }
 
+function toDateStr(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
 function getMonthMatrix(year: number, month: number) {
-  // month: 0-indexed
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
-  const matrix = [];
-  let week = [];
+  const matrix: (Date | null)[][] = [];
   let day = 1 - firstDay.getDay();
   while (day <= lastDay.getDate()) {
-    week = [];
+    const week: (Date | null)[] = [];
     for (let i = 0; i < 7; i++, day++) {
-      if (day < 1 || day > lastDay.getDate()) {
-        week.push(null);
-      } else {
-        week.push(new Date(year, month, day));
-      }
+      if (day < 1 || day > lastDay.getDate()) week.push(null);
+      else week.push(new Date(year, month, day));
     }
     matrix.push(week);
   }
   return matrix;
 }
 
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+function isHoliday(dateStr: string) {
+  return HOLIDAYS_2026.includes(dateStr);
 }
-
-function toDateString(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function getHoliday(date: Date) {
-  return HOLIDAYS_2026.find(h => h.date === toDateString(date));
-}
-
-const COLORS = [
-  '#81D8D0', '#F4C0D1', '#B5D4F4', '#C0DD97', '#FAC775', '#F0997B', '#AFA9EC', '#D3D1C7',
-];
 
 export default function Calendar() {
   const { user } = useAuthStore();
   const { addToast } = useToastStore();
-  const today = new Date();
-  // current: 왼쪽 달력(기준), 오른쪽은 +1달
+
   const [current, setCurrent] = useState(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
   });
-  // 네비게이션 입력 상태
   const [editYear, setEditYear] = useState(false);
   const [editMonth, setEditMonth] = useState(false);
   const [navYear, setNavYear] = useState(current.year.toString());
   const [navMonth, setNavMonth] = useState((current.month + 1).toString().padStart(2, '0'));
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetail, setShowDetail] = useState<CalendarEvent | null>(null);
   const [form, setForm] = useState({ title: '', startDate: '', endDate: '', color: COLORS[0] });
-  // 반복 일정 상태
-  const [repeat, setRepeat] = useState<{
-    type: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-    days: string[];
-    excludeHolidays: boolean;
-    endType: 'date' | 'count' | 'forever';
-    endDate: string;
-    endCount: number;
-  }>({
-    type: 'none',
-    days: [],
-    excludeHolidays: true,
-    endType: 'forever',
-    endDate: '',
-    endCount: 1,
-  });
+  const [repeatType, setRepeatType] = useState<'none'|'daily'|'weekly'|'monthly'|'yearly'>('none');
+  const [repeatExcludeHolidays, setRepeatExcludeHolidays] = useState(true);
+  const [repeatEndType, setRepeatEndType] = useState<'forever'|'date'|'count'>('forever');
+  const [repeatEndDate, setRepeatEndDate] = useState('');
+  const [repeatEndCount, setRepeatEndCount] = useState(10);
+  const [autoWeeklyDay, setAutoWeeklyDay] = useState('');
   const [loading, setLoading] = useState(false);
-  // 드래그 상태
   const [dragStart, setDragStart] = useState<Date | null>(null);
   const [dragEnd, setDragEnd] = useState<Date | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // 일정 실시간 구독
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   useEffect(() => {
     const q = query(collection(db, 'calendarEvents'), orderBy('startDate'));
     const unsub = onSnapshot(q, (snap) => {
-      setEvents(
-        snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as CalendarEvent))
-      );
+      setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() } as CalendarEvent)));
     });
     return unsub;
   }, []);
 
-  // 월 이동 (두 달력 동시 이동)
   const moveMonth = (diff: number) => {
-    setCurrent((cur) => {
+    setCurrent(cur => {
       let m = cur.month + diff;
       let y = cur.year;
       while (m < 0) { m += 12; y--; }
@@ -138,17 +117,16 @@ export default function Calendar() {
     });
   };
 
-  // 년도 증감
   const changeYear = (diff: number) => {
-    setCurrent((cur) => {
+    setCurrent(cur => {
       const y = cur.year + diff;
       setNavYear(y.toString());
       return { ...cur, year: y };
     });
   };
-  // 월 증감 (1~12 순환)
+
   const changeMonth = (diff: number) => {
-    setCurrent((cur) => {
+    setCurrent(cur => {
       let m = cur.month + diff;
       let y = cur.year;
       while (m < 0) { m += 12; y--; }
@@ -159,127 +137,75 @@ export default function Calendar() {
     });
   };
 
-  // 년도 직접입력
-  const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNavYear(e.target.value.replace(/[^0-9]/g, ''));
-  };
-  const handleYearInputBlur = () => {
+  const handleYearBlur = () => {
     const y = parseInt(navYear, 10);
-    if (!isNaN(y) && y > 1900 && y < 2100) {
-      setCurrent(cur => ({ ...cur, year: y }));
-    } else {
-      setNavYear(current.year.toString());
-    }
+    if (!isNaN(y) && y > 1900 && y < 2100) setCurrent(c => ({ ...c, year: y }));
+    else setNavYear(current.year.toString());
     setEditYear(false);
   };
-  const handleYearInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleYearInputBlur();
-  };
 
-  // 월 직접입력
-  const handleMonthInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/[^0-9]/g, '');
-    if (val.length > 2) val = val.slice(0, 2);
-    setNavMonth(val);
-  };
-  const handleMonthInputBlur = () => {
-    let m = parseInt(navMonth, 10);
-    if (!isNaN(m) && m >= 1 && m <= 12) {
-      setCurrent(cur => ({ ...cur, month: m - 1 }));
-    } else {
-      setNavMonth((current.month + 1).toString().padStart(2, '0'));
-    }
+  const handleMonthBlur = () => {
+    const m = parseInt(navMonth, 10);
+    if (!isNaN(m) && m >= 1 && m <= 12) setCurrent(c => ({ ...c, month: m - 1 }));
+    else setNavMonth((current.month + 1).toString().padStart(2, '0'));
     setEditMonth(false);
   };
-  const handleMonthInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleMonthInputBlur();
+
+  const canEdit = (event: CalendarEvent) => {
+    return user && (user.role === 'admin' || user.uid === event.authorId);
   };
 
-  // 날짜 직접 입력 (왼쪽 달력 기준)
-  const handleInputMonth = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (/^\d{4}-\d{2}$/.test(val)) {
-      const [y, m] = val.split('-').map(Number);
-      setCurrent({ year: y, month: m - 1 });
-    }
+  const getEventsForDay = (date: Date) => {
+    const ds = toDateStr(date);
+    return events.filter(ev => ev.startDate <= ds && ev.endDate >= ds);
   };
 
-  // 일정 추가
-  // 반복 일정 생성 유틸
-  function getRepeatDates() {
+  const getRepeatDates = () => {
     const start = new Date(form.startDate);
-    let end = new Date(form.endDate);
-    if (repeat.endType === 'date' && repeat.endDate) {
-      end = new Date(repeat.endDate);
-    } else if (repeat.endType === 'count' && repeat.endCount > 0) {
-      // count 기반 반복 종료 계산
-      let dates = [];
-      let d = new Date(form.startDate);
-      let cnt = 0;
-      while (cnt < repeat.endCount && d <= end) {
-        if (repeat.type === 'daily') {
-          dates.push(new Date(d));
-          d.setDate(d.getDate() + 1);
-        } else if (repeat.type === 'weekly') {
-          // 요일별 반복
-          for (let i = 0; i < 7 && cnt < repeat.endCount; i++) {
-            const day = d.getDay();
-            const dayMap = ['sun','mon','tue','wed','thu','fri','sat'];
-            if (repeat.days.includes(dayMap[day])) {
-              dates.push(new Date(d));
-              cnt++;
-            }
-            d.setDate(d.getDate() + 1);
-          }
-        } else if (repeat.type === 'monthly') {
-          dates.push(new Date(d));
-          d.setMonth(d.getMonth() + 1);
-        } else if (repeat.type === 'yearly') {
-          dates.push(new Date(d));
-          d.setFullYear(d.getFullYear() + 1);
-        }
-        cnt++;
-      }
-      return dates;
+    let endLimit = new Date(form.endDate);
+
+    if (repeatEndType === 'date' && repeatEndDate) {
+      endLimit = new Date(repeatEndDate);
+    } else if (repeatEndType === 'forever') {
+      endLimit = new Date(start);
+      endLimit.setFullYear(start.getFullYear() + 1);
     }
-    // forever, date 기반
-    let dates = [];
-    let d = new Date(form.startDate);
-    while (d <= end) {
-      if (repeat.type === 'daily') {
+
+    const dates: Date[] = [];
+    let d = new Date(start);
+    let count = 0;
+    const maxCount = repeatEndType === 'count' ? repeatEndCount : 999;
+
+    while (d <= endLimit && dates.length < maxCount) {
+      if (repeatType === 'daily') {
         dates.push(new Date(d));
         d.setDate(d.getDate() + 1);
-      } else if (repeat.type === 'weekly') {
-        const day = d.getDay();
-        const dayMap = ['sun','mon','tue','wed','thu','fri','sat'];
-        if (repeat.days.includes(dayMap[day])) {
+      } else if (repeatType === 'weekly') {
+        const dayKey = DAY_KEYS[d.getDay()];
+        if (!autoWeeklyDay || dayKey === autoWeeklyDay) {
           dates.push(new Date(d));
         }
         d.setDate(d.getDate() + 1);
-      } else if (repeat.type === 'monthly') {
+      } else if (repeatType === 'monthly') {
         dates.push(new Date(d));
         d.setMonth(d.getMonth() + 1);
-      } else if (repeat.type === 'yearly') {
+      } else if (repeatType === 'yearly') {
         dates.push(new Date(d));
         d.setFullYear(d.getFullYear() + 1);
       } else {
-        dates.push(new Date(d));
         break;
       }
+      count++;
+      if (count > 500) break;
     }
     return dates;
-  }
-
-  // 공휴일 제외
-  function isHoliday(date: Date) {
-    return HOLIDAYS_2026.some(h => h.date === toDateString(date));
-  }
+  };
 
   const handleAddEvent = async () => {
     if (!form.title.trim() || !form.startDate || !form.endDate) return;
     setLoading(true);
     try {
-      if (repeat.type === 'none') {
+      if (repeatType === 'none') {
         await addDoc(collection(db, 'calendarEvents'), {
           title: form.title,
           startDate: form.startDate,
@@ -291,45 +217,26 @@ export default function Calendar() {
           repeat: { type: 'none' },
         });
       } else {
-        // 반복 그룹 식별자 생성
-        const repeatGroupId = `${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-        let dates = getRepeatDates();
-        // 무기한 반복이면 1년치만 생성
-        if (repeat.endType === 'forever') {
-          const start = new Date(form.startDate);
-          const end = new Date(start);
-          end.setFullYear(start.getFullYear() + 1);
-          dates = dates.filter(d => d <= end);
-        }
-        let count = 0;
-        console.log('[반복일정] 생성 시작', { type: repeat.type, count: dates.length, repeatGroupId });
+        const repeatGroupId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const dates = getRepeatDates();
         for (const d of dates) {
-          if (repeat.excludeHolidays && isHoliday(d)) continue;
+          if (repeatExcludeHolidays && isHoliday(toDateStr(d))) continue;
           await addDoc(collection(db, 'calendarEvents'), {
             title: form.title,
-            startDate: toDateString(d),
-            endDate: toDateString(d),
+            startDate: toDateStr(d),
+            endDate: toDateStr(d),
             authorId: user?.uid,
             authorName: user?.displayName || user?.email,
             color: form.color,
             createdAt: new Date(),
-            repeat: {
-              type: repeat.type,
-              days: repeat.days,
-              excludeHolidays: repeat.excludeHolidays,
-              endType: repeat.endType,
-              endDate: repeat.endDate,
-              endCount: repeat.endCount,
-            },
+            repeat: { type: repeatType, excludeHolidays: repeatExcludeHolidays },
             repeatGroupId,
           });
-          count++;
         }
-        console.log('[반복일정] 생성 완료', { type: repeat.type, 생성된_이벤트: count, repeatGroupId });
       }
       setShowAddModal(false);
       setForm({ title: '', startDate: '', endDate: '', color: COLORS[0] });
-      setRepeat({ type: 'none', days: [], excludeHolidays: true, endType: 'forever', endDate: '', endCount: 1 });
+      setRepeatType('none');
       addToast('일정이 추가되었습니다.');
     } catch (e) {
       addToast('일정 추가 실패');
@@ -337,12 +244,11 @@ export default function Calendar() {
     setLoading(false);
   };
 
-  // 일정 수정
-  const handleUpdateEvent = async (event: CalendarEvent) => {
-    if (!form.title.trim() || !form.startDate || !form.endDate) return;
+  const handleUpdateEvent = async () => {
+    if (!showDetail || !form.title.trim()) return;
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'calendarEvents', event.id), {
+      await updateDoc(doc(db, 'calendarEvents', showDetail.id), {
         title: form.title,
         startDate: form.startDate,
         endDate: form.endDate,
@@ -356,20 +262,27 @@ export default function Calendar() {
     setLoading(false);
   };
 
-  // 일정 삭제
-  // 반복 일정 전체 삭제
-  const handleDeleteRepeatEvents = async (event: CalendarEvent) => {
-    if (!event.repeatGroupId) return;
-    if (!window.confirm('이 날짜 이후의 반복 일정을 모두 삭제할까요?')) return;
+  const handleDeleteSingle = async (event: CalendarEvent) => {
+    if (!confirm('이 일정을 삭제할까요?')) return;
     setLoading(true);
     try {
-      // repeatGroupId가 같은 모든 이벤트 조회
-      const q = query(collection(db, 'calendarEvents'));
-      const snap = await onSnapshot(q, () => {}); // dummy for type
-      // 실제 쿼리
-      const allDocs = await (await import('firebase/firestore')).getDocs(q);
-      const toDelete = allDocs.docs
-        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as any))
+      await deleteDoc(doc(db, 'calendarEvents', event.id));
+      setShowDetail(null);
+      addToast('일정이 삭제되었습니다.');
+    } catch (e) {
+      addToast('삭제 실패');
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteRepeat = async (event: CalendarEvent) => {
+    if (!event.repeatGroupId) return;
+    if (!confirm('이 날짜 이후의 반복 일정을 모두 삭제할까요?')) return;
+    setLoading(true);
+    try {
+      const snap = await getDocs(collection(db, 'calendarEvents'));
+      const toDelete = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as any))
         .filter(ev => ev.repeatGroupId === event.repeatGroupId && ev.startDate >= event.startDate);
       for (const ev of toDelete) {
         await deleteDoc(doc(db, 'calendarEvents', ev.id));
@@ -377,57 +290,46 @@ export default function Calendar() {
       setShowDetail(null);
       addToast('반복 일정이 모두 삭제되었습니다.');
     } catch (e) {
-      addToast('일정 삭제 실패');
+      addToast('삭제 실패');
     }
     setLoading(false);
   };
 
-  // 기존 단건 삭제
-  const handleDeleteSingleEvent = async (event: CalendarEvent) => {
-    setLoading(true);
-    try {
-      await deleteDoc(doc(db, 'calendarEvents', event.id));
-      setShowDetail(null);
-      addToast('일정이 삭제되었습니다.');
-    } catch (e) {
-      addToast('일정 삭제 실패');
-    }
-    setLoading(false);
-  };
-
-  // 날짜 클릭/드래그 시 일정 추가 모달
   const onDateClick = (date: Date) => {
-    setSelectedDate(date);
-    setForm({
-      title: '',
-      startDate: toDateString(date),
-      endDate: toDateString(date),
-      color: COLORS[0],
-    });
+    const ds = toDateStr(date);
+    const dayKey = DAY_KEYS[date.getDay()];
+    setAutoWeeklyDay(dayKey);
+    setForm({ title: '', startDate: ds, endDate: ds, color: COLORS[0] });
+    setRepeatType('none');
+    setRepeatEndType('forever');
+    setRepeatEndDate('');
+    setRepeatEndCount(10);
     setShowAddModal(true);
   };
 
-  // 드래그 시작
+  const onEventClick = (event: CalendarEvent, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDetail(event);
+    setForm({ title: event.title, startDate: event.startDate, endDate: event.endDate, color: event.color });
+  };
+
   const handleDragStart = (date: Date) => {
     setDragStart(date);
     setDragEnd(date);
     setIsDragging(true);
   };
-  // 드래그 중
+
   const handleDragEnter = (date: Date) => {
     if (isDragging) setDragEnd(date);
   };
-  // 드래그 끝
+
   const handleDragEnd = () => {
     if (dragStart && dragEnd) {
       const start = dragStart < dragEnd ? dragStart : dragEnd;
       const end = dragStart > dragEnd ? dragStart : dragEnd;
-      setForm({
-        title: '',
-        startDate: toDateString(start),
-        endDate: toDateString(end),
-        color: COLORS[0],
-      });
+      setAutoWeeklyDay(DAY_KEYS[start.getDay()]);
+      setForm({ title: '', startDate: toDateStr(start), endDate: toDateStr(end), color: COLORS[0] });
+      setRepeatType('none');
       setShowAddModal(true);
     }
     setIsDragging(false);
@@ -435,562 +337,345 @@ export default function Calendar() {
     setDragEnd(null);
   };
 
-  // 일정 클릭 시 상세
-  const onEventClick = (event: CalendarEvent) => {
-    setShowDetail(event);
-    setForm({
-      title: event.title,
-      startDate: event.startDate,
-      endDate: event.endDate,
-      color: event.color,
-    });
+  const isDragSelected = (date: Date) => {
+    if (!isDragging || !dragStart || !dragEnd) return false;
+    const start = dragStart < dragEnd ? dragStart : dragEnd;
+    const end = dragStart > dragEnd ? dragStart : dragEnd;
+    return date >= start && date <= end;
   };
 
-  // 두 달력 행렬
-  const leftMatrix = getMonthMatrix(current.year, current.month);
-  // 오른쪽 달력: 다음 달(연도/월 보정)
-  let nextYear = current.year, nextMonth = current.month + 1;
+  const today = new Date();
+  let nextYear = current.year;
+  let nextMonth = current.month + 1;
   if (nextMonth > 11) { nextMonth = 0; nextYear++; }
-  const rightMatrix = getMonthMatrix(nextYear, nextMonth);
-  const leftMonthStr = `${current.year}-${String(current.month + 1).padStart(2, '0')}`;
-  const rightMonthStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}`;
 
-  // 날짜별 일정 필터 (기간 포함)
-  function getEventsForDay(date: Date) {
-    return events.filter(ev => (
-      ev.startDate <= toDateString(date) && ev.endDate >= toDateString(date)
-    ));
-  }
+  const leftMatrix = getMonthMatrix(current.year, current.month);
+  const rightMatrix = isMobile ? [] : getMonthMatrix(nextYear, nextMonth);
 
-  // 일정 더보기 팝업 상태
-  const [moreEvents, setMoreEvents] = useState<{date: Date, events: CalendarEvent[]} | null>(null);
+  const renderMonthCalendar = (matrix: (Date | null)[][], year: number, month: number) => {
+    const monthLabel = `${year}년 ${month + 1}월`;
+    return (
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#2C1810', marginBottom: 8, letterSpacing: '0.05em' }}>
+          {monthLabel}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', marginBottom: 4 }}>
+          {DAY_NAMES.map((d, i) => (
+            <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', padding: '4px 0', color: i === 0 ? '#C17B6B' : i === 6 ? '#6B8BC1' : '#9E8880' }}>
+              {d}
+            </div>
+          ))}
+        </div>
+        {matrix.map((week, wi) => (
+          <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
+            {week.map((date, di) => {
+              if (!date) return <div key={di} style={{ minHeight: 70, borderBottom: '0.5px solid #EDE5DC', borderRight: '0.5px solid #EDE5DC' }} />;
+              const ds = toDateStr(date);
+              const isToday = ds === toDateStr(today);
+              const isHol = isHoliday(ds);
+              const isSun = di === 0;
+              const isSat = di === 6;
+              const dayEvs = getEventsForDay(date);
+              const isDragSel = isDragSelected(date);
+              return (
+                <div
+                  key={di}
+                  onClick={() => onDateClick(date)}
+                  onMouseDown={() => handleDragStart(date)}
+                  onMouseEnter={() => handleDragEnter(date)}
+                  onMouseUp={handleDragEnd}
+                  style={{
+                    minHeight: 70,
+                    borderBottom: '0.5px solid #EDE5DC',
+                    borderRight: '0.5px solid #EDE5DC',
+                    padding: '4px 3px',
+                    cursor: 'pointer',
+                    background: isDragSel ? '#FFF5F2' : isToday ? '#FDF8F4' : '#fff',
+                    userSelect: 'none',
+                  }}
+                >
+                  <div style={{
+                    fontSize: 11,
+                    fontWeight: isToday ? 700 : 400,
+                    color: isToday ? '#C17B6B' : isHol || isSun ? '#C17B6B' : isSat ? '#6B8BC1' : '#2C1810',
+                    width: 20, height: 20,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: isToday ? '50%' : 0,
+                    background: isToday ? '#F5E6E0' : 'transparent',
+                    marginBottom: 2,
+                  }}>
+                    {date.getDate()}
+                  </div>
+                  {isHol && HOLIDAY_NAMES[ds] && (
+                    <div style={{ fontSize: 9, color: '#C17B6B', marginBottom: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                      {HOLIDAY_NAMES[ds]}
+                    </div>
+                  )}
+                  {dayEvs.slice(0, 2).map(ev => {
+                    const isStart = ev.startDate === ds;
+                    const isEnd = ev.endDate === ds;
+                    const isSingle = ev.startDate === ev.endDate;
+                    return (
+                      <div
+                        key={ev.id}
+                        onClick={e => onEventClick(ev, e)}
+                        style={{
+                          fontSize: 10,
+                          color: '#fff',
+                          background: ev.color || '#C17B6B',
+                          padding: '1px 4px',
+                          marginBottom: 2,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          textOverflow: 'ellipsis',
+                          borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0,
+                          marginLeft: isStart || isSingle ? 0 : -3,
+                          marginRight: isEnd || isSingle ? 0 : -3,
+                        }}
+                      >
+                        {isStart || isSingle ? ev.title : ''}
+                      </div>
+                    );
+                  })}
+                  {dayEvs.length > 2 && (
+                    <div style={{ fontSize: 9, color: '#9E8880' }}>+{dayEvs.length - 2}개</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
-  // 권한 체크
-  function canEdit(event: CalendarEvent) {
-    return user && (user.role === 'admin' || user.uid === event.authorId);
-  }
+  const repeatTypeLabel = () => {
+    if (repeatType === 'none') return null;
+    if (repeatType === 'weekly' && autoWeeklyDay) {
+      const idx = DAY_KEYS.indexOf(autoWeeklyDay);
+      return `매주 ${KOREAN_DAYS[idx]} 반복`;
+    }
+    if (repeatType === 'daily') return '매일 반복';
+    if (repeatType === 'monthly') return '매월 반복';
+    if (repeatType === 'yearly') return '매년 반복';
+    return null;
+  };
 
   return (
-    <div className="bg-white border-2 border-[#EDE5DC] rounded-lg p-2 w-full mx-auto text-sm">
-      {/* 상단: 네비게이션 (‹ 2026년 03월 › 한 줄) */}
-      <div className="flex items-center justify-center gap-2 mb-1 select-none">
-        <button onClick={() => moveMonth(-1)} className="px-2 py-0.5 text-lg">‹</button>
-        {editYear || editMonth ? (
-          <>
+    <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%' }}
+      onMouseUp={handleDragEnd}
+    >
+      {/* 네비게이션 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 16px', borderBottom: '1px solid #EDE5DC' }}>
+        <button onClick={() => moveMonth(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 14, padding: '2px 6px' }}>‹</button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => changeYear(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 11 }}>‹</button>
+          {editYear ? (
             <input
-              type="text"
               value={navYear}
-              onChange={handleYearInput}
-              onBlur={handleYearInputBlur}
-              onKeyDown={handleYearInputKey}
-              className="border rounded px-1 py-0.5 w-12 text-center text-sm mr-1"
-              autoFocus={editYear}
+              onChange={e => setNavYear(e.target.value.replace(/[^0-9]/g,''))}
+              onBlur={handleYearBlur}
+              onKeyDown={e => e.key === 'Enter' && handleYearBlur()}
+              autoFocus
+              style={{ width: 50, border: 'none', borderBottom: '1px solid #C17B6B', textAlign: 'center', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent' }}
             />
+          ) : (
+            <span onClick={() => setEditYear(true)} style={{ fontSize: 13, fontWeight: 700, color: '#2C1810', cursor: 'pointer', letterSpacing: '0.05em' }}>{current.year}년</span>
+          )}
+          <button onClick={() => changeYear(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 11 }}>›</button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => changeMonth(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 11 }}>‹</button>
+          {editMonth ? (
             <input
-              type="text"
               value={navMonth}
-              onChange={handleMonthInput}
-              onBlur={handleMonthInputBlur}
-              onKeyDown={handleMonthInputKey}
-              className="border rounded px-1 py-0.5 w-8 text-center text-sm"
-              autoFocus={editMonth}
+              onChange={e => setNavMonth(e.target.value.replace(/[^0-9]/g,''))}
+              onBlur={handleMonthBlur}
+              onKeyDown={e => e.key === 'Enter' && handleMonthBlur()}
+              autoFocus
+              style={{ width: 32, border: 'none', borderBottom: '1px solid #C17B6B', textAlign: 'center', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent' }}
             />
-            <span className="ml-1">월</span>
-          </>
-        ) : (
-          <span
-            className="text-base font-bold cursor-pointer hover:bg-gray-100 rounded px-1"
-            onClick={() => { setEditYear(true); }}
-          >
-            {current.year}년 {String(current.month + 1).padStart(2, '0')}월
-          </span>
+          ) : (
+            <span onClick={() => setEditMonth(true)} style={{ fontSize: 13, fontWeight: 700, color: '#2C1810', cursor: 'pointer' }}>{String(current.month + 1).padStart(2,'0')}월</span>
+          )}
+          <button onClick={() => changeMonth(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 11 }}>›</button>
+        </div>
+
+        <button onClick={() => moveMonth(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 14, padding: '2px 6px' }}>›</button>
+      </div>
+
+      {/* 달력 본체 */}
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #EDE5DC' }}>
+        <div style={{ flex: 1, borderRight: isMobile ? 'none' : '1px solid #EDE5DC', padding: '8px 4px' }}>
+          {renderMonthCalendar(leftMatrix, current.year, current.month)}
+        </div>
+        {!isMobile && (
+          <div style={{ flex: 1, padding: '8px 4px' }}>
+            {renderMonthCalendar(rightMatrix, nextYear, nextMonth)}
+          </div>
         )}
-        <button onClick={() => moveMonth(1)} className="px-2 py-0.5 text-lg">›</button>
-      </div>
-      {/* 두 달력 가로 배치 */}
-      <div className="flex w-full gap-4">
-        {/* 왼쪽: 현재 월 */}
-        <div className="flex-1">
-          <div className="text-center font-bold mb-1 text-base">{leftMonthStr}</div>
-          <div className="grid grid-cols-7 text-center font-bold mb-1 text-sm">
-            {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
-              <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
-            ))}
-          </div>
-          <div
-            className="grid grid-cols-7 gap-0 select-none"
-            onMouseUp={isDragging ? handleDragEnd : undefined}
-            onTouchEnd={isDragging ? handleDragEnd : undefined}
-          >
-            {leftMatrix.flat().map((date, idx) => {
-              if (!date) return <div key={idx} className="min-h-[90px]" />;
-              const isCurrentMonth = date.getMonth() === current.month;
-              const isToday = isSameDay(date, today);
-              const holiday = getHoliday(date);
-              const dayEvents = getEventsForDay(date);
-              // 드래그 하이라이트
-              let isHighlighted = false;
-              if (isDragging && dragStart && dragEnd) {
-                const start = dragStart < dragEnd ? dragStart : dragEnd;
-                const end = dragStart > dragEnd ? dragStart : dragEnd;
-                isHighlighted = date >= start && date <= end;
-              }
-              // 일정 최대 3개, 초과 시 +N개 더보기
-              const maxShow = 3;
-              const showEvents = dayEvents.slice(0, maxShow);
-              const moreCount = dayEvents.length - maxShow;
-              return (
-                <div
-                  key={idx}
-                  className={`relative min-h-[90px] border rounded p-2 flex flex-col items-start overflow-hidden transition-all
-                    ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
-                    ${isToday ? "border-[#EDE5DC] ring-2 ring-[#EDE5DC]" : ""}
-                    ${isHighlighted ? "bg-[#f8f5f2] border-[#EDE5DC]" : ""}
-                    cursor-pointer
-                  `}
-                  onMouseDown={e => { if (isCurrentMonth && e.button === 0) handleDragStart(date); }}
-                  onMouseEnter={e => { if (isDragging && isCurrentMonth && e.buttons === 1) handleDragEnter(date); }}
-                  onTouchStart={e => { if (isCurrentMonth) handleDragStart(date); }}
-                  onTouchMove={e => {
-                    if (isDragging && isCurrentMonth && e.touches.length === 1) {
-                      const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-                      if (target && target instanceof HTMLElement && target.dataset.date) {
-                        handleDragEnter(new Date(target.dataset.date));
-                      }
-                    }
-                  }}
-                  onMouseUp={e => { if (isDragging) handleDragEnd(); }}
-                  onTouchEnd={e => { if (isDragging) handleDragEnd(); }}
-                  onClick={e => {
-                    if (!isDragging && isCurrentMonth) onDateClick(date);
-                  }}
-                  data-date={toDateString(date)}
-                >
-                  <div className={`text-base font-bold mb-2 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
-                  {holiday && <div className="text-xs text-red-400 font-semibold mb-1">{holiday.name}</div>}
-                  <div className="flex flex-col gap-0 w-full">
-                    {showEvents.map(ev => {
-                      // 기간 일정 블락 연결 스타일 계산
-                      const evStart = new Date(ev.startDate);
-                      const evEnd = new Date(ev.endDate);
-                      const isStart = toDateString(date) === ev.startDate;
-                      const isEnd = toDateString(date) === ev.endDate;
-                      const isSingle = ev.startDate === ev.endDate;
-                      // 주의 시작/끝(일요일/토요일)
-                      const dayIdx = date.getDay();
-                      let borderRadius = '';
-                      if (isSingle) borderRadius = 'rounded-full';
-                      else if (isStart && isEnd) borderRadius = 'rounded-full';
-                      else if (isStart) borderRadius = 'rounded-l-full';
-                      else if (isEnd) borderRadius = 'rounded-r-full';
-                      else borderRadius = '';
-                      // 주가 바뀌면(일요일/토요일) 강제 끊김
-                      if (dayIdx === 0 && !isStart) borderRadius = 'rounded-l-full';
-                      if (dayIdx === 6 && !isEnd) borderRadius = 'rounded-r-full';
-                      return (
-                        <div
-                          key={ev.id}
-                          className={`w-full h-6 ${borderRadius} text-[11px] px-2 truncate cursor-pointer border-0`}
-                          style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, marginBottom: 0, minHeight: 22 }}
-                          onClick={e => { e.stopPropagation(); onEventClick(ev); }}
-                        >
-                          {(isStart || isSingle) && <span className="font-bold">{ev.title}</span>}
-                        </div>
-                      );
-                    })}
-                    {moreCount > 0 && (
-                      <button
-                        className="text-xs text-gray-500 underline mt-1"
-                        onClick={e => { e.stopPropagation(); setMoreEvents({ date, events: dayEvents }); }}
-                      >
-                        +{moreCount}개 더보기
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        {/* 오른쪽: 다음 월 */}
-        <div className="flex-1">
-          <div className="text-center font-bold mb-1 text-base">{rightMonthStr}</div>
-          <div className="grid grid-cols-7 text-center font-bold mb-1 text-sm">
-            {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
-              <div key={d} className={i === 0 ? "text-red-500" : i === 6 ? "text-blue-500" : ""}>{d}</div>
-            ))}
-          </div>
-          <div
-            className="grid grid-cols-7 gap-0 select-none"
-            onMouseUp={isDragging ? handleDragEnd : undefined}
-            onTouchEnd={isDragging ? handleDragEnd : undefined}
-          >
-            {rightMatrix.flat().map((date, idx) => {
-              if (!date) return <div key={idx} className="min-h-[90px]" />;
-              const isCurrentMonth = date.getMonth() === nextMonth && date.getFullYear() === nextYear;
-              const isToday = isSameDay(date, today);
-              const holiday = getHoliday(date);
-              const dayEvents = getEventsForDay(date);
-              // 드래그 하이라이트
-              let isHighlighted = false;
-              if (isDragging && dragStart && dragEnd) {
-                const start = dragStart < dragEnd ? dragStart : dragEnd;
-                const end = dragStart > dragEnd ? dragStart : dragEnd;
-                isHighlighted = date >= start && date <= end;
-              }
-              // 일정 최대 3개, 초과 시 +N개 더보기
-              const maxShow = 3;
-              const showEvents = dayEvents.slice(0, maxShow);
-              const moreCount = dayEvents.length - maxShow;
-              return (
-                <div
-                  key={idx}
-                  className={`relative min-h-[90px] border rounded p-2 flex flex-col items-start overflow-hidden transition-all
-                    ${isCurrentMonth ? "bg-white" : "bg-gray-50 text-gray-300"}
-                    ${isToday ? "border-[#EDE5DC] ring-2 ring-[#EDE5DC]" : ""}
-                    ${isHighlighted ? "bg-[#f8f5f2] border-[#EDE5DC]" : ""}
-                    cursor-pointer
-                  `}
-                  onMouseDown={e => { if (isCurrentMonth && e.button === 0) handleDragStart(date); }}
-                  onMouseEnter={e => { if (isDragging && isCurrentMonth && e.buttons === 1) handleDragEnter(date); }}
-                  onTouchStart={e => { if (isCurrentMonth) handleDragStart(date); }}
-                  onTouchMove={e => {
-                    if (isDragging && isCurrentMonth && e.touches.length === 1) {
-                      const target = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-                      if (target && target instanceof HTMLElement && target.dataset.date) {
-                        handleDragEnter(new Date(target.dataset.date));
-                      }
-                    }
-                  }}
-                  onMouseUp={e => { if (isDragging) handleDragEnd(); }}
-                  onTouchEnd={e => { if (isDragging) handleDragEnd(); }}
-                  onClick={e => {
-                    if (!isDragging && isCurrentMonth) onDateClick(date);
-                  }}
-                  data-date={toDateString(date)}
-                >
-                  <div className={`text-base font-bold mb-2 ${holiday || date.getDay() === 0 ? "text-red-500" : ""}`}>{date.getDate()}</div>
-                  {holiday && <div className="text-xs text-red-400 font-semibold mb-1">{holiday.name}</div>}
-                  <div className="flex flex-col gap-0 w-full">
-                    {showEvents.map(ev => {
-                      // 기간 일정 블락 연결 스타일 계산
-                      const evStart = new Date(ev.startDate);
-                      const evEnd = new Date(ev.endDate);
-                      const isStart = toDateString(date) === ev.startDate;
-                      const isEnd = toDateString(date) === ev.endDate;
-                      const isSingle = ev.startDate === ev.endDate;
-                      // 주의 시작/끝(일요일/토요일)
-                      const dayIdx = date.getDay();
-                      let borderRadius = '';
-                      if (isSingle) borderRadius = 'rounded-full';
-                      else if (isStart && isEnd) borderRadius = 'rounded-full';
-                      else if (isStart) borderRadius = 'rounded-l-full';
-                      else if (isEnd) borderRadius = 'rounded-r-full';
-                      else borderRadius = '';
-                      // 주가 바뀌면(일요일/토요일) 강제 끊김
-                      if (dayIdx === 0 && !isStart) borderRadius = 'rounded-l-full';
-                      if (dayIdx === 6 && !isEnd) borderRadius = 'rounded-r-full';
-                      return (
-                        <div
-                          key={ev.id}
-                          className={`w-full h-6 ${borderRadius} text-[11px] px-2 truncate cursor-pointer border-0`}
-                          style={{ background: ev.color, opacity: isCurrentMonth ? 1 : 0.5, marginBottom: 0, minHeight: 22 }}
-                          onClick={e => { e.stopPropagation(); onEventClick(ev); }}
-                        >
-                          {(isStart || isSingle) && <span className="font-bold">{ev.title}</span>}
-                        </div>
-                      );
-                    })}
-                    {moreCount > 0 && (
-                      <button
-                        className="text-xs text-gray-500 underline mt-1"
-                        onClick={e => { e.stopPropagation(); setMoreEvents({ date, events: dayEvents }); }}
-                      >
-                        +{moreCount}개 더보기
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
-      {/* 일정 더보기 팝업 */}
-      {moreEvents && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50" onClick={() => setMoreEvents(null)}>
-          <div className="bg-white p-6 rounded-lg w-full max-w-xs" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-2">{toDateString(moreEvents.date)} 일정 전체</h3>
-            <div className="flex flex-col gap-2">
-              {moreEvents.events.map(ev => (
-                <div
-                  key={ev.id}
-                  className="w-full rounded text-[13px] px-2 py-1 cursor-pointer border border-l-4"
-                  style={{ background: ev.color, borderColor: ev.color }}
-                  onClick={() => { setMoreEvents(null); onEventClick(ev); }}
-                >
-                  <span className="font-bold">{ev.title}</span>
-                  <span className="ml-2 text-xs">{ev.startDate}{ev.endDate !== ev.startDate ? `~${ev.endDate}` : ''}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end mt-4">
-              <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50" onClick={() => setMoreEvents(null)}>닫기</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 일정 추가 모달 - 반복 일정 기능 포함 */}
+      {/* 일정 추가 모달 */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-2xl w-full max-w-md shadow-lg">
-            <h3 className="text-2xl font-bold mb-6 text-center">일정 추가</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-1">제목</label>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 440 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>일정 추가</span>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
               <input
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base mb-2"
-                placeholder="제목을 입력하세요"
                 value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                autoFocus
+                placeholder="일정 제목"
+                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 14, fontFamily: 'inherit' }}
               />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-1">날짜 범위</label>
-              <div className="flex gap-3 items-center">
-                <input
-                  type="date"
-                  className="border rounded-lg px-3 py-2 w-full text-base"
-                  value={form.startDate}
-                  onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                />
-                <span className="text-gray-500">~</span>
-                <input
-                  type="date"
-                  className="border rounded-lg px-3 py-2 w-full text-base"
-                  value={form.endDate}
-                  onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                />
+
+              {/* 날짜 */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 6 }}>날짜</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                    style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                  <span style={{ color: '#9E8880', fontSize: 11 }}>~</span>
+                  <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                    style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                </div>
               </div>
-            </div>
-            {/* 반복 설정 칩 */}
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-1">반복 설정</label>
-              <div className="flex gap-2 flex-wrap">
-                {[
-                  { label: '안함', value: 'none' },
-                  { label: '매일', value: 'daily' },
-                  { label: '매주', value: 'weekly' },
-                  { label: '매월', value: 'monthly' },
-                  { label: '매년', value: 'yearly' },
-                ].map(opt => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    className={`px-3 py-1 rounded-full border text-sm font-semibold transition-all
-                      ${repeat.type === opt.value ? 'border-[#C17B6B] text-[#C17B6B] bg-[#FFF5F2]' : 'border-gray-300 text-gray-600 bg-white'}`}
-                    onClick={() => setRepeat(r => ({ ...r, type: opt.value as typeof r.type, days: [], endType: 'forever' as typeof r.endType, endDate: '', endCount: 1 }))}
-                  >{opt.label}</button>
-                ))}
+
+              {/* 반복 설정 */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 6 }}>반복 설정</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {(['none','daily','weekly','monthly','yearly'] as const).map(t => {
+                    const labels = { none: '안함', daily: '매일', weekly: '매주', monthly: '매월', yearly: '매년' };
+                    return (
+                      <button key={t} onClick={() => setRepeatType(t)}
+                        style={{ padding: '5px 10px', border: `1px solid ${repeatType === t ? '#C17B6B' : '#EDE5DC'}`, background: repeatType === t ? '#FFF5F2' : '#fff', color: repeatType === t ? '#C17B6B' : '#9E8880', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        {labels[t]}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {repeatType === 'weekly' && autoWeeklyDay && (
+                  <div style={{ marginTop: 8, fontSize: 11, color: '#9E8880' }}>
+                    {repeatTypeLabel()}
+                  </div>
+                )}
+
+                {repeatType !== 'none' && (
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 10, color: '#9E8880' }}>공휴일 제외</span>
+                      <div
+                        onClick={() => setRepeatExcludeHolidays(v => !v)}
+                        style={{ width: 32, height: 18, background: repeatExcludeHolidays ? '#C17B6B' : '#EDE5DC', borderRadius: 9, position: 'relative', cursor: 'pointer', transition: 'background 0.2s' }}>
+                        <div style={{ position: 'absolute', top: 2, left: repeatExcludeHolidays ? 14 : 2, width: 14, height: 14, background: '#fff', borderRadius: '50%', transition: 'left 0.2s' }} />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 10, color: '#9E8880', marginBottom: 4 }}>종료</div>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                      {(['forever','date','count'] as const).map(t => {
+                        const labels = { forever: '무기한', date: '날짜 지정', count: '횟수 지정' };
+                        return (
+                          <button key={t} onClick={() => setRepeatEndType(t)}
+                            style={{ padding: '4px 8px', border: `1px solid ${repeatEndType === t ? '#2C1810' : '#EDE5DC'}`, background: repeatEndType === t ? '#FDF8F4' : '#fff', color: repeatEndType === t ? '#2C1810' : '#9E8880', fontSize: 10, cursor: 'pointer' }}>
+                            {labels[t]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {repeatEndType === 'date' && (
+                      <input type="date" value={repeatEndDate} onChange={e => setRepeatEndDate(e.target.value)}
+                        style={{ border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                    )}
+                    {repeatEndType === 'count' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input type="number" value={repeatEndCount} min={1} max={200} onChange={e => setRepeatEndCount(Number(e.target.value))}
+                          style={{ width: 60, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', textAlign: 'center', fontFamily: 'inherit' }} />
+                        <span style={{ fontSize: 11, color: '#9E8880' }}>회</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-            {/* 매주 요일 칩 */}
-            {repeat.type === 'weekly' && (
-              <div className="mb-4">
-                <label className="block text-xs font-semibold mb-1">요일 선택</label>
-                <div className="flex gap-2 flex-wrap">
-                  {[
-                    { label: '월', value: 'mon' },
-                    { label: '화', value: 'tue' },
-                    { label: '수', value: 'wed' },
-                    { label: '목', value: 'thu' },
-                    { label: '금', value: 'fri' },
-                    { label: '토', value: 'sat' },
-                    { label: '일', value: 'sun' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={`px-3 py-1 rounded-full border text-sm font-semibold transition-all
-                        ${repeat.days.includes(opt.value) ? 'border-[#C17B6B] text-[#C17B6B] bg-[#FFF5F2]' : 'border-gray-300 text-gray-600 bg-white'}`}
-                      onClick={() => setRepeat(r => r.days.includes(opt.value)
-                        ? { ...r, days: r.days.filter(d => d !== opt.value) }
-                        : { ...r, days: [...r.days, opt.value] })}
-                    >{opt.label}</button>
+
+              {/* 색상 */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 6 }}>색상</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {COLORS.map(c => (
+                    <div key={c} onClick={() => setForm(f => ({ ...f, color: c }))}
+                      style={{ width: 22, height: 22, borderRadius: '50%', background: c, cursor: 'pointer', border: form.color === c ? '2px solid #2C1810' : '2px solid transparent' }} />
                   ))}
                 </div>
               </div>
-            )}
-            {/* 반복 추가 옵션 */}
-            {repeat.type !== 'none' && (
-              <div className="mb-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">공휴일 제외</span>
-                  <button
-                    type="button"
-                    className={`w-10 h-6 rounded-full border flex items-center px-1 transition-all ${repeat.excludeHolidays ? 'bg-[#C17B6B] border-[#C17B6B]' : 'bg-gray-200 border-gray-300'}`}
-                    onClick={() => setRepeat(r => ({ ...r, excludeHolidays: !r.excludeHolidays }))}
-                  >
-                    <span className={`w-4 h-4 rounded-full bg-white shadow transition-all ${repeat.excludeHolidays ? 'translate-x-4' : ''}`}></span>
-                  </button>
-                </div>
-                <div>
-                  <span className="text-sm font-semibold mr-2">종료</span>
-                  {[
-                    { label: '날짜 지정', value: 'date' },
-                    { label: '횟수 지정', value: 'count' },
-                    { label: '무기한', value: 'forever' },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={`px-3 py-1 rounded-full border text-sm font-semibold transition-all mr-2
-                        ${repeat.endType === opt.value ? 'border-[#C17B6B] text-[#C17B6B] bg-[#FFF5F2]' : 'border-gray-300 text-gray-600 bg-white'}`}
-                      onClick={() => setRepeat(r => ({ ...r, endType: opt.value as typeof r.endType }))}
-                    >{opt.label}</button>
-                  ))}
-                  {repeat.endType === 'date' && (
-                    <input
-                      type="date"
-                      className="ml-2 border rounded px-2 py-1"
-                      value={repeat.endDate}
-                      onChange={e => setRepeat(r => ({ ...r, endDate: e.target.value }))}
-                    />
-                  )}
-                  {repeat.endType === 'count' && (
-                    <input
-                      type="number"
-                      min={1}
-                      className="ml-2 border rounded px-2 py-1 w-20"
-                      value={repeat.endCount}
-                      onChange={e => setRepeat(r => ({ ...r, endCount: Number(e.target.value) }))}
-                    />
-                  )}
-                  {repeat.endType === 'count' && <span className="ml-1">회</span>}
-                </div>
-              </div>
-            )}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold mb-1">색상</label>
-              <div className="flex gap-4 flex-wrap mt-2">
-                {COLORS.map(c => (
-                  <button
-                    key={c}
-                    className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${form.color === c ? "border-[#222] scale-110" : "border-gray-200"}`}
-                    style={{ background: c }}
-                    onClick={() => setForm(f => ({ ...f, color: c }))}
-                    type="button"
-                  />
-                ))}
-              </div>
             </div>
-            <div className="flex justify-end gap-4 mt-6">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-base"
-                disabled={loading}
-              >취소</button>
-              <button
-                onClick={handleAddEvent}
-                className="px-6 py-2 bg-[#81D8D0] text-white rounded-lg hover:bg-[#6BC4BB] text-base font-semibold"
-                disabled={loading}
-              >추가</button>
+
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button onClick={() => setShowAddModal(false)} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
+              <button onClick={handleAddEvent} disabled={loading}
+                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: loading ? '#9E8880' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                {loading ? '저장 중...' : '추가'}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 일정 상세/수정/삭제 모달 */}
+      {/* 일정 상세 모달 */}
       {showDetail && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-xs">
-            <h3 className="text-lg font-semibold mb-2">일정 상세</h3>
-            <div className="mb-2">
-              <div className="font-bold text-base mb-1">{showDetail.title}</div>
-              <div className="text-xs mb-1">기간: {showDetail.startDate} ~ {showDetail.endDate}</div>
-              <div className="text-xs mb-1">작성자: {showDetail.authorName || showDetail.authorId}</div>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 380 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>일정 상세</span>
             </div>
-            {canEdit(showDetail) ? (
-              <>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 rounded mb-2"
-                  placeholder="제목"
-                  value={form.title}
-                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                />
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="date"
-                    className="border rounded px-2 py-1 w-full"
-                    value={form.startDate}
-                    onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                  />
-                  <span className="self-center">~</span>
-                  <input
-                    type="date"
-                    className="border rounded px-2 py-1 w-full"
-                    value={form.endDate}
-                    onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                  />
-                </div>
-                <div className="flex gap-2 mb-4">
-                  {COLORS.map(c => (
-                    <button
-                      key={c}
-                      className={`w-6 h-6 rounded-full border-2 ${form.color === c ? "border-[#222]" : "border-gray-200"}`}
-                      style={{ background: c }}
-                      onClick={() => setForm(f => ({ ...f, color: c }))}
-                      type="button"
-                    />
-                  ))}
-                </div>
-                <div className="flex flex-col gap-2 mt-4">
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      onClick={() => setShowDetail(null)}
-                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
-                      disabled={loading}
-                    >닫기</button>
-                    <button
-                      onClick={() => handleUpdateEvent(showDetail)}
-                      className="px-4 py-2 bg-[#81D8D0] text-white rounded hover:bg-[#6BC4BB]"
-                      disabled={loading}
-                    >수정</button>
+            <div style={{ padding: '16px 20px' }}>
+              {canEdit(showDetail) ? (
+                <>
+                  <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                    style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+                    <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                      style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                    <span style={{ color: '#9E8880' }}>~</span>
+                    <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                      style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
                   </div>
-                  {showDetail.repeatGroupId ? (
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => handleDeleteSingleEvent(showDetail)}
-                        className="flex-1 px-2 py-2 border rounded text-sm font-semibold border-[#EDE5DC] text-[#9E8880] hover:bg-[#FDF8F4]"
-                        disabled={loading}
-                      >이 일정만 삭제</button>
-                      <button
-                        onClick={() => handleDeleteRepeatEvents(showDetail)}
-                        className="flex-1 px-2 py-2 border rounded text-sm font-semibold border-[#C17B6B] text-[#C17B6B] hover:bg-[#FFF5F2]"
-                        disabled={loading}
-                      >이후 일정 모두 삭제</button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => handleDeleteSingleEvent(showDetail)}
-                        className="flex-1 px-2 py-2 border rounded text-sm font-semibold border-[#EDE5DC] text-[#9E8880] hover:bg-[#FDF8F4]"
-                        disabled={loading}
-                      >이 일정만 삭제</button>
-                    </div>
+                  <div style={{ fontSize: 11, color: '#9E8880' }}>작성자: {showDetail.authorName || showDetail.authorId}</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1810', marginBottom: 6 }}>{showDetail.title}</div>
+                  <div style={{ fontSize: 11, color: '#9E8880', marginBottom: 4 }}>{showDetail.startDate} ~ {showDetail.endDate}</div>
+                  <div style={{ fontSize: 11, color: '#9E8880' }}>작성자: {showDetail.authorName || showDetail.authorId}</div>
+                </>
+              )}
+            </div>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <button onClick={() => setShowDetail(null)} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
+              {canEdit(showDetail) && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {showDetail.repeatGroupId && (
+                    <button onClick={() => handleDeleteRepeat(showDetail)}
+                      style={{ fontSize: 10, padding: '6px 12px', border: '1px solid #C17B6B', color: '#C17B6B', background: '#fff', cursor: 'pointer', letterSpacing: '0.06em' }}>
+                      이후 모두 삭제
+                    </button>
                   )}
+                  <button onClick={() => handleDeleteSingle(showDetail)}
+                    style={{ fontSize: 10, padding: '6px 12px', border: '1px solid #EDE5DC', color: '#9E8880', background: '#fff', cursor: 'pointer', letterSpacing: '0.06em' }}>
+                    이 일정만 삭제
+                  </button>
+                  <button onClick={handleUpdateEvent} disabled={loading}
+                    style={{ fontSize: 10, padding: '6px 16px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer', letterSpacing: '0.08em' }}>
+                    저장
+                  </button>
                 </div>
-              </>
-            ) : (
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowDetail(null)}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
-                >닫기</button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
