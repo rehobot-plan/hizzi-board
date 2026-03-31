@@ -91,6 +91,22 @@ export default function Calendar() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetail, setShowDetail] = useState<CalendarEvent | null>(null);
   const [form, setForm] = useState({ title: '', startDate: '', endDate: '', color: COLORS[0] });
+  // 반복 일정 상태
+  const [repeat, setRepeat] = useState<{
+    type: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+    days: string[];
+    excludeHolidays: boolean;
+    endType: 'date' | 'count' | 'forever';
+    endDate: string;
+    endCount: number;
+  }>({
+    type: 'none',
+    days: [],
+    excludeHolidays: true,
+    endType: 'forever',
+    endDate: '',
+    endCount: 1,
+  });
   const [loading, setLoading] = useState(false);
   // 드래그 상태
   const [dragStart, setDragStart] = useState<Date | null>(null);
@@ -188,21 +204,119 @@ export default function Calendar() {
   };
 
   // 일정 추가
+  // 반복 일정 생성 유틸
+  function getRepeatDates() {
+    const start = new Date(form.startDate);
+    let end = new Date(form.endDate);
+    if (repeat.endType === 'date' && repeat.endDate) {
+      end = new Date(repeat.endDate);
+    } else if (repeat.endType === 'count' && repeat.endCount > 0) {
+      // count 기반 반복 종료 계산
+      let dates = [];
+      let d = new Date(form.startDate);
+      let cnt = 0;
+      while (cnt < repeat.endCount && d <= end) {
+        if (repeat.type === 'daily') {
+          dates.push(new Date(d));
+          d.setDate(d.getDate() + 1);
+        } else if (repeat.type === 'weekly') {
+          // 요일별 반복
+          for (let i = 0; i < 7 && cnt < repeat.endCount; i++) {
+            const day = d.getDay();
+            const dayMap = ['sun','mon','tue','wed','thu','fri','sat'];
+            if (repeat.days.includes(dayMap[day])) {
+              dates.push(new Date(d));
+              cnt++;
+            }
+            d.setDate(d.getDate() + 1);
+          }
+        } else if (repeat.type === 'monthly') {
+          dates.push(new Date(d));
+          d.setMonth(d.getMonth() + 1);
+        } else if (repeat.type === 'yearly') {
+          dates.push(new Date(d));
+          d.setFullYear(d.getFullYear() + 1);
+        }
+        cnt++;
+      }
+      return dates;
+    }
+    // forever, date 기반
+    let dates = [];
+    let d = new Date(form.startDate);
+    while (d <= end) {
+      if (repeat.type === 'daily') {
+        dates.push(new Date(d));
+        d.setDate(d.getDate() + 1);
+      } else if (repeat.type === 'weekly') {
+        const day = d.getDay();
+        const dayMap = ['sun','mon','tue','wed','thu','fri','sat'];
+        if (repeat.days.includes(dayMap[day])) {
+          dates.push(new Date(d));
+        }
+        d.setDate(d.getDate() + 1);
+      } else if (repeat.type === 'monthly') {
+        dates.push(new Date(d));
+        d.setMonth(d.getMonth() + 1);
+      } else if (repeat.type === 'yearly') {
+        dates.push(new Date(d));
+        d.setFullYear(d.getFullYear() + 1);
+      } else {
+        dates.push(new Date(d));
+        break;
+      }
+    }
+    return dates;
+  }
+
+  // 공휴일 제외
+  function isHoliday(date: Date) {
+    return HOLIDAYS_2026.some(h => h.date === toDateString(date));
+  }
+
   const handleAddEvent = async () => {
     if (!form.title.trim() || !form.startDate || !form.endDate) return;
     setLoading(true);
     try {
-      await addDoc(collection(db, 'calendarEvents'), {
-        title: form.title,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        authorId: user?.uid,
-        authorName: user?.displayName || user?.email,
-        color: form.color,
-        createdAt: new Date(),
-      });
+      if (repeat.type === 'none') {
+        await addDoc(collection(db, 'calendarEvents'), {
+          title: form.title,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          authorId: user?.uid,
+          authorName: user?.displayName || user?.email,
+          color: form.color,
+          createdAt: new Date(),
+          repeat: { type: 'none' },
+        });
+      } else {
+        const dates = getRepeatDates();
+        let count = 0;
+        for (const d of dates) {
+          if (repeat.excludeHolidays && isHoliday(d)) continue;
+          await addDoc(collection(db, 'calendarEvents'), {
+            title: form.title,
+            startDate: toDateString(d),
+            endDate: toDateString(d),
+            authorId: user?.uid,
+            authorName: user?.displayName || user?.email,
+            color: form.color,
+            createdAt: new Date(),
+            repeat: {
+              type: repeat.type,
+              days: repeat.days,
+              excludeHolidays: repeat.excludeHolidays,
+              endType: repeat.endType,
+              endDate: repeat.endDate,
+              endCount: repeat.endCount,
+            },
+          });
+          count++;
+        }
+      }
       setShowAddModal(false);
       setForm({ title: '', startDate: '', endDate: '', color: COLORS[0] });
+      setRepeat({ type: 'none', days: [], excludeHolidays: true, endType: 'forever', endDate: '', endCount: 1 });
       addToast('일정이 추가되었습니다.');
     } catch (e) {
       addToast('일정 추가 실패');
@@ -589,7 +703,7 @@ export default function Calendar() {
         </div>
       )}
 
-      {/* 일정 추가 모달 - 디자인 개선 */}
+      {/* 일정 추가 모달 - 반복 일정 기능 포함 */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-2xl w-full max-w-md shadow-lg">
@@ -622,6 +736,103 @@ export default function Calendar() {
                 />
               </div>
             </div>
+            {/* 반복 설정 칩 */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">반복 설정</label>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { label: '안함', value: 'none' },
+                  { label: '매일', value: 'daily' },
+                  { label: '매주', value: 'weekly' },
+                  { label: '매월', value: 'monthly' },
+                  { label: '매년', value: 'yearly' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`px-3 py-1 rounded-full border text-sm font-semibold transition-all
+                      ${repeat.type === opt.value ? 'border-[#C17B6B] text-[#C17B6B] bg-[#FFF5F2]' : 'border-gray-300 text-gray-600 bg-white'}`}
+                    onClick={() => setRepeat(r => ({ ...r, type: opt.value as typeof r.type, days: [], endType: 'forever' as typeof r.endType, endDate: '', endCount: 1 }))}
+                  >{opt.label}</button>
+                ))}
+              </div>
+            </div>
+            {/* 매주 요일 칩 */}
+            {repeat.type === 'weekly' && (
+              <div className="mb-4">
+                <label className="block text-xs font-semibold mb-1">요일 선택</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { label: '월', value: 'mon' },
+                    { label: '화', value: 'tue' },
+                    { label: '수', value: 'wed' },
+                    { label: '목', value: 'thu' },
+                    { label: '금', value: 'fri' },
+                    { label: '토', value: 'sat' },
+                    { label: '일', value: 'sun' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`px-3 py-1 rounded-full border text-sm font-semibold transition-all
+                        ${repeat.days.includes(opt.value) ? 'border-[#C17B6B] text-[#C17B6B] bg-[#FFF5F2]' : 'border-gray-300 text-gray-600 bg-white'}`}
+                      onClick={() => setRepeat(r => r.days.includes(opt.value)
+                        ? { ...r, days: r.days.filter(d => d !== opt.value) }
+                        : { ...r, days: [...r.days, opt.value] })}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* 반복 추가 옵션 */}
+            {repeat.type !== 'none' && (
+              <div className="mb-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">공휴일 제외</span>
+                  <button
+                    type="button"
+                    className={`w-10 h-6 rounded-full border flex items-center px-1 transition-all ${repeat.excludeHolidays ? 'bg-[#C17B6B] border-[#C17B6B]' : 'bg-gray-200 border-gray-300'}`}
+                    onClick={() => setRepeat(r => ({ ...r, excludeHolidays: !r.excludeHolidays }))}
+                  >
+                    <span className={`w-4 h-4 rounded-full bg-white shadow transition-all ${repeat.excludeHolidays ? 'translate-x-4' : ''}`}></span>
+                  </button>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold mr-2">종료</span>
+                  {[
+                    { label: '날짜 지정', value: 'date' },
+                    { label: '횟수 지정', value: 'count' },
+                    { label: '무기한', value: 'forever' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`px-3 py-1 rounded-full border text-sm font-semibold transition-all mr-2
+                        ${repeat.endType === opt.value ? 'border-[#C17B6B] text-[#C17B6B] bg-[#FFF5F2]' : 'border-gray-300 text-gray-600 bg-white'}`}
+                      onClick={() => setRepeat(r => ({ ...r, endType: opt.value as typeof r.endType }))}
+                    >{opt.label}</button>
+                  ))}
+                  {repeat.endType === 'date' && (
+                    <input
+                      type="date"
+                      className="ml-2 border rounded px-2 py-1"
+                      value={repeat.endDate}
+                      onChange={e => setRepeat(r => ({ ...r, endDate: e.target.value }))}
+                    />
+                  )}
+                  {repeat.endType === 'count' && (
+                    <input
+                      type="number"
+                      min={1}
+                      className="ml-2 border rounded px-2 py-1 w-20"
+                      value={repeat.endCount}
+                      onChange={e => setRepeat(r => ({ ...r, endCount: Number(e.target.value) }))}
+                    />
+                  )}
+                  {repeat.endType === 'count' && <span className="ml-1">회</span>}
+                </div>
+              </div>
+            )}
             <div className="mb-6">
               <label className="block text-sm font-semibold mb-1">색상</label>
               <div className="flex gap-4 flex-wrap mt-2">
