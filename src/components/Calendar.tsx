@@ -33,6 +33,7 @@ export interface CalendarEvent {
   color: string;
   createdAt: any;
   authorName?: string;
+  repeatGroupId?: string;
 }
 
 function getMonthMatrix(year: number, month: number) {
@@ -290,8 +291,18 @@ export default function Calendar() {
           repeat: { type: 'none' },
         });
       } else {
-        const dates = getRepeatDates();
+        // 반복 그룹 식별자 생성
+        const repeatGroupId = `${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+        let dates = getRepeatDates();
+        // 무기한 반복이면 1년치만 생성
+        if (repeat.endType === 'forever') {
+          const start = new Date(form.startDate);
+          const end = new Date(start);
+          end.setFullYear(start.getFullYear() + 1);
+          dates = dates.filter(d => d <= end);
+        }
         let count = 0;
+        console.log('[반복일정] 생성 시작', { type: repeat.type, count: dates.length, repeatGroupId });
         for (const d of dates) {
           if (repeat.excludeHolidays && isHoliday(d)) continue;
           await addDoc(collection(db, 'calendarEvents'), {
@@ -310,9 +321,11 @@ export default function Calendar() {
               endDate: repeat.endDate,
               endCount: repeat.endCount,
             },
+            repeatGroupId,
           });
           count++;
         }
+        console.log('[반복일정] 생성 완료', { type: repeat.type, 생성된_이벤트: count, repeatGroupId });
       }
       setShowAddModal(false);
       setForm({ title: '', startDate: '', endDate: '', color: COLORS[0] });
@@ -344,7 +357,33 @@ export default function Calendar() {
   };
 
   // 일정 삭제
-  const handleDeleteEvent = async (event: CalendarEvent) => {
+  // 반복 일정 전체 삭제
+  const handleDeleteRepeatEvents = async (event: CalendarEvent) => {
+    if (!event.repeatGroupId) return;
+    if (!window.confirm('이 날짜 이후의 반복 일정을 모두 삭제할까요?')) return;
+    setLoading(true);
+    try {
+      // repeatGroupId가 같은 모든 이벤트 조회
+      const q = query(collection(db, 'calendarEvents'));
+      const snap = await onSnapshot(q, () => {}); // dummy for type
+      // 실제 쿼리
+      const allDocs = await (await import('firebase/firestore')).getDocs(q);
+      const toDelete = allDocs.docs
+        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as any))
+        .filter(ev => ev.repeatGroupId === event.repeatGroupId && ev.startDate >= event.startDate);
+      for (const ev of toDelete) {
+        await deleteDoc(doc(db, 'calendarEvents', ev.id));
+      }
+      setShowDetail(null);
+      addToast('반복 일정이 모두 삭제되었습니다.');
+    } catch (e) {
+      addToast('일정 삭제 실패');
+    }
+    setLoading(false);
+  };
+
+  // 기존 단건 삭제
+  const handleDeleteSingleEvent = async (event: CalendarEvent) => {
     setLoading(true);
     try {
       await deleteDoc(doc(db, 'calendarEvents', event.id));
@@ -907,22 +946,41 @@ export default function Calendar() {
                     />
                   ))}
                 </div>
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => setShowDetail(null)}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
-                    disabled={loading}
-                  >닫기</button>
-                  <button
-                    onClick={() => handleUpdateEvent(showDetail)}
-                    className="px-4 py-2 bg-[#81D8D0] text-white rounded hover:bg-[#6BC4BB]"
-                    disabled={loading}
-                  >수정</button>
-                  <button
-                    onClick={() => handleDeleteEvent(showDetail)}
-                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    disabled={loading}
-                  >삭제</button>
+                <div className="flex flex-col gap-2 mt-4">
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setShowDetail(null)}
+                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+                      disabled={loading}
+                    >닫기</button>
+                    <button
+                      onClick={() => handleUpdateEvent(showDetail)}
+                      className="px-4 py-2 bg-[#81D8D0] text-white rounded hover:bg-[#6BC4BB]"
+                      disabled={loading}
+                    >수정</button>
+                  </div>
+                  {showDetail.repeatGroupId ? (
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => handleDeleteSingleEvent(showDetail)}
+                        className="flex-1 px-2 py-2 border rounded text-sm font-semibold border-[#EDE5DC] text-[#9E8880] hover:bg-[#FDF8F4]"
+                        disabled={loading}
+                      >이 일정만 삭제</button>
+                      <button
+                        onClick={() => handleDeleteRepeatEvents(showDetail)}
+                        className="flex-1 px-2 py-2 border rounded text-sm font-semibold border-[#C17B6B] text-[#C17B6B] hover:bg-[#FFF5F2]"
+                        disabled={loading}
+                      >이후 일정 모두 삭제</button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => handleDeleteSingleEvent(showDetail)}
+                        className="flex-1 px-2 py-2 border rounded text-sm font-semibold border-[#EDE5DC] text-[#9E8880] hover:bg-[#FDF8F4]"
+                        disabled={loading}
+                      >이 일정만 삭제</button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
