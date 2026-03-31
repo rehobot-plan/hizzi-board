@@ -462,48 +462,36 @@ export default function Calendar() {
   };
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%' }}
-      onMouseUp={handleDragEnd}
-    >
-      {/* 네비게이션 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 16px', borderBottom: '1px solid #EDE5DC' }}>
-        <button onClick={() => moveMonth(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 14, padding: '2px 6px' }}>‹</button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <button onClick={() => changeYear(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 11 }}>‹</button>
-          {editYear ? (
-            <input
-              value={navYear}
-              onChange={e => setNavYear(e.target.value.replace(/[^0-9]/g,''))}
-              onBlur={handleYearBlur}
-              onKeyDown={e => e.key === 'Enter' && handleYearBlur()}
-              autoFocus
-              style={{ width: 50, border: 'none', borderBottom: '1px solid #C17B6B', textAlign: 'center', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent' }}
-            />
-          ) : (
-            <span onClick={() => setEditYear(true)} style={{ fontSize: 13, fontWeight: 700, color: '#2C1810', cursor: 'pointer', letterSpacing: '0.05em' }}>{current.year}년</span>
-          )}
-          <button onClick={() => changeYear(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 11 }}>›</button>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <button onClick={() => changeMonth(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 11 }}>‹</button>
-          {editMonth ? (
-            <input
-              value={navMonth}
-              onChange={e => setNavMonth(e.target.value.replace(/[^0-9]/g,''))}
-              onBlur={handleMonthBlur}
-              onKeyDown={e => e.key === 'Enter' && handleMonthBlur()}
-              autoFocus
-              style={{ width: 32, border: 'none', borderBottom: '1px solid #C17B6B', textAlign: 'center', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent' }}
-            />
-          ) : (
-            <span onClick={() => setEditMonth(true)} style={{ fontSize: 13, fontWeight: 700, color: '#2C1810', cursor: 'pointer' }}>{String(current.month + 1).padStart(2,'0')}월</span>
-          )}
-          <button onClick={() => changeMonth(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 11 }}>›</button>
-        </div>
-
-        <button onClick={() => moveMonth(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 14, padding: '2px 6px' }}>›</button>
+    <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%' }} onMouseUp={handleDragEnd}>
+      {/* 네비게이션 - 단순화 */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '12px 16px', borderBottom: '1px solid #EDE5DC' }}>
+        <button onClick={() => moveMonth(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 22, padding: '2px 12px', fontWeight: 700 }}>‹</button>
+        {editYear ? (
+          <input
+            value={navYear}
+            onChange={e => setNavYear(e.target.value.replace(/[^0-9]/g, ''))}
+            onBlur={handleYearBlur}
+            onKeyDown={e => e.key === 'Enter' && handleYearBlur()}
+            autoFocus
+            style={{ width: 50, border: 'none', borderBottom: '1px solid #C17B6B', textAlign: 'center', fontSize: 18, color: '#2C1810', outline: 'none', background: 'transparent', fontWeight: 700, marginRight: 4 }}
+          />
+        ) : (
+          <span onClick={() => setEditYear(true)} style={{ fontSize: 18, fontWeight: 700, color: '#2C1810', cursor: 'pointer', letterSpacing: '0.05em', marginRight: 4 }}>{current.year}년</span>
+        )}
+        {editMonth ? (
+          <input
+            value={navMonth}
+            onChange={e => setNavMonth(e.target.value.replace(/[^0-9]/g, ''))}
+            onBlur={handleMonthBlur}
+            onKeyDown={e => e.key === 'Enter' && handleMonthBlur()}
+            autoFocus
+            style={{ width: 32, border: 'none', borderBottom: '1px solid #C17B6B', textAlign: 'center', fontSize: 18, color: '#2C1810', outline: 'none', background: 'transparent', fontWeight: 700, marginLeft: 4 }}
+          />
+        ) : (
+          <span onClick={() => setEditMonth(true)} style={{ fontSize: 18, fontWeight: 700, color: '#2C1810', cursor: 'pointer', marginLeft: 4 }}>{String(current.month + 1).padStart(2, '0')}월</span>
+        )}
+        <button onClick={() => moveMonth(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 22, padding: '2px 12px', fontWeight: 700 }}>›</button>
       </div>
 
       {/* 달력 본체 */}
