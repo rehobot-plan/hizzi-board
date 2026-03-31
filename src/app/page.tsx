@@ -60,6 +60,9 @@ export default function Home() {
   // 사이드바 메뉴
   // 사이드바 메뉴 제거, 브랜드명/사용자 정보만 유지
 
+  // 모바일 패널 오버레이 상태
+  const [mobilePanelId, setMobilePanelId] = useState<string | null>(null);
+
   if (authLoading || panelLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-[#FDF8F4]">Loading...</div>;
   }
@@ -69,8 +72,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex bg-[#FDF8F4]">
-      {/* 사이드바 */}
-      <aside className="flex flex-col justify-between min-h-screen w-[200px] bg-[#5C1F1F] py-8 px-6">
+      {/* 사이드바: 모바일에서 숨김 */}
+      <aside
+        className="flex-col justify-between min-h-screen w-[200px] bg-[#5C1F1F] py-8 px-6 hidden md:flex"
+      >
         <div>
           <div className="mb-12 select-none">
             <span className="block text-white text-2xl font-extrabold tracking-[0.15em] uppercase text-center" style={{ letterSpacing: '0.15em' }}>HIZZI BOARD</span>
@@ -110,7 +115,7 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-8 py-8">
+        <div className="flex-1 overflow-y-auto px-2 md:px-8 py-8">
           {adminMode && (
             <div className="border border-red-300 bg-red-50 rounded p-4 mb-4">
               <h2 className="text-xl font-semibold text-red-600 mb-2">관리자 - 사용자 관리</h2>
@@ -153,22 +158,54 @@ export default function Home() {
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-6">
-            {panels
-              .slice()
-              .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-              .map((panel) => (
-                <div
-                  key={panel.id}
-                  draggable
-                  onDragStart={e => handlePanelDragStart(e, panel.id)}
-                  onDragOver={handlePanelDragOver}
-                  onDrop={e => handlePanelDrop(e, panel.id)}
-                  className="h-full"
-                >
-                  <Panel id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} position={panel.position} />
+          {/* 데스크탑: 3x2 그리드, 모바일: 3열 미니카드 */}
+          <div>
+            {/* 데스크탑 */}
+            <div className="hidden md:grid grid-cols-3 gap-6">
+              {panels
+                .slice()
+                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                .map((panel) => (
+                  <div
+                    key={panel.id}
+                    draggable
+                    onDragStart={e => handlePanelDragStart(e, panel.id)}
+                    onDragOver={handlePanelDragOver}
+                    onDrop={e => handlePanelDrop(e, panel.id)}
+                    className="h-full"
+                  >
+                    <Panel id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} position={panel.position} />
+                  </div>
+                ))}
+            </div>
+            {/* 모바일: 3열 미니카드 */}
+            <div className="grid grid-cols-3 gap-2 md:hidden">
+              {panels
+                .slice()
+                .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                .map((panel) => (
+                  <button
+                    key={panel.id}
+                    className="h-20 bg-white border border-[#EDE5DC] rounded flex items-center justify-center text-xs font-bold text-[#2C1810] overflow-hidden"
+                    onClick={() => setMobilePanelId(panel.id)}
+                  >
+                    {panel.name}
+                  </button>
+                ))}
+            </div>
+            {/* 모바일 오버레이 */}
+            {mobilePanelId && (() => {
+              const activePanel = panels.find(p => p.id === mobilePanelId);
+              if (!activePanel) return null;
+              return (
+                <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center md:hidden" onClick={() => setMobilePanelId(null)}>
+                  <div className="bg-white rounded-lg shadow-lg w-full h-full max-w-md mx-auto p-4 relative flex flex-col" onClick={e => e.stopPropagation()}>
+                    <button className="absolute top-4 right-4 text-2xl text-[#2C1810]" onClick={() => setMobilePanelId(null)}>&times;</button>
+                    <Panel {...activePanel} />
+                  </div>
                 </div>
-              ))}
+              );
+            })()}
           </div>
 
           <NoticeArea />
