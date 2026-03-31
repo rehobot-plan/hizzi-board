@@ -3,6 +3,7 @@ import { collection, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, delete
 import { db } from '@/lib/firebase';
 import { usePanelStore } from '@/store/panelStore';
 import { useToastStore } from '@/store/toastStore';
+import { useAuthStore } from '@/store/authStore';
 
 export interface PostAttachment {
   name: string;
@@ -126,7 +127,12 @@ export const initPostListener = () => {
       }
 
       if (actionMessage) {
-        useToastStore.getState().addToast(`${author}님이 ${panelName}에 게시물을 ${actionMessage}`);
+        const currentUserEmail = useAuthStore.getState().user?.email;
+        const isMyPost = data.author === currentUserEmail;
+        const isVisibleToMe = !data.visibleTo || data.visibleTo.length === 0 || data.visibleTo.includes(currentUserEmail);
+        if (!isMyPost && isVisibleToMe) {
+          useToastStore.getState().addToast(`${author}님이 ${panelName}에 게시물을 ${actionMessage}`);
+        }
       }
     });
 
