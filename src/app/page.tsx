@@ -15,7 +15,7 @@ import LeaveManager from '@/components/LeaveManager';
 export default function Home() {
   const { user, loading: authLoading, signOut, recoveryOrphanAccount } = useAuthStore();
   const { panels, loading: panelLoading, updatePanel, addPanel } = usePanelStore();
-  const { users, loading: userLoading, deleteUser, updateUserPanel } = useUserStore();
+  const { users, loading: userLoading, deleteUser, updateUserPanel, updateUserName, updateLeaveViewPermission } = useUserStore();
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
   const [adminTab, setAdminTab] = useState<'users' | 'leave' | 'recovery'>('users');
@@ -25,6 +25,9 @@ export default function Home() {
   const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const router = useRouter();
 
   const getUserPanel = (email: string) => panels.find((p) => p.ownerEmail === email);
@@ -252,11 +255,46 @@ export default function Home() {
                         const userPanel = getUserPanel(u.email);
                         const isCurrentAdmin = user?.email === u.email && user?.role === 'admin';
                         const isUnassigned = isUnassignedUser(u);
+                        const isEditingName = editingNameId === u.id;
                         return (
                           <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded gap-3">
                             <div className="min-w-0">
                               <p className="text-sm font-medium flex items-center gap-2">
-                                <span>{u.name} ({u.email})</span>
+                                {isEditingName ? (
+                                  <input
+                                    autoFocus
+                                    value={editingNameValue}
+                                    onChange={(e) => setEditingNameValue(e.target.value)}
+                                    onBlur={async () => {
+                                      if (editingNameValue.trim()) {
+                                        await updateUserName(u.id, editingNameValue.trim());
+                                      }
+                                      setEditingNameId(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        if (editingNameValue.trim()) {
+                                          void updateUserName(u.id, editingNameValue.trim());
+                                        }
+                                        setEditingNameId(null);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingNameId(null);
+                                      }
+                                    }}
+                                    className="border-b border-[#2C1810] bg-transparent outline-none text-sm text-[#2C1810]"
+                                  />
+                                ) : (
+                                  <span
+                                    onClick={() => {
+                                      setEditingNameId(u.id);
+                                      setEditingNameValue(u.name);
+                                    }}
+                                    className="cursor-pointer hover:text-[#C17B6B]"
+                                  >
+                                    {u.name}
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-gray-500">({u.email})</span>
                                 {isUnassigned && (
                                   <span className="text-[10px] px-2 py-0.5 border" style={{ color: '#C17B6B', borderColor: '#C17B6B', background: '#FFF5F2' }}>
                                     패널 미배정
@@ -269,12 +307,22 @@ export default function Home() {
                               {u.role === 'admin' ? (
                                 <span className="text-xs text-[#9E8880] px-2">관리자 계정</span>
                               ) : (
-                                <select
-                                  value={userPanel?.id || ''}
-                                  onChange={(e) => handleAssignPanel(u.id, u.email, e.target.value)}
-                                  className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[140px]"
-                                >
-                                  <option value="">패널 없음</option>
+                                <>
+                                  <select
+                                    value={u.leaveViewPermission || 'none'}
+                                    onChange={(e) => updateLeaveViewPermission(u.id, e.target.value as 'none' | 'self' | 'all')}
+                                    className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[100px]"
+                                  >
+                                    <option value="none">연차열람 없음</option>
+                                    <option value="self">본인만</option>
+                                    <option value="all">전체</option>
+                                  </select>
+                                  <select
+                                    value={userPanel?.id || ''}
+                                    onChange={(e) => handleAssignPanel(u.id, u.email, e.target.value)}
+                                    className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[140px]"
+                                  >
+                                    <option value="">패널 없음</option>
                                   {panels
                                     .slice()
                                     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -287,26 +335,17 @@ export default function Home() {
                                         </option>
                                       );
                                     })}
-                                </select>
+                                  </select>
+                                  <button
+                                    disabled={isCurrentAdmin}
+                                    onClick={() => setDeleteConfirmId(u.id)}
+                                    className="px-3 py-1 text-xs border text-white disabled:opacity-40"
+                                    style={{ borderColor: '#C17B6B', background: '#C17B6B' }}
+                                  >
+                                    삭제
+                                  </button>
+                                </>
                               )}
-                              <button
-                                disabled={isCurrentAdmin}
-                                onClick={async () => {
-                                  if (isCurrentAdmin) return;
-                                  try {
-                                    const panel = panels.find((p) => p.ownerEmail === u.email);
-                                    if (panel) await updatePanel(panel.id, { ownerEmail: null });
-                                    await updateUserPanel(u.id, null);
-                                    await deleteUser(u.id);
-                                  } catch (err: any) {
-                                    console.error(err);
-                                    setDeleteError('삭제 중 오류가 발생했습니다.');
-                                  }
-                                }}
-                                className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300"
-                              >
-                                삭제
-                              </button>
                             </div>
                           </div>
                         );
@@ -455,6 +494,50 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {deleteConfirmId && (() => {
+        const targetUser = users.find((u) => u.id === deleteConfirmId);
+        if (!targetUser) return null;
+        return (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setDeleteConfirmId(null)}>
+            <div className="bg-white border border-[#EDE5DC] w-full max-w-sm p-4 rounded" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-sm font-semibold text-[#2C1810] mb-3">계정 삭제</h3>
+              <p className="text-xs text-[#9E8880] mb-4">
+                정말 <strong>{targetUser.name}</strong>({targetUser.email}) 계정을 삭제하시겠습니까?<br/>
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="px-3 py-1 text-xs border border-[#9E8880] text-[#9E8880]"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const panel = panels.find((p) => p.ownerEmail === targetUser.email);
+                      if (panel) await updatePanel(panel.id, { ownerEmail: null });
+                      await updateUserPanel(deleteConfirmId, null);
+                      await deleteUser(deleteConfirmId);
+                      setDeleteConfirmId(null);
+                    } catch (err: any) {
+                      console.error(err);
+                      setDeleteError('삭제 중 오류가 발생했습니다.');
+                    }
+                  }}
+                  className="px-3 py-1 text-xs text-white"
+                  style={{ borderColor: '#C17B6B', background: '#C17B6B', border: '1px solid #C17B6B' }}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

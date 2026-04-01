@@ -41,7 +41,6 @@ export default function LeaveManager() {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [joinDateDraft, setJoinDateDraft] = useState('');
   const [manualUsedDraft, setManualUsedDraft] = useState('0');
-  const [viewerDraft, setViewerDraft] = useState('');
 
   const [showAdd, setShowAdd] = useState(false);
   const [editTargetId, setEditTargetId] = useState<string | null>(null);
@@ -63,8 +62,7 @@ export default function LeaveManager() {
   useEffect(() => {
     setJoinDateDraft(setting?.joinDate || '');
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
-    setViewerDraft((setting?.viewerEmails || []).join(', '));
-  }, [setting?.joinDate, setting?.manualUsedDays, setting?.viewerEmails]);
+  }, [setting?.joinDate, setting?.manualUsedDays]);
 
   const userEvents = useMemo(() => {
     if (!selectedUser) return [];
@@ -75,6 +73,11 @@ export default function LeaveManager() {
   }, [events, selectedUser]);
 
   const isAdmin = user?.role === 'admin';
+  
+  // leaveViewPermission에 따른 접근 권한 체크
+  const userLeaveViewPermission = !!user ? (users.find((u) => u.email === user.email)?.leaveViewPermission || 'none') : 'none';
+  const hasLeaveAccess = isAdmin || userLeaveViewPermission === 'all' || userLeaveViewPermission === 'self';
+  
   const canView = !!selectedUser && canViewLeaveLedger({
     targetUserId: selectedUser.id,
     currentEmail: user?.email,
@@ -84,8 +87,7 @@ export default function LeaveManager() {
 
   const canRegister = !!selectedUser && (
     isAdmin ||
-    (user?.email && selectedUser.email === user.email) ||
-    (setting?.viewerEmails || []).includes(user?.email || '')
+    (user?.email && selectedUser.email === user.email)
   );
 
   const total = calcAnnualLeave(setting?.joinDate || '');
@@ -95,7 +97,6 @@ export default function LeaveManager() {
   const applyDraftFromSetting = () => {
     setJoinDateDraft(setting?.joinDate || '');
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
-    setViewerDraft((setting?.viewerEmails || []).join(', '));
   };
 
   const openAddModal = () => {
@@ -116,17 +117,13 @@ export default function LeaveManager() {
 
   const handleSaveSetting = async () => {
     if (!selectedUser || !isAdmin || !joinDateDraft) return;
-    const viewerEmails = viewerDraft
-      .split(',')
-      .map((email) => email.trim())
-      .filter(Boolean);
 
     await upsertSetting({
       userId: selectedUser.id,
       userName: selectedUser.name,
       joinDate: joinDateDraft,
       manualUsedDays: Number(manualUsedDraft) || 0,
-      viewerEmails,
+      viewerEmails: [],
     });
   };
 
@@ -167,7 +164,6 @@ export default function LeaveManager() {
     const nextSetting = settings.find((s) => s.userId === nextUserId);
     setJoinDateDraft(nextSetting?.joinDate || '');
     setManualUsedDraft(String(nextSetting?.manualUsedDays || 0));
-    setViewerDraft((nextSetting?.viewerEmails || []).join(', '));
   };
 
   if (!employees.length) {
@@ -175,6 +171,15 @@ export default function LeaveManager() {
       <div className="border border-[#EDE5DC] bg-white rounded p-4">
         <h2 className="text-sm font-semibold text-[#2C1810] mb-2">연차 관리</h2>
         <p className="text-xs text-[#9E8880]">등록된 직원이 없습니다.</p>
+      </div>
+    );
+  }
+
+  if (!hasLeaveAccess) {
+    return (
+      <div className="border border-[#EDE5DC] bg-white rounded p-4">
+        <h2 className="text-sm font-semibold text-[#2C1810] mb-2">연차 관리</h2>
+        <p className="text-xs text-[#9E8880]">연차 열람 권한이 없습니다.</p>
       </div>
     );
   }
@@ -204,7 +209,7 @@ export default function LeaveManager() {
     <div className="border border-[#EDE5DC] bg-white rounded p-4">
       <h2 className="text-sm font-semibold text-[#2C1810] mb-4">연차 관리</h2>
 
-      {isAdmin && (
+      {(isAdmin || userLeaveViewPermission === 'all') && (
         <div className="mb-6 overflow-x-auto">
           <h3 className="text-xs font-semibold text-[#2C1810] mb-3">전체 직원 연차 현황</h3>
           <table className="w-full text-10px border-collapse">
@@ -242,6 +247,10 @@ export default function LeaveManager() {
         <h3 className="text-xs font-semibold text-[#2C1810] mb-3">개별 직원 관리</h3>
         <div className="flex gap-2 mb-4 flex-wrap">
         {employees.map((employee) => {
+          // leaveViewPermission이 'self'이면 본인만 표시
+          if (userLeaveViewPermission === 'self' && user?.email !== employee.email && !isAdmin) {
+            return null;
+          }
           const active = (selectedUser?.id || employees[0].id) === employee.id;
           return (
             <button
@@ -302,13 +311,6 @@ export default function LeaveManager() {
 
           {isAdmin && (
             <div className="mb-4">
-              <div className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-1">열람자 이메일(쉼표 구분)</div>
-              <input
-                value={viewerDraft}
-                onChange={(e) => setViewerDraft(e.target.value)}
-                className="w-full border-b border-[#EDE5DC] bg-transparent outline-none text-xs text-[#2C1810] py-1"
-                placeholder="viewer1@company.com, viewer2@company.com"
-              />
               <div className="mt-2">
                 <button
                   type="button"
