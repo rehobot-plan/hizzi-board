@@ -5,8 +5,10 @@ import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import {
   calcAnnualLeave,
+  calcConfirmedLeave,
+  calcPlannedLeave,
   calcRemainingLeave,
-  calcUsedLeave,
+  calcTotalUsed,
   canViewLeaveLedger,
   LeaveEvent,
   LeaveType,
@@ -86,7 +88,7 @@ export default function LeaveManager() {
   );
 
   const total = calcAnnualLeave(setting?.joinDate || '');
-  const used = calcUsedLeave(userEvents, setting?.manualUsedDays || 0);
+  const used = calcTotalUsed(userEvents, setting?.manualUsedDays || 0);
   const remain = calcRemainingLeave(setting?.joinDate || '', userEvents, setting?.manualUsedDays || 0);
 
   const applyDraftFromSetting = () => {
@@ -174,9 +176,10 @@ export default function LeaveManager() {
     const empEvents = events.filter((e) => e.userId === emp.id);
     const totalLeave = calcAnnualLeave(empSetting?.joinDate || '');
     const manualUsed = Number(empSetting?.manualUsedDays) || 0;
-    const confirmedUsed = calcUsedLeave(empEvents, 0);
-    const totalUsed = manualUsed + confirmedUsed;
-    const remaining = totalLeave - totalUsed;
+    const plannedUsed = calcPlannedLeave(empEvents);
+    const confirmedUsed = calcConfirmedLeave(empEvents, 0);
+    const totalUsed = calcTotalUsed(empEvents, manualUsed);
+    const remaining = calcRemainingLeave(empSetting?.joinDate || '', empEvents, manualUsed);
 
     return {
       id: emp.id,
@@ -184,6 +187,7 @@ export default function LeaveManager() {
       joinDate: empSetting?.joinDate || '-',
       totalLeave,
       manualUsed,
+      plannedUsed,
       confirmedUsed,
       totalUsed,
       remaining,
@@ -205,7 +209,8 @@ export default function LeaveManager() {
                 <th className="px-2 py-2 text-left text-[#2C1810]" style={{ fontSize: '12px' }}>이름</th>
                 <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>입사일</th>
                 <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>발생연차</th>
-                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>수동입력사용</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>수동입력</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>예정</th>
                 <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>확정사용</th>
                 <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>총사용</th>
                 <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>잔여</th>
@@ -218,6 +223,7 @@ export default function LeaveManager() {
                   <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.joinDate}</td>
                   <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.totalLeave}</td>
                   <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.manualUsed}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.plannedUsed}</td>
                   <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.confirmedUsed}</td>
                   <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.totalUsed}</td>
                   <td

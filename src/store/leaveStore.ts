@@ -66,18 +66,43 @@ export function calcAnnualLeave(joinDate: string, nowDate = new Date()): number 
   return Math.min(15 + Math.max(extra, 0), 25);
 }
 
-export function calcUsedLeave(events: LeaveEvent[], manualUsed: number, nowDate = new Date()): number {
-  const today = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
-  const confirmedDays = events
-    .filter((e) => parseLocalDate(e.date) <= today)
-    .reduce((sum, e) => sum + e.days, 0);
-  return manualUsed + confirmedDays;
+function normalizedToday(nowDate = new Date()): Date {
+  const today = new Date(nowDate);
+  today.setHours(0, 0, 0, 0);
+  return today;
 }
 
+// 확정 사용 (오늘 포함 지난 날짜)
+export function calcConfirmedLeave(events: LeaveEvent[], _manualUsed = 0, nowDate = new Date()): number {
+  const today = normalizedToday(nowDate);
+  return events
+    .filter((e) => new Date(e.date + 'T00:00:00') <= today)
+    .reduce((sum, e) => sum + (Number(e.days) || 0), 0);
+}
+
+// 예정 사용 (오늘 이후 날짜)
+export function calcPlannedLeave(events: LeaveEvent[], nowDate = new Date()): number {
+  const today = normalizedToday(nowDate);
+  return events
+    .filter((e) => new Date(e.date + 'T00:00:00') > today)
+    .reduce((sum, e) => sum + (Number(e.days) || 0), 0);
+}
+
+// 총 사용 = 수동입력 + 확정 + 예정
+export function calcTotalUsed(events: LeaveEvent[], manualUsed: number, nowDate = new Date()): number {
+  return (Number(manualUsed) || 0) + calcConfirmedLeave(events, manualUsed, nowDate) + calcPlannedLeave(events, nowDate);
+}
+
+// 이전 사용처 호환용: 확정 사용량 반환
+export function calcUsedLeave(events: LeaveEvent[], manualUsed: number, nowDate = new Date()): number {
+  return calcConfirmedLeave(events, manualUsed, nowDate);
+}
+
+// 잔여 = 발생 - 총사용 (마이너스 허용)
 export function calcRemainingLeave(joinDate: string, events: LeaveEvent[], manualUsed: number, nowDate = new Date()): number {
   const total = calcAnnualLeave(joinDate, nowDate);
-  const used = calcUsedLeave(events, manualUsed, nowDate);
-  return Math.max(total - used, 0);
+  const totalUsed = calcTotalUsed(events, manualUsed, nowDate);
+  return total - totalUsed;
 }
 
 export function canViewLeaveLedger(params: {
