@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
@@ -520,3 +520,4 @@ export default function LeaveManager() {
     </div>
   );
 }
+
