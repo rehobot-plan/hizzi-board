@@ -5,6 +5,8 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
+import { LeaveType, useLeaveStore } from '@/store/leaveStore';
+import { useUserStore } from '@/store/userStore';
 
 const HOLIDAYS_2026: Record<string, string> = {
   '2026-01-01':'신정','2026-01-28':'설날연휴','2026-01-29':'설날연휴','2026-01-30':'설날연휴',
@@ -28,6 +30,19 @@ export interface CalendarEvent {
   createdAt: any;
   authorName?: string;
   repeatGroupId?: string;
+}
+
+interface CalendarDisplayEvent {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  color: string;
+  authorName?: string;
+  authorId?: string;
+  source: 'calendar' | 'leave';
+  rawCalendar?: CalendarEvent;
+  rawLeave?: any;
 }
 
 function toDS(date: Date): string {
@@ -73,6 +88,8 @@ function addYears(date: Date, n: number): Date {
 export default function Calendar() {
   const { user } = useAuthStore();
   const { addToast } = useToastStore();
+  const { settings: leaveSettings, events: leaveEvents, addLeaveEvent, updateLeaveEvent, deleteLeaveEvent } = useLeaveStore();
+  const { users } = useUserStore();
   const todayStr = toDS(new Date());
 
   const [cur, setCur] = useState(() => {
@@ -86,7 +103,12 @@ export default function Calendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [showDetail, setShowDetail] = useState<CalendarEvent | null>(null);
+  const [showLeaveDetail, setShowLeaveDetail] = useState<any | null>(null);
   const [form, setForm] = useState({ title: '', startDate: '', endDate: '', color: COLORS[0] });
+  const [addMode, setAddMode] = useState<'calendar' | 'leave'>('calendar');
+  const [leaveTargetUserId, setLeaveTargetUserId] = useState('');
+  const [leaveType, setLeaveType] = useState<LeaveType>('full');
+  const [leaveMemo, setLeaveMemo] = useState('');
   const [repeatType, setRepeatType] = useState<'none'|'daily'|'weekly'|'monthly'|'yearly'>('none');
   const [weeklyDay, setWeeklyDay] = useState('');
   const [excludeHolidays, setExcludeHolidays] = useState(true);
@@ -138,12 +160,57 @@ export default function Calendar() {
     setEditMonth(false);
   };
 
-  const canEdit = (ev: CalendarEvent) =>
+  const canEditCalendar = (ev: CalendarEvent) =>
     !!(user && (user.role === 'admin' || user.uid === ev.authorId));
 
-  const getEventsForDay = (date: Date) => {
+  const canEditLeave = (ev: any) => {
+    if (!user) return false;
+    const isAdmin = user.role === 'admin';
+    const isOwner = user.email && ev.userEmail === user.email;
+    const isManager = user.email && Array.isArray(leaveSettings.find((s) => s.userId === ev.userId)?.viewerEmails)
+      ? (leaveSettings.find((s) => s.userId === ev.userId)?.viewerEmails || []).includes(user.email)
+      : false;
+    const isCreator = user.email && ev.createdBy === user.email;
+    const isPast = new Date(ev.date + 'T00:00:00') <= new Date(new Date().toDateString());
+    if (isAdmin) return true;
+    if (isPast || ev.confirmed) return false;
+    return !!(isOwner || isManager || isCreator);
+  };
+
+  const getEventsForDay = (date: Date): CalendarDisplayEvent[] => {
     const ds = toDS(date);
-    return events.filter(ev => ev.startDate <= ds && ev.endDate >= ds);
+    const normalEvents = events
+      .filter(ev => ev.startDate <= ds && ev.endDate >= ds)
+      .map((ev) => ({
+        id: ev.id,
+        title: ev.title,
+        startDate: ev.startDate,
+        endDate: ev.endDate,
+        color: ev.color || '#C17B6B',
+        authorName: ev.authorName,
+        authorId: ev.authorId,
+        source: 'calendar' as const,
+        rawCalendar: ev,
+      }));
+
+    const leaveBlocks = leaveEvents
+      .filter((ev: any) => ev.date === ds)
+      .map((ev: any) => {
+        const isHalf = ev.type === 'half_am' || ev.type === 'half_pm';
+        const typeLabel = ev.type === 'full' ? '연차' : (ev.type === 'half_am' ? '오전반차' : '오후반차');
+        return {
+          id: ev.id,
+          title: (ev.userName || '직원') + ' ' + typeLabel + (ev.confirmed ? ' 🔒' : ''),
+          startDate: ev.date,
+          endDate: ev.date,
+          color: isHalf ? '#C17B6B' : '#7A2828',
+          authorName: ev.createdBy,
+          source: 'leave' as const,
+          rawLeave: ev,
+        };
+      });
+
+    return [...normalEvents, ...leaveBlocks];
   };
 
   // 반복 날짜 생성 (핵심 로직)
@@ -200,6 +267,10 @@ export default function Calendar() {
     const d = new Date(startStr + 'T00:00:00');
     setWeeklyDay(DAY_KEYS[d.getDay()]);
     setForm({ title: '', startDate: startStr, endDate: endStr, color: COLORS[0] });
+    setAddMode('calendar');
+    setLeaveTargetUserId('');
+    setLeaveType('full');
+    setLeaveMemo('');
     setRepeatType('none');
     setEndType('forever');
     setEndDate('');
@@ -209,6 +280,40 @@ export default function Calendar() {
   };
 
   const handleAdd = async () => {
+    if (addMode === 'leave') {
+      if (!form.startDate || !leaveTargetUserId || !user) return;
+      const target = users.find((u) => u.id === leaveTargetUserId);
+      if (!target) return;
+      const isAdmin = user.role === 'admin';
+      const isSelf = user.email && user.email === target.email;
+      const targetSetting = leaveSettings.find((s) => s.userId === target.id);
+      const isManager = !!(user.email && targetSetting?.viewerEmails?.includes(user.email));
+      if (!isAdmin && !isSelf && !isManager) {
+        addToast('본인 또는 관리자만 연차를 등록할 수 있습니다.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        await addLeaveEvent({
+          userId: target.id,
+          userName: target.name,
+          userEmail: target.email,
+          date: form.startDate,
+          type: leaveType,
+          days: leaveType === 'full' ? 1 : 0.5,
+          memo: leaveMemo,
+          createdBy: user.email || '',
+        });
+        addToast('연차가 등록되었습니다.');
+        setShowAdd(false);
+      } catch (e) {
+        addToast('연차 등록 실패');
+      }
+      setLoading(false);
+      return;
+    }
+
     if (!form.title.trim() || !form.startDate || !form.endDate) return;
     setLoading(true);
     try {
@@ -252,6 +357,25 @@ export default function Calendar() {
     setLoading(false);
   };
 
+  const handleLeaveUpdate = async () => {
+    if (!showLeaveDetail || !form.startDate) return;
+    if (!canEditLeave(showLeaveDetail)) return;
+    setLoading(true);
+    try {
+      await updateLeaveEvent(showLeaveDetail.id, {
+        date: form.startDate,
+        type: leaveType,
+        days: leaveType === 'full' ? 1 : 0.5,
+        memo: leaveMemo,
+      });
+      setShowLeaveDetail(null);
+      addToast('연차가 수정되었습니다.');
+    } catch (e) {
+      addToast('연차 수정 실패');
+    }
+    setLoading(false);
+  };
+
   const handleDeleteSingle = async (ev: CalendarEvent) => {
     if (!confirm('이 일정을 삭제할까요?')) return;
     setLoading(true);
@@ -276,6 +400,20 @@ export default function Calendar() {
       setShowDetail(null);
       addToast(toDelete.length + '개 삭제되었습니다.');
     } catch (e) { addToast('삭제 실패'); }
+    setLoading(false);
+  };
+
+  const handleLeaveDelete = async (ev: any) => {
+    if (!canEditLeave(ev)) return;
+    if (!confirm('이 연차를 삭제할까요?')) return;
+    setLoading(true);
+    try {
+      await deleteLeaveEvent(ev.id);
+      setShowLeaveDetail(null);
+      addToast('연차가 삭제되었습니다.');
+    } catch (e) {
+      addToast('연차 삭제 실패');
+    }
     setLoading(false);
   };
 
@@ -340,7 +478,20 @@ export default function Calendar() {
                 const isStart = ev.startDate === ds;
                 const isEnd = ev.endDate === ds;
                 return (
-                  <div key={ev.id} onClick={e => { e.stopPropagation(); setShowDetail(ev); setForm({ title: ev.title, startDate: ev.startDate, endDate: ev.endDate, color: ev.color }); }}
+                  <div key={ev.id} onClick={e => {
+                    e.stopPropagation();
+                    setForm({ title: ev.title, startDate: ev.startDate, endDate: ev.endDate, color: ev.color });
+                    if (ev.source === 'calendar' && ev.rawCalendar) {
+                      setShowLeaveDetail(null);
+                      setShowDetail(ev.rawCalendar);
+                    }
+                    if (ev.source === 'leave' && ev.rawLeave) {
+                      setShowDetail(null);
+                      setShowLeaveDetail(ev.rawLeave);
+                      setLeaveType(ev.rawLeave.type || 'full');
+                      setLeaveMemo(ev.rawLeave.memo || '');
+                    }
+                  }}
                     style={{ fontSize: 10, color: '#fff', background: ev.color || '#C17B6B', padding: '1px 4px', marginBottom: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0, marginLeft: isStart || isSingle ? 0 : -3, marginRight: isEnd || isSingle ? 0 : -3 }}>
                     {isStart || isSingle ? ev.title : '\u00A0'}
                   </div>
@@ -397,6 +548,23 @@ export default function Calendar() {
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>일정 추가</span>
             </div>
             <div style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                <button
+                  onClick={() => setAddMode('calendar')}
+                  style={{ padding: '5px 10px', border: '1px solid ' + (addMode === 'calendar' ? '#2C1810' : '#EDE5DC'), background: addMode === 'calendar' ? '#FDF8F4' : '#fff', color: addMode === 'calendar' ? '#2C1810' : '#9E8880', fontSize: 10, textTransform: 'uppercase', cursor: 'pointer' }}
+                >
+                  일반 일정
+                </button>
+                <button
+                  onClick={() => setAddMode('leave')}
+                  style={{ padding: '5px 10px', border: '1px solid ' + (addMode === 'leave' ? '#2C1810' : '#EDE5DC'), background: addMode === 'leave' ? '#FDF8F4' : '#fff', color: addMode === 'leave' ? '#2C1810' : '#9E8880', fontSize: 10, textTransform: 'uppercase', cursor: 'pointer' }}
+                >
+                  연차 등록
+                </button>
+              </div>
+
+              {addMode === 'calendar' ? (
+                <>
 
               {/* 제목 */}
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="일정 제목" style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 16, fontFamily: 'inherit' }} />
@@ -491,6 +659,63 @@ export default function Calendar() {
                   ))}
                 </div>
               </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>대상자</div>
+                    <select
+                      value={leaveTargetUserId}
+                      onChange={(e) => setLeaveTargetUserId(e.target.value)}
+                      style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
+                    >
+                      <option value="">직원 선택</option>
+                      {users.filter((u) => u.role !== 'admin').map((u) => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>날짜</div>
+                    <input
+                      type="date"
+                      value={form.startDate}
+                      onChange={e => setForm(f => ({ ...f, startDate: e.target.value, endDate: e.target.value }))}
+                      style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>종류</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {([
+                        { key: 'full', label: '전일' },
+                        { key: 'half_am', label: '오전반차' },
+                        { key: 'half_pm', label: '오후반차' },
+                      ] as const).map((t) => (
+                        <button
+                          key={t.key}
+                          onClick={() => setLeaveType(t.key)}
+                          style={{ padding: '5px 10px', border: '1px solid ' + (leaveType === t.key ? '#2C1810' : '#EDE5DC'), background: leaveType === t.key ? '#FDF8F4' : '#fff', color: leaveType === t.key ? '#2C1810' : '#9E8880', fontSize: 10, cursor: 'pointer' }}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>메모</div>
+                    <input
+                      value={leaveMemo}
+                      onChange={(e) => setLeaveMemo(e.target.value)}
+                      placeholder="선택 입력"
+                      style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', bottom: 0 }}>
@@ -512,7 +737,7 @@ export default function Calendar() {
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>일정 상세</span>
             </div>
             <div style={{ padding: '16px 20px' }}>
-              {canEdit(showDetail) ? (
+              {canEditCalendar(showDetail) ? (
                 <>
                   <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                     style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
@@ -535,7 +760,7 @@ export default function Calendar() {
             </div>
             <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <button onClick={() => setShowDetail(null)} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
-              {canEdit(showDetail) && (
+              {canEditCalendar(showDetail) && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {showDetail.repeatGroupId && (
                     <button onClick={() => handleDeleteRepeat(showDetail)}
@@ -548,6 +773,63 @@ export default function Calendar() {
                     이 일정만 삭제
                   </button>
                   <button onClick={handleUpdate} disabled={loading}
+                    style={{ fontSize: 10, padding: '6px 14px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}>
+                    저장
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLeaveDetail && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 380 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>연차 상세</span>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              {canEditLeave(showLeaveDetail) ? (
+                <>
+                  <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value, endDate: e.target.value }))}
+                    style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                    {([
+                      { key: 'full', label: '전일' },
+                      { key: 'half_am', label: '오전반차' },
+                      { key: 'half_pm', label: '오후반차' },
+                    ] as const).map((t) => (
+                      <button
+                        key={t.key}
+                        onClick={() => setLeaveType(t.key)}
+                        style={{ padding: '5px 8px', border: '1px solid ' + (leaveType === t.key ? '#2C1810' : '#EDE5DC'), background: leaveType === t.key ? '#FDF8F4' : '#fff', color: leaveType === t.key ? '#2C1810' : '#9E8880', fontSize: 10, cursor: 'pointer' }}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <input value={leaveMemo} onChange={e => setLeaveMemo(e.target.value)}
+                    style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                  <div style={{ fontSize: 11, color: '#9E8880', marginTop: 8 }}>대상자: {showLeaveDetail.userName}</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1810', marginBottom: 6 }}>{showLeaveDetail.userName} 연차</div>
+                  <div style={{ fontSize: 11, color: '#9E8880', marginBottom: 4 }}>{showLeaveDetail.date} / {showLeaveDetail.type === 'full' ? '전일' : showLeaveDetail.type === 'half_am' ? '오전반차' : '오후반차'} {showLeaveDetail.confirmed ? '🔒' : ''}</div>
+                  <div style={{ fontSize: 11, color: '#9E8880' }}>메모: {showLeaveDetail.memo || '-'}</div>
+                </>
+              )}
+            </div>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <button onClick={() => setShowLeaveDetail(null)} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
+              {canEditLeave(showLeaveDetail) && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button onClick={() => handleLeaveDelete(showLeaveDetail)}
+                    style={{ fontSize: 10, padding: '6px 10px', border: '1px solid #EDE5DC', color: '#9E8880', background: '#fff', cursor: 'pointer' }}>
+                    삭제
+                  </button>
+                  <button onClick={handleLeaveUpdate} disabled={loading}
                     style={{ fontSize: 10, padding: '6px 14px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}>
                     저장
                   </button>

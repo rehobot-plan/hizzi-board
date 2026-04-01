@@ -10,6 +10,7 @@ import { initPostListener } from '@/store/postStore';
 import Panel from '@/components/Panel';
 import Calendar from '@/components/Calendar';
 import NoticeArea from '@/components/NoticeArea';
+import LeaveManager from '@/components/LeaveManager';
 
 export default function Home() {
   const { user, loading: authLoading, signOut } = useAuthStore();
@@ -17,6 +18,7 @@ export default function Home() {
   const { users, loading: userLoading, deleteUser } = useUserStore();
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
+  const [adminTab, setAdminTab] = useState<'users' | 'leave'>('users');
   const [deleteError, setDeleteError] = useState('');
   const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
   const router = useRouter();
@@ -117,43 +119,76 @@ export default function Home() {
 
         <div className="flex-1 overflow-y-auto px-2 md:px-8 py-8">
           {adminMode && (
-            <div className="border border-red-300 bg-red-50 rounded p-4 mb-4">
-              <h2 className="text-xl font-semibold text-red-600 mb-2">관리자 - 사용자 관리</h2>
-              {deleteError && <p className="text-sm text-red-600 mb-2">{deleteError}</p>}
-              {userLoading ? (
-                <p>로딩 중...</p>
+            <div className="border border-[#EDE5DC] bg-white rounded p-4 mb-4">
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setAdminTab('users')}
+                  className="px-3 py-1 text-xs border"
+                  style={{
+                    borderColor: adminTab === 'users' ? '#2C1810' : '#EDE5DC',
+                    color: adminTab === 'users' ? '#2C1810' : '#9E8880',
+                    background: adminTab === 'users' ? '#FDF8F4' : '#fff',
+                  }}
+                >
+                  사용자 관리
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdminTab('leave')}
+                  className="px-3 py-1 text-xs border"
+                  style={{
+                    borderColor: adminTab === 'leave' ? '#2C1810' : '#EDE5DC',
+                    color: adminTab === 'leave' ? '#2C1810' : '#9E8880',
+                    background: adminTab === 'leave' ? '#FDF8F4' : '#fff',
+                  }}
+                >
+                  연차 관리
+                </button>
+              </div>
+
+              {adminTab === 'users' ? (
+                <>
+                  <h2 className="text-base font-semibold text-[#2C1810] mb-2">관리자 - 사용자 관리</h2>
+                  {deleteError && <p className="text-sm text-red-600 mb-2">{deleteError}</p>}
+                  {userLoading ? (
+                    <p>로딩 중...</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {users.map((u) => {
+                        const userPanel = panels.find((p) => p.ownerEmail === u.email);
+                        const isCurrentAdmin = user?.email === u.email && user?.role === 'admin';
+                        return (
+                          <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded">
+                            <div>
+                              <p className="text-sm font-medium">{u.name} ({u.email})</p>
+                              <p className="text-xs text-gray-500">담당 패널: {userPanel?.name || '없음'}</p>
+                            </div>
+                            <button
+                              disabled={isCurrentAdmin}
+                              onClick={async () => {
+                                if (isCurrentAdmin) return;
+                                try {
+                                  const panel = panels.find((p) => p.ownerEmail === u.email);
+                                  if (panel) await updatePanel(panel.id, { ownerEmail: null });
+                                  await deleteUser(u.id);
+                                } catch (err: any) {
+                                  console.error(err);
+                                  setDeleteError('삭제 중 오류가 발생했습니다.');
+                                }
+                              }}
+                              className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="space-y-2">
-                  {users.map((u) => {
-                    const userPanel = panels.find((p) => p.ownerEmail === u.email);
-                    const isCurrentAdmin = user?.email === u.email && user?.role === 'admin';
-                    return (
-                      <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded">
-                        <div>
-                          <p className="text-sm font-medium">{u.name} ({u.email})</p>
-                          <p className="text-xs text-gray-500">담당 패널: {userPanel?.name || '없음'}</p>
-                        </div>
-                        <button
-                          disabled={isCurrentAdmin}
-                          onClick={async () => {
-                            if (isCurrentAdmin) return;
-                            try {
-                              const panel = panels.find((p) => p.ownerEmail === u.email);
-                              if (panel) await updatePanel(panel.id, { ownerEmail: null });
-                              await deleteUser(u.id);
-                            } catch (err: any) {
-                              console.error(err);
-                              setDeleteError('삭제 중 오류가 발생했습니다.');
-                            }
-                          }}
-                          className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300"
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+                <LeaveManager />
               )}
             </div>
           )}
