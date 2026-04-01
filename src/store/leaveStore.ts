@@ -52,18 +52,28 @@ function toNumber(value: unknown, fallback = 0): number {
   return fallback;
 }
 
-export function calcAnnualLeave(joinDate: string, nowDate = new Date()): number {
+export function calcAnnualLeave(joinDate: string): number {
   if (!joinDate) return 0;
-  const join = parseLocalDate(joinDate);
-  const years = (nowDate.getTime() - join.getTime()) / (1000 * 60 * 60 * 24 * 365);
 
-  if (years < 1) {
-    const months = Math.floor(years * 12);
-    return Math.min(Math.max(months, 0), 11);
-  }
+  const join = new Date(joinDate + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const extra = Math.floor((Math.floor(years) - 1) / 2);
-  return Math.min(15 + Math.max(extra, 0), 25);
+  const totalDays = (today.getTime() - join.getTime()) / (1000 * 60 * 60 * 24);
+  const totalMonths = Math.floor(totalDays / 30.44);
+  const totalYears = Math.floor(totalDays / 365.25);
+
+  // 1년 미만 월별 연차 (최대 11일)
+  const under1Year = Math.min(totalMonths, 11);
+
+  // 1년 미만이면 월별 연차만
+  if (totalYears < 1) return under1Year;
+
+  // 1년 이상 연차 (15일 + 2년마다 1일, 최대 25일)
+  const over1Year = Math.min(15 + Math.floor((totalYears - 1) / 2), 25);
+
+  // 합산 (최대 26일, 소멸 없음)
+  return Math.min(under1Year + over1Year, 26);
 }
 
 function normalizedToday(nowDate = new Date()): Date {
@@ -100,7 +110,7 @@ export function calcUsedLeave(events: LeaveEvent[], manualUsed: number, nowDate 
 
 // 잔여 = 발생 - 총사용 (마이너스 허용)
 export function calcRemainingLeave(joinDate: string, events: LeaveEvent[], manualUsed: number, nowDate = new Date()): number {
-  const total = calcAnnualLeave(joinDate, nowDate);
+  const total = calcAnnualLeave(joinDate);
   const totalUsed = calcTotalUsed(events, manualUsed, nowDate);
   return total - totalUsed;
 }
