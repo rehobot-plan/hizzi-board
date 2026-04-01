@@ -6,7 +6,6 @@ import { useUserStore } from '@/store/userStore';
 import {
   calcAnnualLeave,
   calcConfirmedLeave,
-  calcPlannedLeave,
   calcRemainingLeave,
   calcTotalUsed,
   canViewLeaveLedger,
@@ -241,12 +240,23 @@ export default function LeaveManager() {
   const leaveTableData = employees.map((emp) => {
     const empSetting = settings.find((s) => s.userId === emp.id);
     const empEvents = events.filter((e) => e.userId === emp.id);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const totalLeave = calcAnnualLeave(empSetting?.joinDate || '');
     const manualUsed = Number(empSetting?.manualUsedDays) || 0;
-    const plannedUsed = calcPlannedLeave(empEvents);
+
+    // 예정 사용: 오늘 이후 날짜 연차 합계
+    const plannedUsed = events
+      .filter((e) => e.userId === emp.id && new Date(e.date + 'T00:00:00') > today)
+      .reduce((sum, e) => sum + (Number(e.days) || 0), 0);
+
     const confirmedUsed = calcConfirmedLeave(empEvents, 0);
-    const totalUsed = calcTotalUsed(empEvents, manualUsed);
-    const remaining = calcRemainingLeave(empSetting?.joinDate || '', empEvents, manualUsed);
+
+    // 총사용 = 수동입력 + 예정 + 확정
+    const totalUsed = manualUsed + plannedUsed + confirmedUsed;
+
+    // 잔여 = 발생 - 총사용 (마이너스 허용)
+    const remaining = totalLeave - totalUsed;
 
     return {
       id: emp.id,
