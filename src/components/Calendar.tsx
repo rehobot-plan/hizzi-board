@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { useAuthStore } from '@/store/authStore';
@@ -119,6 +119,9 @@ export default function Calendar() {
   const [dragStart, setDragStart] = useState<Date | null>(null);
   const [dragEnd, setDragEnd] = useState<Date | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedStartDate, setSelectedStartDate] = useState('');
+  const [selectedEndDate, setSelectedEndDate] = useState('');
+  const ignoreNextClickRef = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -262,6 +265,8 @@ export default function Calendar() {
 
   const openAddModal = (startStr: string, endStr: string) => {
     const d = new Date(startStr + 'T00:00:00');
+    setSelectedStartDate(startStr);
+    setSelectedEndDate(endStr);
     setWeeklyDay(DAY_KEYS[d.getDay()]);
     setForm({ title: '', startDate: startStr, endDate: endStr, color: COLORS[0] });
     setAddMode('calendar');
@@ -276,9 +281,29 @@ export default function Calendar() {
     setShowAdd(true);
   };
 
+  const syncRangeToForm = (startStr: string, endStr: string) => {
+    setForm((f) => ({ ...f, startDate: startStr, endDate: endStr }));
+  };
+
+  const buildDateRange = (startStr: string, endStr: string): string[] => {
+    const start = new Date(startStr + 'T00:00:00');
+    const end = new Date(endStr + 'T00:00:00');
+    const s = start <= end ? start : end;
+    const e = start <= end ? end : start;
+    const result: string[] = [];
+    let cursor = new Date(s);
+    while (cursor <= e) {
+      result.push(toDS(cursor));
+      cursor = addDays(cursor, 1);
+    }
+    return result;
+  };
+
   const handleAdd = async () => {
     if (addMode === 'leave') {
-      if (!form.startDate || !leaveTargetUserId || !user) return;
+      const rangeStart = selectedStartDate || form.startDate;
+      const rangeEnd = selectedEndDate || form.endDate || form.startDate;
+      if (!rangeStart || !leaveTargetUserId || !user) return;
       const target = users.find((u) => u.id === leaveTargetUserId);
       if (!target) return;
       const isAdmin = user.role === 'admin';
@@ -290,17 +315,20 @@ export default function Calendar() {
 
       setLoading(true);
       try {
-        await addLeaveEvent({
-          userId: target.id,
-          userName: target.name,
-          userEmail: target.email,
-          date: form.startDate,
-          type: leaveType,
-          days: leaveType === 'full' ? 1 : 0.5,
-          memo: leaveMemo,
-          createdBy: user.email || '',
-        });
-        addToast('연차가 등록되었습니다.');
+        const dates = buildDateRange(rangeStart, rangeEnd);
+        for (const ds of dates) {
+          await addLeaveEvent({
+            userId: target.id,
+            userName: target.name,
+            userEmail: target.email,
+            date: ds,
+            type: leaveType,
+            days: leaveType === 'full' ? 1 : 0.5,
+            memo: leaveMemo,
+            createdBy: user.email || '',
+          });
+        }
+        addToast(dates.length + '일 연차가 등록되었습니다.');
         setShowAdd(false);
       } catch (e) {
         addToast('연차 등록 실패');
@@ -413,12 +441,20 @@ export default function Calendar() {
   };
 
   // 드래그
-  const onMouseDown = (date: Date) => { setDragStart(date); setDragEnd(date); setIsDragging(true); };
+  const onMouseDown = (date: Date) => {
+    setDragStart(date);
+    setDragEnd(date);
+    setIsDragging(true);
+    ignoreNextClickRef.current = false;
+  };
   const onMouseEnter = (date: Date) => { if (isDragging) setDragEnd(date); };
   const onMouseUp = () => {
     if (dragStart && dragEnd) {
       const s = dragStart <= dragEnd ? dragStart : dragEnd;
       const e = dragStart <= dragEnd ? dragEnd : dragStart;
+      if (toDS(s) !== toDS(e)) {
+        ignoreNextClickRef.current = true;
+      }
       openAddModal(toDS(s), toDS(e));
     }
     setIsDragging(false); setDragStart(null); setDragEnd(null);
@@ -458,7 +494,15 @@ export default function Calendar() {
           return (
             <div
               key={wi + '-' + di}
-              onClick={() => openAddModal(ds, ds)}
+              onClick={() => {
+                if (ignoreNextClickRef.current) {
+                  ignoreNextClickRef.current = false;
+                  return;
+                }
+                setSelectedStartDate(ds);
+                setSelectedEndDate(ds);
+                openAddModal(ds, ds);
+              }}
               onMouseDown={() => onMouseDown(date)}
               onMouseEnter={() => onMouseEnter(date)}
               onMouseUp={onMouseUp}
@@ -545,13 +589,21 @@ export default function Calendar() {
             <div style={{ padding: '16px 20px' }}>
               <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
                 <button
-                  onClick={() => setAddMode('calendar')}
+                  onClick={() => {
+                    setAddMode('calendar');
+                    syncRangeToForm(selectedStartDate || form.startDate, selectedEndDate || form.endDate || form.startDate);
+                  }}
                   style={{ padding: '5px 10px', border: '1px solid ' + (addMode === 'calendar' ? '#2C1810' : '#EDE5DC'), background: addMode === 'calendar' ? '#FDF8F4' : '#fff', color: addMode === 'calendar' ? '#2C1810' : '#9E8880', fontSize: 10, textTransform: 'uppercase', cursor: 'pointer' }}
                 >
                   일반 일정
                 </button>
                 <button
-                  onClick={() => setAddMode('leave')}
+                  onClick={() => {
+                    setAddMode('leave');
+                    const s = selectedStartDate || form.startDate;
+                    const e = selectedEndDate || form.endDate || form.startDate;
+                    syncRangeToForm(s, e);
+                  }}
                   style={{ padding: '5px 10px', border: '1px solid ' + (addMode === 'leave' ? '#2C1810' : '#EDE5DC'), background: addMode === 'leave' ? '#FDF8F4' : '#fff', color: addMode === 'leave' ? '#2C1810' : '#9E8880', fontSize: 10, textTransform: 'uppercase', cursor: 'pointer' }}
                 >
                   연차 등록
@@ -673,12 +725,11 @@ export default function Calendar() {
 
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>날짜</div>
-                    <input
-                      type="date"
-                      value={form.startDate}
-                      onChange={e => setForm(f => ({ ...f, startDate: e.target.value, endDate: e.target.value }))}
-                      style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
-                    />
+                    <div style={{ fontSize: 11, color: '#2C1810', borderBottom: '1px solid #EDE5DC', padding: '6px 0' }}>
+                      {(selectedStartDate || form.startDate) === (selectedEndDate || form.endDate || form.startDate)
+                        ? (selectedStartDate || form.startDate)
+                        : `${selectedStartDate || form.startDate} ~ ${selectedEndDate || form.endDate || form.startDate}`}
+                    </div>
                   </div>
 
                   <div style={{ marginBottom: 16 }}>
