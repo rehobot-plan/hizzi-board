@@ -184,7 +184,7 @@ export default function LeaveManager() {
   };
 
   const handleSaveLeave = async () => {
-    if (!selectedUser || !formDate || !canRegister) return;
+    if (!selectedUser || !formDate || !isAdmin) return;
     const payload = {
       userId: selectedUser.id,
       userName: selectedUser.name,
