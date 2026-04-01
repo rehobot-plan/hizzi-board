@@ -99,6 +99,43 @@ export default function LeaveManager() {
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
   };
 
+  // 입사일 자동 변환: 숫자 8자리 → YYYY-MM-DD
+  const handleJoinDateChange = (value: string) => {
+    // 이미 YYYY-MM-DD 형식이면 그냥 적용
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      setJoinDateDraft(value);
+      return;
+    }
+
+    // 숫자만 추출
+    const raw = value.replace(/\D/g, '');
+
+    // 숫자 8자리 체크
+    if (raw.length === 8 && /^\d{8}$/.test(raw)) {
+      const year = raw.slice(0, 4);
+      const month = raw.slice(4, 6);
+      const day = raw.slice(6, 8);
+
+      const monthNum = parseInt(month, 10);
+      const dayNum = parseInt(day, 10);
+
+      // 유효한 날짜 체크
+      if (monthNum > 0 && monthNum <= 12 && dayNum > 0 && dayNum <= 31) {
+        const formatted = `${year}-${month}-${day}`;
+        setJoinDateDraft(formatted);
+      } else {
+        alert('유효하지 않은 날짜입니다. (예: 20240801)');
+      }
+    } else if (raw.length === 0 || value === '') {
+      // 빈 입력
+      setJoinDateDraft('');
+    } else if (raw.length < 8) {
+      // 8자리 미만 입력 중
+      setJoinDateDraft(value);
+    }
+    // 8자리 초과는 무시
+  };
+
   const openAddModal = () => {
     setFormDate('');
     setFormType('full');
@@ -279,9 +316,10 @@ export default function LeaveManager() {
               <div className="text-[11px] text-[#9E8880] uppercase tracking-wider">입사일</div>
               {isAdmin ? (
                 <input
-                  type="date"
+                  type="text"
                   value={joinDateDraft}
-                  onChange={(e) => setJoinDateDraft(e.target.value)}
+                  onChange={(e) => handleJoinDateChange(e.target.value)}
+                  placeholder="YYYY-MM-DD 또는 YYYYMMDD"
                   className="w-full mt-1 border-b border-[#EDE5DC] bg-transparent outline-none text-[#2C1810]"
                 />
               ) : (
