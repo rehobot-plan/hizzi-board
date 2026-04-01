@@ -68,11 +68,18 @@ export default function LeaveManager() {
   const [formType, setFormType] = useState<LeaveType>('full');
   const [formMemo, setFormMemo] = useState('');
 
+  const isAdmin = user?.role === 'admin';
+  const canViewAllLedger = leaveViewPermission === 'all';
+
   const selectedUser = useMemo(() => {
     if (!employees.length) return null;
+    if (!isAdmin && canViewAllLedger) {
+      // 열람자는 본인 연차 기본 표시
+      return employees.find((u) => u.email === user?.email) || employees[0];
+    }
     const targetId = selectedUserId || employees[0].id;
     return employees.find((u) => u.id === targetId) || employees[0];
-  }, [employees, selectedUserId]);
+  }, [employees, selectedUserId, isAdmin, canViewAllLedger, user?.email]);
 
   const setting = useMemo(() => {
     if (!selectedUser) return null;
@@ -93,8 +100,6 @@ export default function LeaveManager() {
       .sort((a, b) => (a.date > b.date ? -1 : 1));
   }, [events, selectedUser]);
 
-  const isAdmin = user?.role === 'admin';
-  const canViewAllLedger = leaveViewPermission === 'all';
   const isReadOnlyAllViewer = !isAdmin && canViewAllLedger;
   const canView = !!selectedUser && canViewLeaveLedger({
     targetUserId: selectedUser.id,
@@ -311,8 +316,6 @@ export default function LeaveManager() {
         </div>
       )}
 
-      {!isReadOnlyAllViewer && (
-        <>
       {isAdmin && (
       <div className="flex gap-2 mb-4 flex-wrap">
         {employees.map((employee) => {
@@ -457,9 +460,6 @@ export default function LeaveManager() {
               );
             })}
           </div>
-        </>
-      )}
-
         </>
       )}
 
