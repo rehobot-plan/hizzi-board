@@ -34,6 +34,22 @@ function isPastOrToday(dateStr: string): boolean {
   return target <= today;
 }
 
+function formatJoinDate(val: string): string | null {
+  const nums = val.replace(/\D/g, '');
+  if (nums.length === 8) {
+    const y = nums.slice(0, 4);
+    const m = nums.slice(4, 6);
+    const d = nums.slice(6, 8);
+    const mn = parseInt(m, 10);
+    const dn = parseInt(d, 10);
+    if (mn >= 1 && mn <= 12 && dn >= 1 && dn <= 31) {
+      return y + '-' + m + '-' + d;
+    }
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  return null;
+}
+
 export default function LeaveManager() {
   const { user } = useAuthStore();
   const { users } = useUserStore();
@@ -42,6 +58,7 @@ export default function LeaveManager() {
   const employees = useMemo(() => users.filter((u) => u.role !== 'admin'), [users]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [joinDateDraft, setJoinDateDraft] = useState('');
+  const [joinDateError, setJoinDateError] = useState('');
   const [manualUsedDraft, setManualUsedDraft] = useState('0');
 
   const [showAdd, setShowAdd] = useState(false);
@@ -63,6 +80,7 @@ export default function LeaveManager() {
 
   useEffect(() => {
     setJoinDateDraft(setting?.joinDate || '');
+    setJoinDateError('');
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
   }, [setting?.joinDate, setting?.manualUsedDays]);
 
@@ -93,7 +111,44 @@ export default function LeaveManager() {
 
   const applyDraftFromSetting = () => {
     setJoinDateDraft(setting?.joinDate || '');
+    setJoinDateError('');
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
+  };
+
+  const handleJoinDateInput = (value: string) => {
+    setJoinDateDraft(value);
+    if (!value.trim()) {
+      setJoinDateError('');
+      return;
+    }
+
+    const nums = value.replace(/\D/g, '');
+    if (nums.length === 8) {
+      const formatted = formatJoinDate(value);
+      if (formatted) {
+        setJoinDateDraft(formatted);
+        setJoinDateError('');
+      } else {
+        setJoinDateError('날짜 형식이 올바르지 않습니다. (YYYYMMDD 또는 YYYY-MM-DD)');
+      }
+    } else {
+      setJoinDateError('');
+    }
+  };
+
+  const handleJoinDateBlur = () => {
+    if (!joinDateDraft.trim()) {
+      setJoinDateError('');
+      return;
+    }
+
+    const formatted = formatJoinDate(joinDateDraft);
+    if (formatted) {
+      setJoinDateDraft(formatted);
+      setJoinDateError('');
+    } else {
+      setJoinDateError('날짜 형식이 올바르지 않습니다. (YYYYMMDD 또는 YYYY-MM-DD)');
+    }
   };
 
   const openAddModal = () => {
@@ -115,10 +170,17 @@ export default function LeaveManager() {
   const handleSaveSetting = async () => {
     if (!selectedUser || !isAdmin || !joinDateDraft) return;
 
+    const normalizedJoinDate = formatJoinDate(joinDateDraft);
+    if (!normalizedJoinDate) {
+      setJoinDateError('저장할 수 없는 날짜 형식입니다. (YYYYMMDD 또는 YYYY-MM-DD)');
+      return;
+    }
+    setJoinDateError('');
+
     await upsertSetting({
       userId: selectedUser.id,
       userName: selectedUser.name,
-      joinDate: joinDateDraft,
+      joinDate: normalizedJoinDate,
       manualUsedDays: Number(manualUsedDraft) || 0,
     });
   };
@@ -159,6 +221,7 @@ export default function LeaveManager() {
     setSelectedUserId(nextUserId);
     const nextSetting = settings.find((s) => s.userId === nextUserId);
     setJoinDateDraft(nextSetting?.joinDate || '');
+    setJoinDateError('');
     setManualUsedDraft(String(nextSetting?.manualUsedDays || 0));
   };
 
@@ -268,12 +331,22 @@ export default function LeaveManager() {
             <div className="border border-[#EDE5DC] p-3 rounded">
               <div className="text-[11px] text-[#9E8880] uppercase tracking-wider">입사일</div>
               {isAdmin ? (
-                <input
-                  type="date"
-                  value={joinDateDraft}
-                  onChange={(e) => setJoinDateDraft(e.target.value)}
-                  className="w-full mt-1 border-b border-[#EDE5DC] bg-transparent outline-none text-[#2C1810]"
-                />
+                <>
+                  <input
+                    type="text"
+                    value={joinDateDraft}
+                    onChange={(e) => handleJoinDateInput(e.target.value)}
+                    onBlur={handleJoinDateBlur}
+                    placeholder="YYYYMMDD 또는 YYYY-MM-DD"
+                    className="w-full mt-1 border-b bg-transparent outline-none text-[#2C1810]"
+                    style={{ borderColor: joinDateError ? '#C17B6B' : '#EDE5DC' }}
+                  />
+                  {joinDateError && (
+                    <div className="mt-1 text-[11px]" style={{ color: '#C17B6B' }}>
+                      {joinDateError}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="mt-1 text-[#2C1810]">{setting?.joinDate || '-'}</div>
               )}
