@@ -106,6 +106,9 @@ export default function Calendar() {
   const { addToast } = useToastStore();
   const { settings: leaveSettings, events: leaveEvents, addLeaveEvent, updateLeaveEvent, deleteLeaveEvent } = useLeaveStore();
   const { users } = useUserStore();
+  const currentAppUser = users.find((u) => u.email === user?.email);
+  const leaveViewPermission = currentAppUser?.leaveViewPermission;
+  const canSelectLeaveTarget = user?.role === 'admin' || leaveViewPermission === 'all';
   const todayStr = toDS(new Date());
 
   const [cur, setCur] = useState(() => {
@@ -308,7 +311,7 @@ export default function Calendar() {
     setWeeklyDay(DAY_KEYS[d.getDay()]);
     setForm({ title: '', startDate: startStr, endDate: endStr, color: COLORS[0] });
     setAddMode('calendar');
-    setLeaveTargetUserId('');
+    setLeaveTargetUserId(currentAppUser?.id || '');
     setLeaveType('full');
     setLeaveMemo('');
     setRepeatType('none');
@@ -341,8 +344,12 @@ export default function Calendar() {
     if (addMode === 'leave') {
       const rangeStart = selectedStartDate || form.startDate;
       const rangeEnd = selectedEndDate || form.endDate || form.startDate;
-      if (!rangeStart || !leaveTargetUserId || !user) return;
-      const target = users.find((u) => u.id === leaveTargetUserId);
+      if (!rangeStart || !user) return;
+
+      const effectiveTargetUserId = canSelectLeaveTarget ? leaveTargetUserId : (currentAppUser?.id || '');
+      if (!effectiveTargetUserId) return;
+
+      const target = users.find((u) => u.id === effectiveTargetUserId);
       if (!target) return;
       const isAdmin = user.role === 'admin';
       const isSelf = user.email && user.email === target.email;
@@ -749,16 +756,22 @@ export default function Calendar() {
                 <>
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>대상자</div>
-                    <select
-                      value={leaveTargetUserId}
-                      onChange={(e) => setLeaveTargetUserId(e.target.value)}
-                      style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
-                    >
-                      <option value="">직원 선택</option>
-                      {users.filter((u) => u.role !== 'admin').map((u) => (
-                        <option key={u.id} value={u.id}>{u.name}</option>
-                      ))}
-                    </select>
+                    {canSelectLeaveTarget ? (
+                      <select
+                        value={leaveTargetUserId}
+                        onChange={(e) => setLeaveTargetUserId(e.target.value)}
+                        style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
+                      >
+                        <option value="">직원 선택</option>
+                        {users.filter((u) => u.role !== 'admin').map((u) => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div style={{ width: '100%', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810' }}>
+                        {currentAppUser?.name || user?.displayName || user?.email || '본인'}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ marginBottom: 16 }}>
