@@ -103,11 +103,6 @@ export default function LeaveManager() {
     currentRole: user?.role,
   });
 
-  const canRegister = !!selectedUser && (
-    isAdmin ||
-    (user?.email && selectedUser.email === user.email)
-  );
-
   const total = calcAnnualLeave(setting?.joinDate || '');
   const used = calcTotalUsed(userEvents, setting?.manualUsedDays || 0);
   const remain = calcRemainingLeave(setting?.joinDate || '', userEvents, setting?.manualUsedDays || 0);
@@ -316,9 +311,9 @@ export default function LeaveManager() {
         </div>
       )}
 
-      {isReadOnlyAllViewer ? null : (
+      {!isReadOnlyAllViewer && (
         <>
-
+      {isAdmin && (
       <div className="flex gap-2 mb-4 flex-wrap">
         {employees.map((employee) => {
           const active = (selectedUser?.id || employees[0].id) === employee.id;
@@ -339,6 +334,7 @@ export default function LeaveManager() {
           );
         })}
       </div>
+      )}
 
       {!canView ? (
         <p className="text-xs text-[#9E8880]">이 직원의 연차 대장을 볼 권한이 없습니다.</p>
@@ -412,7 +408,7 @@ export default function LeaveManager() {
 
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-xs font-semibold text-[#2C1810]">연차 사용 내역</h3>
-            {canRegister && (
+            {isAdmin && (
               <button
                 type="button"
                 onClick={openAddModal}
@@ -437,11 +433,12 @@ export default function LeaveManager() {
                     </div>
                     <div className="text-[#9E8880] mt-1">{event.memo || '-'} / 등록자: {event.createdBy || '-'}</div>
                   </div>
+                  {isAdmin && (
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => openEditModal(event)}
-                      disabled={locked && !isAdmin}
+                      disabled={locked}
                       className="px-2 py-1 border border-[#EDE5DC] text-[#9E8880] disabled:opacity-40"
                     >
                       수정
@@ -449,12 +446,13 @@ export default function LeaveManager() {
                     <button
                       type="button"
                       onClick={() => handleDelete(event)}
-                      disabled={locked && !isAdmin}
+                      disabled={locked}
                       className="px-2 py-1 border border-[#C17B6B] text-[#C17B6B] disabled:opacity-40"
                     >
                       삭제
                     </button>
                   </div>
+                  )}
                 </div>
               );
             })}
@@ -465,7 +463,7 @@ export default function LeaveManager() {
         </>
       )}
 
-      {showAdd && selectedUser && (
+      {isAdmin && showAdd && selectedUser && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowAdd(false)}>
           <div className="bg-white border border-[#EDE5DC] rounded w-full max-w-sm p-4" onClick={(e) => e.stopPropagation()}>
             <h4 className="text-xs font-semibold text-[#2C1810] mb-3 uppercase tracking-widest">
