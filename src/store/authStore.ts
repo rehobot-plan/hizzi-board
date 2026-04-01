@@ -36,7 +36,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: true,
   signIn: async (email, password) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // 복구 계정의 uid 동기화: email로 users 문서 검색 후 uid 업데이트
+      if (userCredential.user?.email) {
+        try {
+          const usersSnap = await getDocs(collection(db, 'users'));
+          const userDoc = usersSnap.docs.find((d) => (d.data() as any)?.email === userCredential.user.email);
+          
+          if (userDoc && userDoc.id !== userCredential.user.uid) {
+            // 복구 계정이거나 uid가 다른 경우, 현재 uid로 업데이트
+            await updateDoc(doc(db, 'users', userDoc.id), { uid: userCredential.user.uid });
+          }
+        } catch (syncError) {
+          console.error('UID sync error:', syncError);
+        }
+      }
 
       // 관리자는 로그인 시마다 패널 배정을 강제로 해제
       if (email === ADMIN_EMAIL) {
@@ -207,10 +222,32 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 // Listen to auth state changes
 try {
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       if (user.email === ADMIN_EMAIL) {
         void clearAdminPanelOwnership();
+      }
+
+      // 복구 계정의 uid 동기화: email로 users 문서 검색 후 uid 업데이트
+      if (user.email) {
+        try {
+          const usersSnap = await getDocs(collection(db, 'users'));
+          const userDoc = usersSnap.docs.find((d) => (d.data() as any)?.email === user.email);
+          
+          if (userDoc && userDoc.id !== user.uid) {
+            // 문서가 있으나 uid가 다른 경우, 현재 uid로 업데이트
+            await updateDoc(doc(db, 'users', userDoc.id), { uid: user.uid });
+          } else if (!userDoc) {
+            // 문서가 없으면 현재 uid로 생성 (혹시 문제가 있을 경우)
+            await setDoc(doc(db, 'users', user.uid), {
+              name: user.displayName || user.email,
+              email: user.email,
+              role: user.email === ADMIN_EMAIL ? 'admin' : 'user',
+            }, { merge: true });
+          }
+        } catch (checkError) {
+          console.error('User sync error:', checkError);
+        }
       }
 
       // Add role based on email
