@@ -151,18 +151,32 @@ export default function Home() {
         className="flex-col justify-between min-h-screen w-[200px] bg-[#5C1F1F] py-8 px-6 hidden md:flex"
       >
         <div>
-          <div className="mb-12 select-none">
+          <div className="mb-12 select-none cursor-pointer transition-opacity hover:opacity-80" onClick={() => router.push('/')}>
             <span className="block text-white text-2xl font-extrabold tracking-[0.15em] uppercase text-center" style={{ letterSpacing: '0.15em' }}>HIZZI BOARD</span>
           </div>
         </div>
         {/* 아바타+이름 */}
-        <div className="flex items-center gap-3 mt-8 px-2">
-          <div className="w-9 h-9 rounded-full bg-[#C17B6B] flex items-center justify-center text-white font-bold text-lg uppercase">
-            {user?.displayName?.[0] || user?.email?.[0] || 'U'}
+        <div>
+          <div className="flex items-center gap-3 px-2 mb-3">
+            <div className="w-9 h-9 rounded-full bg-[#C17B6B] flex items-center justify-center text-white font-bold text-lg uppercase">
+              {user?.displayName?.[0] || user?.email?.[0] || 'U'}
+            </div>
+            <div className="text-white text-xs font-medium truncate max-w-[100px]">
+              {user?.displayName || user?.email}
+            </div>
           </div>
-          <div className="text-white text-xs font-medium truncate max-w-[100px]">
-            {user?.displayName || user?.email}
-          </div>
+          {user && users.find((u) => u.email === user.email)?.leaveViewPermission && 
+           user && users.find((u) => u.email === user.email)?.leaveViewPermission !== 'none' && (
+            <button
+              onClick={() => router.push('/leave')}
+              className="w-full px-2 py-1 text-white text-center transition-all hover:opacity-90"
+              style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.08em' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.9)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+            >
+              연차 사용 내역
+            </button>
+          )}
         </div>
       </aside>
 
