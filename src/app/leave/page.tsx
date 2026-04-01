@@ -1,15 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
-import {
-  calcAnnualLeave,
-  calcRemainingLeave,
-  calcUsedLeave,
-  useLeaveStore,
-} from '@/store/leaveStore';
+import { calcAnnualLeave, calcUsedLeave, useLeaveStore } from '@/store/leaveStore';
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
   full: '전일',
@@ -20,64 +15,61 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
 export default function LeavePage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuthStore();
-  const { users, loading: userLoading } = useUserStore();
+  const { users, loading: usersLoading } = useUserStore();
   const { settings, events, loading: leaveLoading } = useLeaveStore();
 
-  const currentUser = useMemo(
-    () => users.find((u) => u.email === user?.email),
-    [users, user?.email]
-  );
+  const currentAppUser = useMemo(() => users.find((u) => u.email === user?.email), [users, user?.email]);
+  const permission = currentAppUser?.leaveViewPermission;
 
-  const leaveViewPermission = currentUser?.leaveViewPermission || 'none';
+  const mySetting = useMemo(() => {
+    if (!currentAppUser) return null;
+    return settings.find((s) => s.userId === currentAppUser.id) || null;
+  }, [currentAppUser, settings]);
+
+  const myEvents = useMemo(() => {
+    if (!currentAppUser) return [];
+    return events
+      .filter((e) => e.userId === currentAppUser.id)
+      .slice()
+      .sort((a, b) => (a.date > b.date ? -1 : 1));
+  }, [events, currentAppUser]);
+
+  const myTotal = calcAnnualLeave(mySetting?.joinDate || '');
+  const myUsed = calcUsedLeave(myEvents, mySetting?.manualUsedDays || 0);
+  const myRemain = myTotal - myUsed;
 
   const employees = useMemo(() => users.filter((u) => u.role !== 'admin'), [users]);
 
-  // 모든 직원의 연차 데이터
   const leaveTableData = useMemo(() => {
     return employees.map((emp) => {
       const empSetting = settings.find((s) => s.userId === emp.id);
       const empEvents = events.filter((e) => e.userId === emp.id);
       const total = calcAnnualLeave(empSetting?.joinDate || '');
-      const manualUsed = empSetting?.manualUsedDays || 0;
+      const manualUsed = Number(empSetting?.manualUsedDays) || 0;
       const confirmedUsed = calcUsedLeave(empEvents, 0);
       const totalUsed = manualUsed + confirmedUsed;
-      const remaining = calcRemainingLeave(empSetting?.joinDate || '', empEvents, manualUsed);
+      const remain = total - totalUsed;
+
       return {
         id: emp.id,
         name: emp.name,
         joinDate: empSetting?.joinDate || '-',
-        total: isNaN(total) ? 0 : total,
-        manualUsed: isNaN(manualUsed) ? 0 : manualUsed,
-        confirmedUsed: isNaN(confirmedUsed) ? 0 : confirmedUsed,
-        totalUsed: isNaN(totalUsed) ? 0 : totalUsed,
-        remaining: isNaN(remaining) ? 0 : remaining,
+        total,
+        manualUsed,
+        confirmedUsed,
+        totalUsed,
+        remain,
       };
     });
   }, [employees, settings, events]);
-
-  // 본인 연차 정보
-  const currentUserData = useMemo(() => {
-    if (!currentUser) return null;
-    const setting = settings.find((s) => s.userId === currentUser.id);
-    const userEvents = events.filter((e) => e.userId === currentUser.id);
-    const total = calcAnnualLeave(setting?.joinDate || '');
-    const used = calcUsedLeave(userEvents, setting?.manualUsedDays || 0);
-    const remain = calcRemainingLeave(setting?.joinDate || '', userEvents, setting?.manualUsedDays || 0);
-    return {
-      total: isNaN(total) ? 0 : total,
-      used: isNaN(used) ? 0 : used,
-      remain: isNaN(remain) ? 0 : remain,
-      events: userEvents.slice().sort((a, b) => (a.date > b.date ? -1 : 1)),
-    };
-  }, [currentUser, settings, events]);
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
     }
-  }, [user, authLoading, router]);
+  }, [authLoading, user, router]);
 
-  if (authLoading || userLoading || leaveLoading) {
+  if (authLoading || usersLoading || leaveLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-[#FDF8F4]">Loading...</div>;
   }
 
@@ -85,152 +77,97 @@ export default function LeavePage() {
     return null;
   }
 
-  if (leaveViewPermission === 'none') {
-    return (
-      <div className="min-h-screen bg-[#FDF8F4] p-8">
-        <button
-          onClick={() => router.push('/')}
-          className="mb-8 text-sm text-[#9E8880] hover:text-[#2C1810]"
-        >
-          ← 돌아가기
-        </button>
-        <div className="border border-[#EDE5DC] bg-white rounded p-8 text-center">
-          <h1 className="text-lg font-semibold text-[#2C1810] mb-2">연차 열람 권한이 없습니다</h1>
-          <p className="text-xs text-[#9E8880]">관리자에게 연차 열람 권한을 받아주세요.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#FDF8F4] p-8">
+    <div className="min-h-screen bg-[#FDF8F4] px-4 md:px-8 py-8">
       <button
+        type="button"
         onClick={() => router.push('/')}
-        className="mb-8 text-sm text-[#9E8880] hover:text-[#2C1810]"
+        className="text-xs text-[#9E8880] hover:text-[#2C1810] mb-6"
       >
         ← 돌아가기
       </button>
 
-      {leaveViewPermission === 'self' ? (
-        <div>
-          <h1 className="text-2xl font-semibold text-[#2C1810] mb-6">내 연차</h1>
+      {!permission || permission === 'none' ? (
+        <div className="border border-[#EDE5DC] bg-white rounded p-4">
+          <h2 className="text-sm font-semibold text-[#2C1810] mb-2">연차 사용 내역</h2>
+          <p className="text-xs text-[#9E8880]">권한이 없습니다.</p>
+        </div>
+      ) : permission === 'me' ? (
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold text-[#2C1810]">내 연차 현황</h2>
 
-          {currentUserData && (
-            <>
-              {/* 연차 현황 카드 */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="border border-[#EDE5DC] p-4 rounded bg-white">
-                  <div className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-2">발생 연차</div>
-                  <div className="text-3xl font-bold text-[#2C1810]">{currentUserData.total}</div>
-                </div>
-                <div className="border border-[#EDE5DC] p-4 rounded bg-white">
-                  <div className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-2">사용한 연차</div>
-                  <div className="text-3xl font-bold text-[#2C1810]">{currentUserData.used}</div>
-                </div>
-                <div className="border border-[#EDE5DC] p-4 rounded bg-white">
-                  <div className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-2">잔여 연차</div>
-                  <div
-                    className="text-3xl font-bold"
-                    style={{ color: currentUserData.remain < 0 ? '#C17B6B' : '#2C1810' }}
-                  >
-                    {currentUserData.remain}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div className="border border-[#EDE5DC] p-3 rounded bg-white">
+              <div className="text-[11px] text-[#9E8880] uppercase tracking-wider">발생</div>
+              <div className="mt-1 text-[#2C1810]">{myTotal}</div>
+            </div>
+            <div className="border border-[#EDE5DC] p-3 rounded bg-white">
+              <div className="text-[11px] text-[#9E8880] uppercase tracking-wider">사용</div>
+              <div className="mt-1 text-[#2C1810]">{myUsed}</div>
+            </div>
+            <div className="border border-[#EDE5DC] p-3 rounded bg-white">
+              <div className="text-[11px] text-[#9E8880] uppercase tracking-wider">잔여</div>
+              <div className="mt-1" style={{ color: myRemain < 0 ? '#C17B6B' : '#2C1810' }}>{myRemain}</div>
+            </div>
+          </div>
+
+          <div className="border border-[#EDE5DC] bg-white rounded p-4">
+            <h3 className="text-xs font-semibold text-[#2C1810] mb-2">연차 사용 내역</h3>
+            <div className="space-y-2">
+              {myEvents.length === 0 && (
+                <div className="text-xs text-[#9E8880] border border-[#EDE5DC] rounded p-3">등록된 연차가 없습니다.</div>
+              )}
+              {myEvents.map((event) => (
+                <div key={event.id} className="border border-[#EDE5DC] rounded p-3 text-xs flex justify-between items-center">
+                  <div>
+                    <div className="text-[#2C1810] font-medium">
+                      {event.date} · {LEAVE_TYPE_LABEL[event.type]} ({event.days}일) {event.confirmed ? '🔒' : ''}
+                    </div>
+                    <div className="text-[#9E8880] mt-1">{event.memo || '-'}</div>
                   </div>
                 </div>
-              </div>
-
-              {/* 연차 사용 내역 */}
-              <div className="border border-[#EDE5DC] bg-white rounded p-4">
-                <h2 className="text-sm font-semibold text-[#2C1810] mb-4">연차 사용 내역</h2>
-                {currentUserData.events.length === 0 ? (
-                  <p className="text-xs text-[#9E8880]">등록된 연차가 없습니다.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {currentUserData.events.map((event) => (
-                      <div
-                        key={event.id}
-                        className="border border-[#EDE5DC] rounded p-3 text-xs flex justify-between items-center"
-                      >
-                        <div>
-                          <div className="text-[#2C1810] font-medium">
-                            {event.date} · {LEAVE_TYPE_LABEL[event.type]} ({event.days}일)
-                            {event.confirmed ? ' 🔒' : ''}
-                          </div>
-                          <div className="text-[#9E8880] mt-1">{event.memo || '-'}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
-        <div>
-          <h1 className="text-2xl font-semibold text-[#2C1810] mb-6">전체 직원 연차 현황</h1>
-          <div className="overflow-x-auto">
-            <table className="w-full text-10px border-collapse">
-              <thead>
-                <tr style={{ borderBottom: `1px solid #EDE5DC`, background: '#FDF8F4' }}>
-                  <th className="px-3 py-2 text-left font-semibold text-[#2C1810]" style={{ fontSize: '11px' }}>
-                    이름
-                  </th>
-                  <th className="px-3 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '11px' }}>
-                    입사일
-                  </th>
-                  <th className="px-3 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '11px' }}>
-                    발생
-                  </th>
-                  <th className="px-3 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '11px' }}>
-                    수동입력
-                  </th>
-                  <th className="px-3 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '11px' }}>
-                    확정사용
-                  </th>
-                  <th className="px-3 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '11px' }}>
-                    총사용
-                  </th>
-                  <th className="px-3 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '11px' }}>
-                    잔여
-                  </th>
+        <div className="border border-[#EDE5DC] bg-white rounded p-4 overflow-x-auto">
+          <h2 className="text-sm font-semibold text-[#2C1810] mb-3">전체 직원 연차 현황</h2>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #EDE5DC', background: '#FDF8F4' }}>
+                <th className="px-2 py-2 text-left text-[#2C1810]" style={{ fontSize: '11px' }}>이름</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>입사일</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>발생</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>수동사용</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>확정사용</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>총사용</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>잔여</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaveTableData.map((row) => (
+                <tr key={row.id} style={{ borderBottom: '1px solid #EDE5DC' }}>
+                  <td className="px-2 py-2 text-[#2C1810]" style={{ fontSize: '11px' }}>{row.name}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>{row.joinDate}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>{row.total}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>{row.manualUsed}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>{row.confirmedUsed}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>{row.totalUsed}</td>
+                  <td
+                    className="px-2 py-2 text-center"
+                    style={{
+                      fontSize: '11px',
+                      color: row.remain < 0 ? '#C17B6B' : '#2C1810',
+                      fontWeight: row.remain < 0 ? 'bold' : 'normal',
+                    }}
+                  >
+                    {row.remain}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {leaveTableData.map((row) => (
-                  <tr key={row.id} style={{ borderBottom: `1px solid #EDE5DC` }}>
-                    <td className="px-3 py-2 text-[#2C1810]" style={{ fontSize: '11px' }}>
-                      {row.name}
-                    </td>
-                    <td className="px-3 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>
-                      {row.joinDate}
-                    </td>
-                    <td className="px-3 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>
-                      {row.total}
-                    </td>
-                    <td className="px-3 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>
-                      {row.manualUsed}
-                    </td>
-                    <td className="px-3 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>
-                      {row.confirmedUsed}
-                    </td>
-                    <td className="px-3 py-2 text-center text-[#2C1810]" style={{ fontSize: '11px' }}>
-                      {row.totalUsed}
-                    </td>
-                    <td
-                      className="px-3 py-2 text-center"
-                      style={{
-                        fontSize: '11px',
-                        color: row.remaining < 0 ? '#C17B6B' : '#2C1810',
-                        fontWeight: row.remaining < 0 ? 'bold' : 'normal',
-                      }}
-                    >
-                      {row.remaining}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

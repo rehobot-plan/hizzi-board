@@ -8,7 +8,7 @@ export interface AppUser {
   email: string;
   role?: 'admin' | 'user';
   panelId?: string;
-  leaveViewPermission?: 'none' | 'self' | 'all';
+  leaveViewPermission?: 'none' | 'me' | 'all';
 }
 
 interface UserState {
@@ -17,8 +17,6 @@ interface UserState {
   addUser: (user: Omit<AppUser, 'id'>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   updateUserPanel: (id: string, panelId: string | null) => Promise<void>;
-  updateUserName: (id: string, name: string) => Promise<void>;
-  updateLeaveViewPermission: (id: string, permission: 'none' | 'self' | 'all') => Promise<void>;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -53,26 +51,6 @@ export const useUserStore = create<UserState>((set) => ({
       }));
     } catch (error) {
       console.error('Error updating user panel:', error);
-    }
-  },
-  updateUserName: async (id, name) => {
-    try {
-      await updateDoc(doc(db, 'users', id), { name });
-      set((state) => ({
-        users: state.users.map((u) => (u.id === id ? { ...u, name } : u)),
-      }));
-    } catch (error) {
-      console.error('Error updating user name:', error);
-    }
-  },
-  updateLeaveViewPermission: async (id, permission) => {
-    try {
-      await updateDoc(doc(db, 'users', id), { leaveViewPermission: permission });
-      set((state) => ({
-        users: state.users.map((u) => (u.id === id ? { ...u, leaveViewPermission: permission } : u)),
-      }));
-    } catch (error) {
-      console.error('Error updating leave view permission:', error);
     }
   },
 }));

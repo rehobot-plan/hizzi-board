@@ -41,6 +41,7 @@ export default function LeaveManager() {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [joinDateDraft, setJoinDateDraft] = useState('');
   const [manualUsedDraft, setManualUsedDraft] = useState('0');
+  const [viewerDraft, setViewerDraft] = useState('');
 
   const [showAdd, setShowAdd] = useState(false);
   const [editTargetId, setEditTargetId] = useState<string | null>(null);
@@ -62,7 +63,8 @@ export default function LeaveManager() {
   useEffect(() => {
     setJoinDateDraft(setting?.joinDate || '');
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
-  }, [setting?.joinDate, setting?.manualUsedDays]);
+    setViewerDraft((setting?.viewerEmails || []).join(', '));
+  }, [setting?.joinDate, setting?.manualUsedDays, setting?.viewerEmails]);
 
   const userEvents = useMemo(() => {
     if (!selectedUser) return [];
@@ -73,11 +75,6 @@ export default function LeaveManager() {
   }, [events, selectedUser]);
 
   const isAdmin = user?.role === 'admin';
-  
-  // leaveViewPermission에 따른 접근 권한 체크
-  const userLeaveViewPermission = !!user ? (users.find((u) => u.email === user.email)?.leaveViewPermission || 'none') : 'none';
-  const hasLeaveAccess = isAdmin || userLeaveViewPermission === 'all' || userLeaveViewPermission === 'self';
-  
   const canView = !!selectedUser && canViewLeaveLedger({
     targetUserId: selectedUser.id,
     currentEmail: user?.email,
@@ -87,7 +84,8 @@ export default function LeaveManager() {
 
   const canRegister = !!selectedUser && (
     isAdmin ||
-    (user?.email && selectedUser.email === user.email)
+    (user?.email && selectedUser.email === user.email) ||
+    (setting?.viewerEmails || []).includes(user?.email || '')
   );
 
   const total = calcAnnualLeave(setting?.joinDate || '');
@@ -97,43 +95,7 @@ export default function LeaveManager() {
   const applyDraftFromSetting = () => {
     setJoinDateDraft(setting?.joinDate || '');
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
-  };
-
-  // 입사일 자동 변환: 숫자 8자리 → YYYY-MM-DD
-  const handleJoinDateChange = (value: string) => {
-    // 이미 YYYY-MM-DD 형식이면 그냥 적용
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      setJoinDateDraft(value);
-      return;
-    }
-
-    // 숫자만 추출
-    const raw = value.replace(/\D/g, '');
-
-    // 숫자 8자리 체크
-    if (raw.length === 8 && /^\d{8}$/.test(raw)) {
-      const year = raw.slice(0, 4);
-      const month = raw.slice(4, 6);
-      const day = raw.slice(6, 8);
-
-      const monthNum = parseInt(month, 10);
-      const dayNum = parseInt(day, 10);
-
-      // 유효한 날짜 체크
-      if (monthNum > 0 && monthNum <= 12 && dayNum > 0 && dayNum <= 31) {
-        const formatted = `${year}-${month}-${day}`;
-        setJoinDateDraft(formatted);
-      } else {
-        alert('유효하지 않은 날짜입니다. (예: 20240801)');
-      }
-    } else if (raw.length === 0 || value === '') {
-      // 빈 입력
-      setJoinDateDraft('');
-    } else if (raw.length < 8) {
-      // 8자리 미만 입력 중
-      setJoinDateDraft(value);
-    }
-    // 8자리 초과는 무시
+    setViewerDraft((setting?.viewerEmails || []).join(', '));
   };
 
   const openAddModal = () => {
@@ -154,13 +116,17 @@ export default function LeaveManager() {
 
   const handleSaveSetting = async () => {
     if (!selectedUser || !isAdmin || !joinDateDraft) return;
+    const viewerEmails = viewerDraft
+      .split(',')
+      .map((email) => email.trim())
+      .filter(Boolean);
 
     await upsertSetting({
       userId: selectedUser.id,
       userName: selectedUser.name,
       joinDate: joinDateDraft,
       manualUsedDays: Number(manualUsedDraft) || 0,
-      viewerEmails: [],
+      viewerEmails,
     });
   };
 
@@ -201,6 +167,7 @@ export default function LeaveManager() {
     const nextSetting = settings.find((s) => s.userId === nextUserId);
     setJoinDateDraft(nextSetting?.joinDate || '');
     setManualUsedDraft(String(nextSetting?.manualUsedDays || 0));
+    setViewerDraft((nextSetting?.viewerEmails || []).join(', '));
   };
 
   if (!employees.length) {
@@ -212,82 +179,12 @@ export default function LeaveManager() {
     );
   }
 
-  if (!hasLeaveAccess) {
-    return (
-      <div className="border border-[#EDE5DC] bg-white rounded p-4">
-        <h2 className="text-sm font-semibold text-[#2C1810] mb-2">연차 관리</h2>
-        <p className="text-xs text-[#9E8880]">연차 열람 권한이 없습니다.</p>
-      </div>
-    );
-  }
-
-  // 관리자용 전체 연차 현황 테이블
-  const leaveTableData = employees.map((emp) => {
-    const empSetting = settings.find((s) => s.userId === emp.id);
-    const empEvents = events.filter((e) => e.userId === emp.id);
-    const total = calcAnnualLeave(empSetting?.joinDate || '');
-    const manualUsed = empSetting?.manualUsedDays || 0;
-    const confirmedUsed = calcUsedLeave(empEvents, 0);
-    const totalUsed = manualUsed + confirmedUsed;
-    const remaining = calcRemainingLeave(empSetting?.joinDate || '', empEvents, manualUsed);
-    return {
-      id: emp.id,
-      name: emp.name,
-      joinDate: empSetting?.joinDate || '-',
-      total: isNaN(total) ? 0 : total,
-      manualUsed: isNaN(manualUsed) ? 0 : manualUsed,
-      confirmedUsed: isNaN(confirmedUsed) ? 0 : confirmedUsed,
-      totalUsed: isNaN(totalUsed) ? 0 : totalUsed,
-      remaining: isNaN(remaining) ? 0 : remaining,
-    };
-  });
-
   return (
     <div className="border border-[#EDE5DC] bg-white rounded p-4">
       <h2 className="text-sm font-semibold text-[#2C1810] mb-4">연차 관리</h2>
 
-      {(isAdmin || userLeaveViewPermission === 'all') && (
-        <div className="mb-6 overflow-x-auto">
-          <h3 className="text-xs font-semibold text-[#2C1810] mb-3">전체 직원 연차 현황</h3>
-          <table className="w-full text-10px border-collapse">
-            <thead>
-              <tr style={{ borderBottom: `1px solid #EDE5DC`, background: '#FDF8F4' }}>
-                <th className="px-2 py-2 text-left font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>이름</th>
-                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>입사일</th>
-                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>발생연차</th>
-                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>수동입력</th>
-                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>확정사용</th>
-                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>총사용</th>
-                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>잔여</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaveTableData.map((row) => (
-                <tr key={row.id} style={{ borderBottom: `1px solid #EDE5DC` }}>
-                  <td className="px-2 py-2 text-[#2C1810]" style={{ fontSize: '10px' }}>{row.name}</td>
-                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.joinDate}</td>
-                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.total}</td>
-                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.manualUsed}</td>
-                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.confirmedUsed}</td>
-                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.totalUsed}</td>
-                  <td className="px-2 py-2 text-center" style={{ fontSize: '10px', color: row.remaining < 0 ? '#C17B6B' : '#2C1810', fontWeight: row.remaining < 0 ? 'bold' : 'normal' }}>
-                    {row.remaining}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="mb-4">
-        <h3 className="text-xs font-semibold text-[#2C1810] mb-3">개별 직원 관리</h3>
-        <div className="flex gap-2 mb-4 flex-wrap">
+      <div className="flex gap-2 mb-4 flex-wrap">
         {employees.map((employee) => {
-          // leaveViewPermission이 'self'이면 본인만 표시
-          if (userLeaveViewPermission === 'self' && user?.email !== employee.email && !isAdmin) {
-            return null;
-          }
           const active = (selectedUser?.id || employees[0].id) === employee.id;
           return (
             <button
@@ -316,10 +213,9 @@ export default function LeaveManager() {
               <div className="text-[11px] text-[#9E8880] uppercase tracking-wider">입사일</div>
               {isAdmin ? (
                 <input
-                  type="text"
+                  type="date"
                   value={joinDateDraft}
-                  onChange={(e) => handleJoinDateChange(e.target.value)}
-                  placeholder="YYYY-MM-DD 또는 YYYYMMDD"
+                  onChange={(e) => setJoinDateDraft(e.target.value)}
                   className="w-full mt-1 border-b border-[#EDE5DC] bg-transparent outline-none text-[#2C1810]"
                 />
               ) : (
@@ -349,6 +245,13 @@ export default function LeaveManager() {
 
           {isAdmin && (
             <div className="mb-4">
+              <div className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-1">열람자 이메일(쉼표 구분)</div>
+              <input
+                value={viewerDraft}
+                onChange={(e) => setViewerDraft(e.target.value)}
+                className="w-full border-b border-[#EDE5DC] bg-transparent outline-none text-xs text-[#2C1810] py-1"
+                placeholder="viewer1@company.com, viewer2@company.com"
+              />
               <div className="mt-2">
                 <button
                   type="button"
@@ -419,8 +322,6 @@ export default function LeaveManager() {
           </div>
         </>
       )}
-
-      </div>
 
       {showAdd && selectedUser && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowAdd(false)}>

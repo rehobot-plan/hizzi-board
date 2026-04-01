@@ -69,21 +69,16 @@ export function calcAnnualLeave(joinDate: string, nowDate = new Date()): number 
 
 export function calcUsedLeave(events: LeaveEvent[], manualUsed: number, nowDate = new Date()): number {
   const today = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
-  const safeManualUsed = toNumber(manualUsed, 0);
   const confirmedDays = events
     .filter((e) => parseLocalDate(e.date) <= today)
-    .reduce((sum, e) => {
-      const days = Number(e.days) || 0;
-      return sum + (isNaN(days) ? 0 : days);
-    }, 0);
-  return safeManualUsed + confirmedDays;
+    .reduce((sum, e) => sum + e.days, 0);
+  return manualUsed + confirmedDays;
 }
 
 export function calcRemainingLeave(joinDate: string, events: LeaveEvent[], manualUsed: number, nowDate = new Date()): number {
   const total = calcAnnualLeave(joinDate, nowDate);
   const used = calcUsedLeave(events, manualUsed, nowDate);
-  const remaining = total - used;
-  return isNaN(remaining) ? 0 : remaining;
+  return Math.max(total - used, 0);
 }
 
 export function canViewLeaveLedger(params: {

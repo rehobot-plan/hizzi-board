@@ -13,21 +13,16 @@ import NoticeArea from '@/components/NoticeArea';
 import LeaveManager from '@/components/LeaveManager';
 
 export default function Home() {
-  const { user, loading: authLoading, signOut, recoveryOrphanAccount } = useAuthStore();
+  const { user, loading: authLoading, signOut } = useAuthStore();
   const { panels, loading: panelLoading, updatePanel, addPanel } = usePanelStore();
-  const { users, loading: userLoading, deleteUser, updateUserPanel, updateUserName, updateLeaveViewPermission } = useUserStore();
+  const { users, loading: userLoading, deleteUser, updateUserPanel } = useUserStore();
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
-  const [adminTab, setAdminTab] = useState<'users' | 'leave' | 'recovery'>('users');
+  const [adminTab, setAdminTab] = useState<'users' | 'leave'>('users');
   const [deleteError, setDeleteError] = useState('');
   const [showAddPanelModal, setShowAddPanelModal] = useState(false);
   const [newPanelName, setNewPanelName] = useState('');
   const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
-  const [recoveryEmail, setRecoveryEmail] = useState('');
-  const [recoveryMessage, setRecoveryMessage] = useState('');
-  const [editingNameId, setEditingNameId] = useState<string | null>(null);
-  const [editingNameValue, setEditingNameValue] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const router = useRouter();
 
   const getUserPanel = (email: string) => panels.find((p) => p.ownerEmail === email);
@@ -151,32 +146,52 @@ export default function Home() {
         className="flex-col justify-between min-h-screen w-[200px] bg-[#5C1F1F] py-8 px-6 hidden md:flex"
       >
         <div>
-          <div className="mb-12 select-none cursor-pointer transition-opacity hover:opacity-80" onClick={() => router.push('/')}>
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="mb-12 select-none w-full cursor-pointer hover:opacity-80"
+          >
             <span className="block text-white text-2xl font-extrabold tracking-[0.15em] uppercase text-center" style={{ letterSpacing: '0.15em' }}>HIZZI BOARD</span>
-          </div>
+          </button>
         </div>
         {/* 아바타+이름 */}
-        <div>
-          <div className="flex items-center gap-3 px-2 mb-3">
+        <div className="px-2 -mt-2">
+          <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-[#C17B6B] flex items-center justify-center text-white font-bold text-lg uppercase">
               {user?.displayName?.[0] || user?.email?.[0] || 'U'}
             </div>
-            <div className="text-white text-xs font-medium truncate max-w-[100px]">
-              {user?.displayName || user?.email}
+            <div className="min-w-0">
+              <div className="text-white text-xs font-medium truncate max-w-[100px]">
+                {user?.displayName || user?.email}
+              </div>
+              <div className="text-[10px] uppercase" style={{ letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)' }}>
+                online
+              </div>
             </div>
           </div>
-          {user && users.find((u) => u.email === user.email)?.leaveViewPermission && 
-           user && users.find((u) => u.email === user.email)?.leaveViewPermission !== 'none' && (
-            <button
-              onClick={() => router.push('/leave')}
-              className="w-full px-2 py-1 text-white text-center transition-all hover:opacity-90"
-              style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.08em' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.9)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
-            >
-              연차 사용 내역
-            </button>
-          )}
+          {(() => {
+            const currentAppUser = users.find((u) => u.email === user?.email);
+            const permission = currentAppUser?.leaveViewPermission;
+            if (!permission || permission === 'none') return null;
+
+            return (
+              <button
+                type="button"
+                onClick={() => router.push('/leave')}
+                className="mt-3 text-left"
+                style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  color: 'rgba(255,255,255,0.5)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.9)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+              >
+                연차 사용 내역
+              </button>
+            );
+          })()}
         </div>
       </aside>
 
@@ -231,18 +246,6 @@ export default function Home() {
                 >
                   연차 관리
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setAdminTab('recovery')}
-                  className="px-3 py-1 text-xs border"
-                  style={{
-                    borderColor: adminTab === 'recovery' ? '#2C1810' : '#EDE5DC',
-                    color: adminTab === 'recovery' ? '#2C1810' : '#9E8880',
-                    background: adminTab === 'recovery' ? '#FDF8F4' : '#fff',
-                  }}
-                >
-                  계정 복구
-                </button>
               </div>
 
               {adminTab === 'users' ? (
@@ -269,46 +272,11 @@ export default function Home() {
                         const userPanel = getUserPanel(u.email);
                         const isCurrentAdmin = user?.email === u.email && user?.role === 'admin';
                         const isUnassigned = isUnassignedUser(u);
-                        const isEditingName = editingNameId === u.id;
                         return (
                           <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded gap-3">
                             <div className="min-w-0">
                               <p className="text-sm font-medium flex items-center gap-2">
-                                {isEditingName ? (
-                                  <input
-                                    autoFocus
-                                    value={editingNameValue}
-                                    onChange={(e) => setEditingNameValue(e.target.value)}
-                                    onBlur={async () => {
-                                      if (editingNameValue.trim()) {
-                                        await updateUserName(u.id, editingNameValue.trim());
-                                      }
-                                      setEditingNameId(null);
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        if (editingNameValue.trim()) {
-                                          void updateUserName(u.id, editingNameValue.trim());
-                                        }
-                                        setEditingNameId(null);
-                                      } else if (e.key === 'Escape') {
-                                        setEditingNameId(null);
-                                      }
-                                    }}
-                                    className="border-b border-[#2C1810] bg-transparent outline-none text-sm text-[#2C1810]"
-                                  />
-                                ) : (
-                                  <span
-                                    onClick={() => {
-                                      setEditingNameId(u.id);
-                                      setEditingNameValue(u.name);
-                                    }}
-                                    className="cursor-pointer hover:text-[#C17B6B]"
-                                  >
-                                    {u.name}
-                                  </span>
-                                )}
-                                <span className="text-[10px] text-gray-500">({u.email})</span>
+                                <span>{u.name} ({u.email})</span>
                                 {isUnassigned && (
                                   <span className="text-[10px] px-2 py-0.5 border" style={{ color: '#C17B6B', borderColor: '#C17B6B', background: '#FFF5F2' }}>
                                     패널 미배정
@@ -321,22 +289,12 @@ export default function Home() {
                               {u.role === 'admin' ? (
                                 <span className="text-xs text-[#9E8880] px-2">관리자 계정</span>
                               ) : (
-                                <>
-                                  <select
-                                    value={u.leaveViewPermission || 'none'}
-                                    onChange={(e) => updateLeaveViewPermission(u.id, e.target.value as 'none' | 'self' | 'all')}
-                                    className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[100px]"
-                                  >
-                                    <option value="none">연차열람 없음</option>
-                                    <option value="self">본인만</option>
-                                    <option value="all">전체</option>
-                                  </select>
-                                  <select
-                                    value={userPanel?.id || ''}
-                                    onChange={(e) => handleAssignPanel(u.id, u.email, e.target.value)}
-                                    className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[140px]"
-                                  >
-                                    <option value="">패널 없음</option>
+                                <select
+                                  value={userPanel?.id || ''}
+                                  onChange={(e) => handleAssignPanel(u.id, u.email, e.target.value)}
+                                  className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[140px]"
+                                >
+                                  <option value="">패널 없음</option>
                                   {panels
                                     .slice()
                                     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -349,17 +307,26 @@ export default function Home() {
                                         </option>
                                       );
                                     })}
-                                  </select>
-                                  <button
-                                    disabled={isCurrentAdmin}
-                                    onClick={() => setDeleteConfirmId(u.id)}
-                                    className="px-3 py-1 text-xs border text-white disabled:opacity-40"
-                                    style={{ borderColor: '#C17B6B', background: '#C17B6B' }}
-                                  >
-                                    삭제
-                                  </button>
-                                </>
+                                </select>
                               )}
+                              <button
+                                disabled={isCurrentAdmin}
+                                onClick={async () => {
+                                  if (isCurrentAdmin) return;
+                                  try {
+                                    const panel = panels.find((p) => p.ownerEmail === u.email);
+                                    if (panel) await updatePanel(panel.id, { ownerEmail: null });
+                                    await updateUserPanel(u.id, null);
+                                    await deleteUser(u.id);
+                                  } catch (err: any) {
+                                    console.error(err);
+                                    setDeleteError('삭제 중 오류가 발생했습니다.');
+                                  }
+                                }}
+                                className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300"
+                              >
+                                삭제
+                              </button>
                             </div>
                           </div>
                         );
@@ -367,50 +334,8 @@ export default function Home() {
                     </div>
                   )}
                 </>
-              ) : adminTab === 'leave' ? (
-                <LeaveManager />
               ) : (
-                <div>
-                  <h2 className="text-base font-semibold text-[#2C1810] mb-4">관리자 - 계정 복구</h2>
-                  <p className="text-xs text-[#9E8880] mb-4">Firebase Auth에는 있지만 Firestore users에 없는 고아 계정을 복구합니다.</p>
-                  
-                  {recoveryMessage && (
-                    <div className={`text-sm p-3 rounded mb-4 ${recoveryMessage.includes('성공') || recoveryMessage.includes('Success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {recoveryMessage}
-                    </div>
-                  )}
-                  
-                  <div className="border border-[#EDE5DC] p-4 rounded bg-white">
-                    <label className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-2 block">이메일</label>
-                    <div className="flex gap-2 mb-3">
-                      <input
-                        type="email"
-                        value={recoveryEmail}
-                        onChange={(e) => setRecoveryEmail(e.target.value)}
-                        placeholder="example@company.com"
-                        className="flex-1 border-b border-[#EDE5DC] bg-transparent outline-none text-sm text-[#2C1810]"
-                      />
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            setRecoveryMessage('');
-                            await recoveryOrphanAccount(recoveryEmail);
-                            setRecoveryMessage(`✓ ${recoveryEmail} 계정이 복구되었습니다.`);
-                            setRecoveryEmail('');
-                          } catch (err: any) {
-                            setRecoveryMessage(`✕ 오류: ${err?.message || '계정 복구 실패'}`);
-                          }
-                        }}
-                        className="px-4 py-1 text-xs bg-[#2C1810] text-[#FDF8F4] border border-[#2C1810] rounded"
-                      >
-                        복구
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-[#9E8880]">• 해당 이메일이 이미 Firestore에 있으면 복구할 수 없습니다.</p>
-                    <p className="text-[10px] text-[#9E8880]">• 복구 후 자동으로 빈 패널이 배정됩니다. (관리자 계정 제외)</p>
-                  </div>
-                </div>
+                <LeaveManager />
               )}
             </div>
           )}
@@ -508,50 +433,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {deleteConfirmId && (() => {
-        const targetUser = users.find((u) => u.id === deleteConfirmId);
-        if (!targetUser) return null;
-        return (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setDeleteConfirmId(null)}>
-            <div className="bg-white border border-[#EDE5DC] w-full max-w-sm p-4 rounded" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-sm font-semibold text-[#2C1810] mb-3">계정 삭제</h3>
-              <p className="text-xs text-[#9E8880] mb-4">
-                정말 <strong>{targetUser.name}</strong>({targetUser.email}) 계정을 삭제하시겠습니까?<br/>
-                이 작업은 되돌릴 수 없습니다.
-              </p>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirmId(null)}
-                  className="px-3 py-1 text-xs border border-[#9E8880] text-[#9E8880]"
-                >
-                  취소
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const panel = panels.find((p) => p.ownerEmail === targetUser.email);
-                      if (panel) await updatePanel(panel.id, { ownerEmail: null });
-                      await updateUserPanel(deleteConfirmId, null);
-                      await deleteUser(deleteConfirmId);
-                      setDeleteConfirmId(null);
-                    } catch (err: any) {
-                      console.error(err);
-                      setDeleteError('삭제 중 오류가 발생했습니다.');
-                    }
-                  }}
-                  className="px-3 py-1 text-xs text-white"
-                  style={{ borderColor: '#C17B6B', background: '#C17B6B', border: '1px solid #C17B6B' }}
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
