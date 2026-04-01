@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 
 interface CustomUser extends User {
   role?: string;
@@ -34,6 +36,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       if (userCredential.user) {
         await updateProfile(userCredential.user, { displayName: name });
+
+        // 신규 가입자는 패널 미배정 상태(panelId: null)로 저장
+        const userQuery = query(collection(db, 'users'), where('email', '==', email));
+        const existing = await getDocs(userQuery);
+        if (existing.empty) {
+          await addDoc(collection(db, 'users'), {
+            name,
+            email,
+            role: 'user',
+            panelId: null,
+          });
+        }
       }
     } catch (error) {
       // Fallback mock signup

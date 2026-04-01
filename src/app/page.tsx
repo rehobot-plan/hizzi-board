@@ -15,7 +15,7 @@ import LeaveManager from '@/components/LeaveManager';
 export default function Home() {
   const { user, loading: authLoading, signOut } = useAuthStore();
   const { panels, loading: panelLoading, updatePanel } = usePanelStore();
-  const { users, loading: userLoading, deleteUser } = useUserStore();
+  const { users, loading: userLoading, deleteUser, updateUserPanel } = useUserStore();
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
   const [adminTab, setAdminTab] = useState<'users' | 'leave'>('users');
@@ -37,6 +37,41 @@ export default function Home() {
   const handleLogout = async () => {
     await signOut();
     router.push('/login');
+  };
+
+  const handleAssignPanel = async (targetUserId: string, targetEmail: string, nextPanelId: string) => {
+    try {
+      const targetUser = users.find((u) => u.id === targetUserId);
+      if (!targetUser) return;
+
+      const prevPanel = panels.find((p) => p.ownerEmail === targetEmail);
+
+      if (nextPanelId === '') {
+        if (prevPanel) {
+          await updatePanel(prevPanel.id, { ownerEmail: null });
+        }
+        await updateUserPanel(targetUserId, null);
+        return;
+      }
+
+      const nextPanel = panels.find((p) => p.id === nextPanelId);
+      if (!nextPanel) return;
+
+      // 이미 다른 사용자가 배정된 패널은 선택 불가
+      if (nextPanel.ownerEmail && nextPanel.ownerEmail !== targetEmail) {
+        return;
+      }
+
+      if (prevPanel && prevPanel.id !== nextPanel.id) {
+        await updatePanel(prevPanel.id, { ownerEmail: null });
+      }
+
+      await updatePanel(nextPanel.id, { ownerEmail: targetEmail });
+      await updateUserPanel(targetUserId, nextPanel.id);
+    } catch (err) {
+      console.error(err);
+      setDeleteError('패널 배정 저장 중 오류가 발생했습니다.');
+    }
   };
 
   const handlePanelDragStart = (e: React.DragEvent<HTMLDivElement>, panelId: string) => {
@@ -159,28 +194,50 @@ export default function Home() {
                         const userPanel = panels.find((p) => p.ownerEmail === u.email);
                         const isCurrentAdmin = user?.email === u.email && user?.role === 'admin';
                         return (
-                          <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded">
-                            <div>
+                          <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded gap-3">
+                            <div className="min-w-0">
                               <p className="text-sm font-medium">{u.name} ({u.email})</p>
                               <p className="text-xs text-gray-500">담당 패널: {userPanel?.name || '없음'}</p>
                             </div>
-                            <button
-                              disabled={isCurrentAdmin}
-                              onClick={async () => {
-                                if (isCurrentAdmin) return;
-                                try {
-                                  const panel = panels.find((p) => p.ownerEmail === u.email);
-                                  if (panel) await updatePanel(panel.id, { ownerEmail: null });
-                                  await deleteUser(u.id);
-                                } catch (err: any) {
-                                  console.error(err);
-                                  setDeleteError('삭제 중 오류가 발생했습니다.');
-                                }
-                              }}
-                              className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300"
-                            >
-                              삭제
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={userPanel?.id || ''}
+                                onChange={(e) => handleAssignPanel(u.id, u.email, e.target.value)}
+                                disabled={u.role === 'admin'}
+                                className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[140px]"
+                              >
+                                <option value="">패널 없음</option>
+                                {panels
+                                  .slice()
+                                  .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                                  .map((p) => {
+                                    const occupiedByOther = !!(p.ownerEmail && p.ownerEmail !== u.email);
+                                    return (
+                                      <option key={p.id} value={p.id} disabled={occupiedByOther}>
+                                        {p.name}{occupiedByOther ? ' (배정됨)' : ''}
+                                      </option>
+                                    );
+                                  })}
+                              </select>
+                              <button
+                                disabled={isCurrentAdmin}
+                                onClick={async () => {
+                                  if (isCurrentAdmin) return;
+                                  try {
+                                    const panel = panels.find((p) => p.ownerEmail === u.email);
+                                    if (panel) await updatePanel(panel.id, { ownerEmail: null });
+                                    await updateUserPanel(u.id, null);
+                                    await deleteUser(u.id);
+                                  } catch (err: any) {
+                                    console.error(err);
+                                    setDeleteError('삭제 중 오류가 발생했습니다.');
+                                  }
+                                }}
+                                className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-300"
+                              >
+                                삭제
+                              </button>
+                            </div>
                           </div>
                         );
                       })}

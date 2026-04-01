@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { collection, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export interface AppUser {
@@ -15,6 +15,7 @@ interface UserState {
   loading: boolean;
   addUser: (user: Omit<AppUser, 'id'>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
+  updateUserPanel: (id: string, panelId: string | null) => Promise<void>;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -39,6 +40,16 @@ export const useUserStore = create<UserState>((set) => ({
       set((state) => ({ users: state.users.filter((user) => user.id !== id) }));
     } catch (error) {
       console.error('Error deleting user:', error);
+    }
+  },
+  updateUserPanel: async (id, panelId) => {
+    try {
+      await updateDoc(doc(db, 'users', id), { panelId: panelId || null });
+      set((state) => ({
+        users: state.users.map((u) => (u.id === id ? { ...u, panelId: panelId || undefined } : u)),
+      }));
+    } catch (error) {
+      console.error('Error updating user panel:', error);
     }
   },
 }));
