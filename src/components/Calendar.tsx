@@ -167,14 +167,11 @@ export default function Calendar() {
     if (!user) return false;
     const isAdmin = user.role === 'admin';
     const isOwner = user.email && ev.userEmail === user.email;
-    const isManager = user.email && Array.isArray(leaveSettings.find((s) => s.userId === ev.userId)?.viewerEmails)
-      ? (leaveSettings.find((s) => s.userId === ev.userId)?.viewerEmails || []).includes(user.email)
-      : false;
     const isCreator = user.email && ev.createdBy === user.email;
     const isPast = new Date(ev.date + 'T00:00:00') <= new Date(new Date().toDateString());
     if (isAdmin) return true;
     if (isPast || ev.confirmed) return false;
-    return !!(isOwner || isManager || isCreator);
+    return !!(isOwner || isCreator);
   };
 
   const getEventsForDay = (date: Date): CalendarDisplayEvent[] => {
@@ -286,9 +283,7 @@ export default function Calendar() {
       if (!target) return;
       const isAdmin = user.role === 'admin';
       const isSelf = user.email && user.email === target.email;
-      const targetSetting = leaveSettings.find((s) => s.userId === target.id);
-      const isManager = !!(user.email && targetSetting?.viewerEmails?.includes(user.email));
-      if (!isAdmin && !isSelf && !isManager) {
+      if (!isAdmin && !isSelf) {
         addToast('본인 또는 관리자만 연차를 등록할 수 있습니다.');
         return;
       }

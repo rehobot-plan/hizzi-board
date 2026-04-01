@@ -41,7 +41,6 @@ export default function LeaveManager() {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [joinDateDraft, setJoinDateDraft] = useState('');
   const [manualUsedDraft, setManualUsedDraft] = useState('0');
-  const [viewerDraft, setViewerDraft] = useState('');
 
   const [showAdd, setShowAdd] = useState(false);
   const [editTargetId, setEditTargetId] = useState<string | null>(null);
@@ -63,8 +62,7 @@ export default function LeaveManager() {
   useEffect(() => {
     setJoinDateDraft(setting?.joinDate || '');
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
-    setViewerDraft((setting?.viewerEmails || []).join(', '));
-  }, [setting?.joinDate, setting?.manualUsedDays, setting?.viewerEmails]);
+  }, [setting?.joinDate, setting?.manualUsedDays]);
 
   const userEvents = useMemo(() => {
     if (!selectedUser) return [];
@@ -77,15 +75,14 @@ export default function LeaveManager() {
   const isAdmin = user?.role === 'admin';
   const canView = !!selectedUser && canViewLeaveLedger({
     targetUserId: selectedUser.id,
+    targetUserEmail: selectedUser.email,
     currentEmail: user?.email,
     currentRole: user?.role,
-    settings,
   });
 
   const canRegister = !!selectedUser && (
     isAdmin ||
-    (user?.email && selectedUser.email === user.email) ||
-    (setting?.viewerEmails || []).includes(user?.email || '')
+    (user?.email && selectedUser.email === user.email)
   );
 
   const total = calcAnnualLeave(setting?.joinDate || '');
@@ -95,7 +92,6 @@ export default function LeaveManager() {
   const applyDraftFromSetting = () => {
     setJoinDateDraft(setting?.joinDate || '');
     setManualUsedDraft(String(setting?.manualUsedDays || 0));
-    setViewerDraft((setting?.viewerEmails || []).join(', '));
   };
 
   const openAddModal = () => {
@@ -116,17 +112,12 @@ export default function LeaveManager() {
 
   const handleSaveSetting = async () => {
     if (!selectedUser || !isAdmin || !joinDateDraft) return;
-    const viewerEmails = viewerDraft
-      .split(',')
-      .map((email) => email.trim())
-      .filter(Boolean);
 
     await upsertSetting({
       userId: selectedUser.id,
       userName: selectedUser.name,
       joinDate: joinDateDraft,
       manualUsedDays: Number(manualUsedDraft) || 0,
-      viewerEmails,
     });
   };
 
@@ -167,7 +158,6 @@ export default function LeaveManager() {
     const nextSetting = settings.find((s) => s.userId === nextUserId);
     setJoinDateDraft(nextSetting?.joinDate || '');
     setManualUsedDraft(String(nextSetting?.manualUsedDays || 0));
-    setViewerDraft((nextSetting?.viewerEmails || []).join(', '));
   };
 
   if (!employees.length) {
@@ -179,9 +169,69 @@ export default function LeaveManager() {
     );
   }
 
+  const leaveTableData = employees.map((emp) => {
+    const empSetting = settings.find((s) => s.userId === emp.id);
+    const empEvents = events.filter((e) => e.userId === emp.id);
+    const totalLeave = calcAnnualLeave(empSetting?.joinDate || '');
+    const manualUsed = Number(empSetting?.manualUsedDays) || 0;
+    const confirmedUsed = calcUsedLeave(empEvents, 0);
+    const totalUsed = manualUsed + confirmedUsed;
+    const remaining = totalLeave - totalUsed;
+
+    return {
+      id: emp.id,
+      name: emp.name,
+      joinDate: empSetting?.joinDate || '-',
+      totalLeave,
+      manualUsed,
+      confirmedUsed,
+      totalUsed,
+      remaining,
+    };
+  });
+
   return (
     <div className="border border-[#EDE5DC] bg-white rounded p-4">
       <h2 className="text-sm font-semibold text-[#2C1810] mb-4">연차 관리</h2>
+
+      {isAdmin && (
+        <div className="mb-5 overflow-x-auto border border-[#EDE5DC] rounded">
+          <div className="px-3 py-2 text-xs font-semibold text-[#2C1810] bg-[#FDF8F4] border-b border-[#EDE5DC]">
+            전체 직원 연차 현황
+          </div>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr style={{ background: '#FDF8F4', borderBottom: '1px solid #EDE5DC' }}>
+                <th className="px-2 py-2 text-left text-[#2C1810]" style={{ fontSize: '12px' }}>이름</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>입사일</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>발생연차</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>수동입력사용</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>확정사용</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>총사용</th>
+                <th className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>잔여</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaveTableData.map((row) => (
+                <tr key={row.id} style={{ borderBottom: '1px solid #EDE5DC' }}>
+                  <td className="px-2 py-2 text-[#2C1810]" style={{ fontSize: '12px' }}>{row.name}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.joinDate}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.totalLeave}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.manualUsed}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.confirmedUsed}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '12px' }}>{row.totalUsed}</td>
+                  <td
+                    className="px-2 py-2 text-center"
+                    style={{ fontSize: '12px', color: row.remaining < 0 ? '#C17B6B' : '#2C1810' }}
+                  >
+                    {row.remaining}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="flex gap-2 mb-4 flex-wrap">
         {employees.map((employee) => {
@@ -245,13 +295,6 @@ export default function LeaveManager() {
 
           {isAdmin && (
             <div className="mb-4">
-              <div className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-1">열람자 이메일(쉼표 구분)</div>
-              <input
-                value={viewerDraft}
-                onChange={(e) => setViewerDraft(e.target.value)}
-                className="w-full border-b border-[#EDE5DC] bg-transparent outline-none text-xs text-[#2C1810] py-1"
-                placeholder="viewer1@company.com, viewer2@company.com"
-              />
               <div className="mt-2">
                 <button
                   type="button"

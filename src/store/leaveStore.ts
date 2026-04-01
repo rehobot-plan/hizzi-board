@@ -10,7 +10,6 @@ export interface LeaveSetting {
   userName: string;
   joinDate: string;
   manualUsedDays: number;
-  viewerEmails: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -83,17 +82,14 @@ export function calcRemainingLeave(joinDate: string, events: LeaveEvent[], manua
 
 export function canViewLeaveLedger(params: {
   targetUserId: string;
+  targetUserEmail?: string;
   currentEmail?: string | null;
   currentRole?: string;
-  settings: LeaveSetting[];
 }): boolean {
-  const { targetUserId, currentEmail, currentRole, settings } = params;
+  const { targetUserEmail, currentEmail, currentRole } = params;
   if (currentRole === 'admin') return true;
   if (!currentEmail) return false;
-
-  const setting = settings.find((s) => s.userId === targetUserId);
-  if (!setting) return false;
-  return setting.viewerEmails.includes(currentEmail);
+  return !!targetUserEmail && targetUserEmail === currentEmail;
 }
 
 function normalizeLeaveEvent(raw: any, id: string): LeaveEvent {
@@ -124,7 +120,6 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
     const data = {
       ...payload,
       manualUsedDays: toNumber(payload.manualUsedDays, 0),
-      viewerEmails: (payload.viewerEmails || []).map((e) => e.trim()).filter(Boolean),
       updatedAt: new Date(),
     };
 
@@ -190,7 +185,6 @@ try {
           userName: data.userName || '',
           joinDate: data.joinDate || '',
           manualUsedDays: toNumber(data.manualUsedDays, 0),
-          viewerEmails: Array.isArray(data.viewerEmails) ? data.viewerEmails : [],
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
           updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
         } as LeaveSetting;
