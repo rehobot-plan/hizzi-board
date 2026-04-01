@@ -4,6 +4,20 @@ import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
 import { auth } from '@/lib/firebase';
 import { db } from '@/lib/firebase';
 
+const ADMIN_EMAIL = 'admin@company.com';
+
+async function clearAdminPanelOwnership(): Promise<void> {
+  try {
+    const panelSnap = await getDocs(collection(db, 'panels'));
+    const adminOwned = panelSnap.docs.filter((d) => (d.data() as any)?.ownerEmail === ADMIN_EMAIL);
+    for (const panelDoc of adminOwned) {
+      await updateDoc(doc(db, 'panels', panelDoc.id), { ownerEmail: null });
+    }
+  } catch (error) {
+    console.error('Admin panel cleanup skipped:', error);
+  }
+}
+
 interface CustomUser extends User {
   role?: string;
 }
@@ -22,9 +36,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   signIn: async (email, password) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+
+      // 관리자는 로그인 시마다 패널 배정을 강제로 해제
+      if (email === ADMIN_EMAIL) {
+        await clearAdminPanelOwnership();
+      }
     } catch (error) {
       // Fallback to mock
-      if (email === 'admin@company.com' && password === 'admin1234!') {
+      if (email === ADMIN_EMAIL && password === 'admin1234!') {
         set({ user: { email, uid: 'mock-uid', role: 'admin', displayName: '관리자' } as CustomUser });
       } else {
         throw error;
@@ -37,10 +56,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (userCredential.user) {
         await updateProfile(userCredential.user, { displayName: name });
 
-        const isAdminSignup = email === 'admin@company.com';
+        const isAdminSignup = email === ADMIN_EMAIL;
         let assignedPanelId: string | null = null;
 
         // 빈 패널 자동 배정은 시도만 하고 실패해도 가입은 계속 진행
+        // 관리자(role=admin)는 패널 배정 로직을 실행하지 않음
         if (!isAdminSignup) {
           try {
             const panelSnap = await getDocs(collection(db, 'panels'));
@@ -87,10 +107,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 try {
   onAuthStateChanged(auth, (user) => {
     if (user) {
+      if (user.email === ADMIN_EMAIL) {
+        void clearAdminPanelOwnership();
+      }
+
       // Add role based on email
       const customUser: CustomUser = {
         ...user,
-        role: user.email === 'admin@company.com' ? 'admin' : undefined,
+        role: user.email === ADMIN_EMAIL ? 'admin' : undefined,
         displayName: user.displayName || null,
       };
       useAuthStore.setState({ user: customUser, loading: false });
