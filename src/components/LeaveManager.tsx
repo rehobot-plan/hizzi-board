@@ -54,6 +54,8 @@ export default function LeaveManager() {
   const { user } = useAuthStore();
   const { users } = useUserStore();
   const { settings, events, upsertSetting, addLeaveEvent, updateLeaveEvent, deleteLeaveEvent } = useLeaveStore();
+  const currentUser = useMemo(() => users.find((u) => u.email === user?.email), [users, user?.email]);
+  const leaveViewPermission = currentUser?.leaveViewPermission;
 
   const employees = useMemo(() => users.filter((u) => u.role !== 'admin'), [users]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -93,6 +95,8 @@ export default function LeaveManager() {
   }, [events, selectedUser]);
 
   const isAdmin = user?.role === 'admin';
+  const canViewAllLedger = leaveViewPermission === 'all';
+  const isReadOnlyAllViewer = !isAdmin && canViewAllLedger;
   const canView = !!selectedUser && canViewLeaveLedger({
     targetUserId: selectedUser.id,
     targetUserEmail: selectedUser.email,
@@ -261,7 +265,7 @@ export default function LeaveManager() {
     <div className="border border-[#EDE5DC] bg-white rounded p-4">
       <h2 className="text-sm font-semibold text-[#2C1810] mb-4">연차 관리</h2>
 
-      {isAdmin && (
+      {(isAdmin || canViewAllLedger) && (
         <div className="mb-5 overflow-x-auto border border-[#EDE5DC] rounded">
           <div className="px-3 py-2 text-xs font-semibold text-[#2C1810] bg-[#FDF8F4] border-b border-[#EDE5DC]">
             전체 직원 연차 현황
@@ -301,6 +305,9 @@ export default function LeaveManager() {
           </table>
         </div>
       )}
+
+      {isReadOnlyAllViewer ? null : (
+        <>
 
       <div className="flex gap-2 mb-4 flex-wrap">
         {employees.map((employee) => {
@@ -442,6 +449,9 @@ export default function LeaveManager() {
               );
             })}
           </div>
+        </>
+      )}
+
         </>
       )}
 
