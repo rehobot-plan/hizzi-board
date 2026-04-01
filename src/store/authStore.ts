@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { db } from '@/lib/firebase';
 
@@ -37,21 +37,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (userCredential.user) {
         await updateProfile(userCredential.user, { displayName: name });
 
-        // 신규 가입자는 패널 미배정 상태(panelId: null)로 저장
-        const userQuery = query(collection(db, 'users'), where('email', '==', email));
-        const existing = await getDocs(userQuery);
-        if (existing.empty) {
-          await addDoc(collection(db, 'users'), {
+        // 패널 배정/사용자 문서 저장 실패와 무관하게 회원가입은 성공 처리
+        try {
+          await setDoc(doc(db, 'users', userCredential.user.uid), {
             name,
             email,
             role: 'user',
             panelId: null,
-          });
+          }, { merge: true });
+        } catch (profileError) {
+          console.error('User profile create skipped:', profileError);
         }
       }
     } catch (error) {
-      // Fallback mock signup
-      set({ user: { email, uid: `mock-${Date.now()}`, displayName: name } as CustomUser });
+      throw error;
     }
   },
   signOut: async () => {

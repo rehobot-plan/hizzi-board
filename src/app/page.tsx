@@ -14,12 +14,14 @@ import LeaveManager from '@/components/LeaveManager';
 
 export default function Home() {
   const { user, loading: authLoading, signOut } = useAuthStore();
-  const { panels, loading: panelLoading, updatePanel } = usePanelStore();
+  const { panels, loading: panelLoading, updatePanel, addPanel } = usePanelStore();
   const { users, loading: userLoading, deleteUser, updateUserPanel } = useUserStore();
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
   const [adminTab, setAdminTab] = useState<'users' | 'leave'>('users');
   const [deleteError, setDeleteError] = useState('');
+  const [showAddPanelModal, setShowAddPanelModal] = useState(false);
+  const [newPanelName, setNewPanelName] = useState('');
   const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -57,8 +59,10 @@ export default function Home() {
       const nextPanel = panels.find((p) => p.id === nextPanelId);
       if (!nextPanel) return;
 
+      const occupiedByRealUser = !!(nextPanel.ownerEmail && users.some((u) => u.email === nextPanel.ownerEmail));
+
       // 이미 다른 사용자가 배정된 패널은 선택 불가
-      if (nextPanel.ownerEmail && nextPanel.ownerEmail !== targetEmail) {
+      if (occupiedByRealUser && nextPanel.ownerEmail !== targetEmail) {
         return;
       }
 
@@ -92,6 +96,14 @@ export default function Home() {
     await updatePanel(draggedPanel.id, { position: targetPanel.position });
     await updatePanel(targetPanel.id, { position: draggedPanel.position });
     setDraggedPanelId(null);
+  };
+
+  const handleAddPanel = async () => {
+    const trimmed = newPanelName.trim();
+    if (!trimmed) return;
+    await addPanel(trimmed);
+    setNewPanelName('');
+    setShowAddPanelModal(false);
   };
 
   // 사이드바 메뉴
@@ -184,7 +196,16 @@ export default function Home() {
 
               {adminTab === 'users' ? (
                 <>
-                  <h2 className="text-base font-semibold text-[#2C1810] mb-2">관리자 - 사용자 관리</h2>
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-base font-semibold text-[#2C1810]">관리자 - 사용자 관리</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPanelModal(true)}
+                      className="px-3 py-1 text-xs border border-[#2C1810] text-[#2C1810] bg-[#FDF8F4]"
+                    >
+                      + 패널 추가
+                    </button>
+                  </div>
                   {deleteError && <p className="text-sm text-red-600 mb-2">{deleteError}</p>}
                   {userLoading ? (
                     <p>로딩 중...</p>
@@ -200,25 +221,29 @@ export default function Home() {
                               <p className="text-xs text-gray-500">담당 패널: {userPanel?.name || '없음'}</p>
                             </div>
                             <div className="flex items-center gap-2">
-                              <select
-                                value={userPanel?.id || ''}
-                                onChange={(e) => handleAssignPanel(u.id, u.email, e.target.value)}
-                                disabled={u.role === 'admin'}
-                                className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[140px]"
-                              >
-                                <option value="">패널 없음</option>
-                                {panels
-                                  .slice()
-                                  .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-                                  .map((p) => {
-                                    const occupiedByOther = !!(p.ownerEmail && p.ownerEmail !== u.email);
-                                    return (
-                                      <option key={p.id} value={p.id} disabled={occupiedByOther}>
-                                        {p.name}{occupiedByOther ? ' (배정됨)' : ''}
-                                      </option>
-                                    );
-                                  })}
-                              </select>
+                              {u.role === 'admin' ? (
+                                <span className="text-xs text-[#9E8880] px-2">관리자 계정</span>
+                              ) : (
+                                <select
+                                  value={userPanel?.id || ''}
+                                  onChange={(e) => handleAssignPanel(u.id, u.email, e.target.value)}
+                                  className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[140px]"
+                                >
+                                  <option value="">패널 없음</option>
+                                  {panels
+                                    .slice()
+                                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                                    .map((p) => {
+                                      const hasRealOwner = !!(p.ownerEmail && users.some((us) => us.email === p.ownerEmail));
+                                      const occupiedByOther = hasRealOwner && p.ownerEmail !== u.email;
+                                      return (
+                                        <option key={p.id} value={p.id} disabled={occupiedByOther}>
+                                          {p.name}{occupiedByOther ? ' (배정됨)' : ''}
+                                        </option>
+                                      );
+                                    })}
+                                </select>
+                              )}
                               <button
                                 disabled={isCurrentAdmin}
                                 onClick={async () => {
@@ -253,7 +278,7 @@ export default function Home() {
           {/* 데스크탑: 3x2 그리드, 모바일: 3열 미니카드 */}
           <div>
             {/* 데스크탑 */}
-            <div className="hidden md:grid grid-cols-3 gap-6">
+            <div className="hidden md:grid grid-cols-3 gap-6 auto-rows-fr">
               {panels
                 .slice()
                 .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -324,6 +349,25 @@ export default function Home() {
           ))}
         </div>
       </main>
+
+      {showAddPanelModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowAddPanelModal(false)}>
+          <div className="bg-white border border-[#EDE5DC] w-full max-w-sm p-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xs font-semibold text-[#2C1810] uppercase tracking-widest mb-3">패널 추가</h3>
+            <input
+              value={newPanelName}
+              onChange={(e) => setNewPanelName(e.target.value)}
+              placeholder="패널 이름"
+              className="w-full border-b border-[#EDE5DC] bg-transparent outline-none text-sm text-[#2C1810] mb-4"
+              autoFocus
+            />
+            <div className="flex justify-between">
+              <button type="button" onClick={() => setShowAddPanelModal(false)} className="text-xs text-[#9E8880]">취소</button>
+              <button type="button" onClick={handleAddPanel} className="px-3 py-1 text-xs bg-[#2C1810] text-[#FDF8F4]">추가</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

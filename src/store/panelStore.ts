@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface Panel {
@@ -16,6 +16,7 @@ interface PanelState {
   loading: boolean;
   updatePanel: (panelId: string, updates: Partial<Omit<Panel, 'id'>>) => Promise<void>;
   swapPanels: (panelAId: string, panelBId: string) => Promise<void>;
+  addPanel: (name: string) => Promise<void>;
 }
 
 export const usePanelStore = create<PanelState>((set) => ({
@@ -58,6 +59,21 @@ export const usePanelStore = create<PanelState>((set) => ({
           return panel;
         }),
       }));
+    }
+  },
+  addPanel: async (name) => {
+    const state = usePanelStore.getState();
+    const nextPosition = state.panels.reduce((max, panel) => Math.max(max, panel.position ?? 0), -1) + 1;
+
+    try {
+      await addDoc(collection(db, 'panels'), {
+        name,
+        ownerEmail: null,
+        position: nextPosition,
+        categories: DEFAULT_CATEGORIES,
+      });
+    } catch (error) {
+      console.error('Error adding panel:', error);
     }
   },
 }));
