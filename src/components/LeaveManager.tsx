@@ -179,11 +179,68 @@ export default function LeaveManager() {
     );
   }
 
+  // 관리자용 전체 연차 현황 테이블
+  const leaveTableData = employees.map((emp) => {
+    const empSetting = settings.find((s) => s.userId === emp.id);
+    const empEvents = events.filter((e) => e.userId === emp.id);
+    const total = calcAnnualLeave(empSetting?.joinDate || '');
+    const manualUsed = empSetting?.manualUsedDays || 0;
+    const confirmedUsed = calcUsedLeave(empEvents, 0);
+    const totalUsed = manualUsed + confirmedUsed;
+    const remaining = calcRemainingLeave(empSetting?.joinDate || '', empEvents, manualUsed);
+    return {
+      id: emp.id,
+      name: emp.name,
+      joinDate: empSetting?.joinDate || '-',
+      total: isNaN(total) ? 0 : total,
+      manualUsed: isNaN(manualUsed) ? 0 : manualUsed,
+      confirmedUsed: isNaN(confirmedUsed) ? 0 : confirmedUsed,
+      totalUsed: isNaN(totalUsed) ? 0 : totalUsed,
+      remaining: isNaN(remaining) ? 0 : remaining,
+    };
+  });
+
   return (
     <div className="border border-[#EDE5DC] bg-white rounded p-4">
       <h2 className="text-sm font-semibold text-[#2C1810] mb-4">연차 관리</h2>
 
-      <div className="flex gap-2 mb-4 flex-wrap">
+      {isAdmin && (
+        <div className="mb-6 overflow-x-auto">
+          <h3 className="text-xs font-semibold text-[#2C1810] mb-3">전체 직원 연차 현황</h3>
+          <table className="w-full text-10px border-collapse">
+            <thead>
+              <tr style={{ borderBottom: `1px solid #EDE5DC`, background: '#FDF8F4' }}>
+                <th className="px-2 py-2 text-left font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>이름</th>
+                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>입사일</th>
+                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>발생연차</th>
+                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>수동입력</th>
+                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>확정사용</th>
+                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>총사용</th>
+                <th className="px-2 py-2 text-center font-semibold text-[#2C1810]" style={{ fontSize: '10px' }}>잔여</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaveTableData.map((row) => (
+                <tr key={row.id} style={{ borderBottom: `1px solid #EDE5DC` }}>
+                  <td className="px-2 py-2 text-[#2C1810]" style={{ fontSize: '10px' }}>{row.name}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.joinDate}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.total}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.manualUsed}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.confirmedUsed}</td>
+                  <td className="px-2 py-2 text-center text-[#2C1810]" style={{ fontSize: '10px' }}>{row.totalUsed}</td>
+                  <td className="px-2 py-2 text-center" style={{ fontSize: '10px', color: row.remaining < 0 ? '#C17B6B' : '#2C1810', fontWeight: row.remaining < 0 ? 'bold' : 'normal' }}>
+                    {row.remaining}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mb-4">
+        <h3 className="text-xs font-semibold text-[#2C1810] mb-3">개별 직원 관리</h3>
+        <div className="flex gap-2 mb-4 flex-wrap">
         {employees.map((employee) => {
           const active = (selectedUser?.id || employees[0].id) === employee.id;
           return (
@@ -322,6 +379,8 @@ export default function LeaveManager() {
           </div>
         </>
       )}
+
+      </div>
 
       {showAdd && selectedUser && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowAdd(false)}>

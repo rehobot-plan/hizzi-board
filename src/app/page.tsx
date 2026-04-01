@@ -13,16 +13,18 @@ import NoticeArea from '@/components/NoticeArea';
 import LeaveManager from '@/components/LeaveManager';
 
 export default function Home() {
-  const { user, loading: authLoading, signOut } = useAuthStore();
+  const { user, loading: authLoading, signOut, recoveryOrphanAccount } = useAuthStore();
   const { panels, loading: panelLoading, updatePanel, addPanel } = usePanelStore();
   const { users, loading: userLoading, deleteUser, updateUserPanel } = useUserStore();
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
-  const [adminTab, setAdminTab] = useState<'users' | 'leave'>('users');
+  const [adminTab, setAdminTab] = useState<'users' | 'leave' | 'recovery'>('users');
   const [deleteError, setDeleteError] = useState('');
   const [showAddPanelModal, setShowAddPanelModal] = useState(false);
   const [newPanelName, setNewPanelName] = useState('');
   const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryMessage, setRecoveryMessage] = useState('');
   const router = useRouter();
 
   const getUserPanel = (email: string) => panels.find((p) => p.ownerEmail === email);
@@ -212,6 +214,18 @@ export default function Home() {
                 >
                   연차 관리
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setAdminTab('recovery')}
+                  className="px-3 py-1 text-xs border"
+                  style={{
+                    borderColor: adminTab === 'recovery' ? '#2C1810' : '#EDE5DC',
+                    color: adminTab === 'recovery' ? '#2C1810' : '#9E8880',
+                    background: adminTab === 'recovery' ? '#FDF8F4' : '#fff',
+                  }}
+                >
+                  계정 복구
+                </button>
               </div>
 
               {adminTab === 'users' ? (
@@ -300,8 +314,50 @@ export default function Home() {
                     </div>
                   )}
                 </>
-              ) : (
+              ) : adminTab === 'leave' ? (
                 <LeaveManager />
+              ) : (
+                <div>
+                  <h2 className="text-base font-semibold text-[#2C1810] mb-4">관리자 - 계정 복구</h2>
+                  <p className="text-xs text-[#9E8880] mb-4">Firebase Auth에는 있지만 Firestore users에 없는 고아 계정을 복구합니다.</p>
+                  
+                  {recoveryMessage && (
+                    <div className={`text-sm p-3 rounded mb-4 ${recoveryMessage.includes('성공') || recoveryMessage.includes('Success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {recoveryMessage}
+                    </div>
+                  )}
+                  
+                  <div className="border border-[#EDE5DC] p-4 rounded bg-white">
+                    <label className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-2 block">이메일</label>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="email"
+                        value={recoveryEmail}
+                        onChange={(e) => setRecoveryEmail(e.target.value)}
+                        placeholder="example@company.com"
+                        className="flex-1 border-b border-[#EDE5DC] bg-transparent outline-none text-sm text-[#2C1810]"
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            setRecoveryMessage('');
+                            await recoveryOrphanAccount(recoveryEmail);
+                            setRecoveryMessage(`✓ ${recoveryEmail} 계정이 복구되었습니다.`);
+                            setRecoveryEmail('');
+                          } catch (err: any) {
+                            setRecoveryMessage(`✕ 오류: ${err?.message || '계정 복구 실패'}`);
+                          }
+                        }}
+                        className="px-4 py-1 text-xs bg-[#2C1810] text-[#FDF8F4] border border-[#2C1810] rounded"
+                      >
+                        복구
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-[#9E8880]">• 해당 이메일이 이미 Firestore에 있으면 복구할 수 없습니다.</p>
+                    <p className="text-[10px] text-[#9E8880]">• 복구 후 자동으로 빈 패널이 배정됩니다. (관리자 계정 제외)</p>
+                  </div>
+                </div>
               )}
             </div>
           )}

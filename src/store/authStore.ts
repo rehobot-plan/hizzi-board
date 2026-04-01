@@ -28,6 +28,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
+  recoveryOrphanAccount: (email: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -90,8 +91,61 @@ export const useAuthStore = create<AuthState>((set) => ({
           console.error('User profile create skipped:', profileError);
         }
       }
-    } catch (error) {
-      throw error;
+    } catch (error: any) {
+      // auth/email-already-in-use 에러 처리: Firestore users에 없으면 복구 시도
+      if (error?.code === 'auth/email-already-in-use') {
+        try {
+          // Firestore users 컬렉션에서 해당 이메일 검색
+          const usersSnap = await getDocs(collection(db, 'users'));
+          const userExists = usersSnap.docs.some((d) => (d.data() as any)?.email === email);
+
+          if (!userExists) {
+            // Firestore에 없으면 로그인 후 users 문서 생성
+            const signInResult = await signInWithEmailAndPassword(auth, email, password);
+            if (signInResult.user) {
+              const isAdminSignup = email === ADMIN_EMAIL;
+              let assignedPanelId: string | null = null;
+
+              // 빈 패널 자동 배정
+              if (!isAdminSignup) {
+                try {
+                  const panelSnap = await getDocs(collection(db, 'panels'));
+                  const sortedPanels = panelSnap.docs
+                    .map((d) => ({ id: d.id, ...(d.data() as any) }))
+                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+                  const emptyPanel = sortedPanels.find((panel) => !panel.ownerEmail);
+                  if (emptyPanel) {
+                    await updateDoc(doc(db, 'panels', emptyPanel.id), { ownerEmail: email });
+                    assignedPanelId = emptyPanel.id;
+                  }
+                } catch (panelAssignError) {
+                  console.error('Panel auto-assign skipped:', panelAssignError);
+                }
+              }
+
+              // users 문서 생성
+              try {
+                await setDoc(doc(db, 'users', signInResult.user.uid), {
+                  name,
+                  email,
+                  role: isAdminSignup ? 'admin' : 'user',
+                  panelId: assignedPanelId,
+                }, { merge: true });
+              } catch (profileError) {
+                console.error('User profile create skipped:', profileError);
+              }
+            }
+          } else {
+            // Firestore에 있으면 원래 에러 던지기
+            throw error;
+          }
+        } catch (fallbackError) {
+          throw fallbackError;
+        }
+      } else {
+        throw error;
+      }
     }
   },
   signOut: async () => {
@@ -99,6 +153,54 @@ export const useAuthStore = create<AuthState>((set) => ({
       await signOut(auth);
     } catch (error) {
       set({ user: null });
+    }
+  },
+  recoveryOrphanAccount: async (email) => {
+    try {
+      // Firestore users에 해당 이메일 존재 여부 확인
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const userExists = usersSnap.docs.some((d) => (d.data() as any)?.email === email);
+
+      if (userExists) {
+        throw new Error('이미 Firestore에 등록된 계정입니다.');
+      }
+
+      // Firebase Auth에 해당 이메일이 있는지 확인하기 위해 fetchSignInMethodsForEmail 사용
+      // 그냥 users 문서를 생성하고 패널 할당
+      const isAdminEmail = email === ADMIN_EMAIL;
+      let assignedPanelId: string | null = null;
+
+      // 빈 패널 자동 배정 (관리자 제외)
+      if (!isAdminEmail) {
+        try {
+          const panelSnap = await getDocs(collection(db, 'panels'));
+          const sortedPanels = panelSnap.docs
+            .map((d) => ({ id: d.id, ...(d.data() as any) }))
+            .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+          const emptyPanel = sortedPanels.find((panel) => !panel.ownerEmail);
+          if (emptyPanel) {
+            await updateDoc(doc(db, 'panels', emptyPanel.id), { ownerEmail: email });
+            assignedPanelId = emptyPanel.id;
+          }
+        } catch (panelAssignError) {
+          console.error('Panel auto-assign skipped:', panelAssignError);
+        }
+      }
+
+      // 이메일에서 이름 추출 (@ 앞부분)
+      const nameFromEmail = email.split('@')[0];
+
+      // users 문서 생성 (uid는 email의 해시값 사용)
+      const docId = 'orphan_' + email.replace(/[^a-z0-9]/g, '_');
+      await setDoc(doc(db, 'users', docId), {
+        name: nameFromEmail,
+        email,
+        role: isAdminEmail ? 'admin' : 'user',
+        panelId: assignedPanelId,
+      }, { merge: true });
+    } catch (error) {
+      throw error;
     }
   },
 }));
