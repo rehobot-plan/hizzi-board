@@ -85,6 +85,7 @@ export const usePostStore = create<PostState>((set, get) => ({
 
 let postUnsubscribe: (() => void) | null = null;
 const notified = new Set<string>();
+const isAdmin = (email: string) => email === 'admin@company.com';
 
 export const initPostListener = () => {
   if (postUnsubscribe) {
@@ -128,9 +129,15 @@ export const initPostListener = () => {
 
       if (actionMessage) {
         const currentUserEmail = useAuthStore.getState().user?.email;
+        const currentUserIsAdmin = useAuthStore.getState().user?.role === 'admin';
         const isMyPost = data.author === currentUserEmail;
         const isVisibleToMe = !data.visibleTo || data.visibleTo.length === 0 || data.visibleTo.includes(currentUserEmail);
-        if (!isMyPost && isVisibleToMe) {
+        if (
+          !isMyPost &&
+          isVisibleToMe &&
+          !isAdmin(data.author || '') &&
+          !currentUserIsAdmin
+        ) {
           useToastStore.getState().addToast(`${author}님이 ${panelName}에 게시물을 ${actionMessage}`);
         }
       }
