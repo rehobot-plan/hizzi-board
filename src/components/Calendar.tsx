@@ -43,6 +43,10 @@ interface CalendarDisplayEvent {
   source: 'calendar' | 'leave';
   rawCalendar?: CalendarEvent;
   rawLeave?: any;
+  isSegmentStart?: boolean;
+  isSegmentEnd?: boolean;
+  isSingleSegment?: boolean;
+  displayTitle?: string;
 }
 
 function toDS(date: Date): string {
@@ -83,6 +87,41 @@ function addYears(date: Date, n: number): Date {
   const d = new Date(date);
   d.setFullYear(d.getFullYear() + n);
   return d;
+}
+
+function isNonWorkingDay(ds: string): boolean {
+  const date = new Date(ds + 'T00:00:00');
+  const day = date.getDay();
+  const isWeekend = day === 0 || day === 6;
+  return isWeekend || !!HOLIDAYS_2026[ds];
+}
+
+function findPrevConnectedDate(ds: string, hasDate: (v: string) => boolean): string | null {
+  let cursor = addDays(new Date(ds + 'T00:00:00'), -1);
+  const first = toDS(cursor);
+  if (hasDate(first)) return first;
+
+  while (isNonWorkingDay(toDS(cursor))) {
+    cursor = addDays(cursor, -1);
+    const key = toDS(cursor);
+    if (hasDate(key)) return key;
+  }
+
+  return null;
+}
+
+function findNextConnectedDate(ds: string, hasDate: (v: string) => boolean): string | null {
+  let cursor = addDays(new Date(ds + 'T00:00:00'), 1);
+  const first = toDS(cursor);
+  if (hasDate(first)) return first;
+
+  while (isNonWorkingDay(toDS(cursor))) {
+    cursor = addDays(cursor, 1);
+    const key = toDS(cursor);
+    if (hasDate(key)) return key;
+  }
+
+  return null;
 }
 
 export default function Calendar() {
@@ -193,11 +232,27 @@ export default function Calendar() {
         rawCalendar: ev,
       }));
 
+    const userLeaveDateMap = new Map<string, Set<string>>();
+    leaveEvents.forEach((ev: any) => {
+      const userId = ev.userId || '';
+      if (!userId || !ev.date) return;
+      if (!userLeaveDateMap.has(userId)) userLeaveDateMap.set(userId, new Set<string>());
+      userLeaveDateMap.get(userId)!.add(ev.date);
+    });
+
     const leaveBlocks = leaveEvents
       .filter((ev: any) => ev.date === ds)
       .map((ev: any) => {
         const isHalf = ev.type === 'half_am' || ev.type === 'half_pm';
         const typeLabel = ev.type === 'full' ? '연차' : (ev.type === 'half_am' ? '오전반차' : '오후반차');
+        const dateSet = userLeaveDateMap.get(ev.userId || '') || new Set<string>();
+        const hasDate = (value: string) => dateSet.has(value);
+        const hasPrev = !!findPrevConnectedDate(ev.date, hasDate);
+        const hasNext = !!findNextConnectedDate(ev.date, hasDate);
+        const isStart = !hasPrev;
+        const isEnd = !hasNext;
+        const isSingle = isStart && isEnd;
+
         return {
           id: ev.id,
           title: (ev.userName || '직원') + ' ' + typeLabel + (ev.confirmed ? ' 🔒' : ''),
@@ -207,6 +262,10 @@ export default function Calendar() {
           authorName: ev.createdBy,
           source: 'leave' as const,
           rawLeave: ev,
+          isSegmentStart: isStart,
+          isSegmentEnd: isEnd,
+          isSingleSegment: isSingle,
+          displayTitle: isStart || isSingle ? ((ev.userName || '직원') + ' ' + typeLabel + (ev.confirmed ? ' 🔒' : '')) : '\u00A0',
         };
       });
 
@@ -513,9 +572,9 @@ export default function Calendar() {
               </div>
               {isHol && <div style={{ fontSize: 9, color: '#C17B6B', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginBottom: 1 }}>{HOLIDAYS_2026[ds]}</div>}
               {dayEvs.slice(0, 2).map(ev => {
-                const isSingle = ev.startDate === ev.endDate;
-                const isStart = ev.startDate === ds;
-                const isEnd = ev.endDate === ds;
+                const isSingle = ev.source === 'leave' ? !!ev.isSingleSegment : ev.startDate === ev.endDate;
+                const isStart = ev.source === 'leave' ? !!ev.isSegmentStart : ev.startDate === ds;
+                const isEnd = ev.source === 'leave' ? !!ev.isSegmentEnd : ev.endDate === ds;
                 return (
                   <div key={ev.id} onClick={e => {
                     e.stopPropagation();
@@ -532,7 +591,7 @@ export default function Calendar() {
                     }
                   }}
                     style={{ fontSize: 10, color: '#fff', background: ev.color || '#C17B6B', padding: '1px 4px', marginBottom: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0, marginLeft: isStart || isSingle ? 0 : -3, marginRight: isEnd || isSingle ? 0 : -3 }}>
-                    {isStart || isSingle ? ev.title : '\u00A0'}
+                    {ev.source === 'leave' ? (ev.displayTitle || '\u00A0') : (isStart || isSingle ? ev.title : '\u00A0')}
                   </div>
                 );
               })}
