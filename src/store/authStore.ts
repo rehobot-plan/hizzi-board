@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { auth } from '@/lib/firebase';
 import { db } from '@/lib/firebase';
 
@@ -37,13 +37,34 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (userCredential.user) {
         await updateProfile(userCredential.user, { displayName: name });
 
-        // 패널 배정/사용자 문서 저장 실패와 무관하게 회원가입은 성공 처리
+        const isAdminSignup = email === 'admin@company.com';
+        let assignedPanelId: string | null = null;
+
+        // 빈 패널 자동 배정은 시도만 하고 실패해도 가입은 계속 진행
+        if (!isAdminSignup) {
+          try {
+            const panelSnap = await getDocs(collection(db, 'panels'));
+            const sortedPanels = panelSnap.docs
+              .map((d) => ({ id: d.id, ...(d.data() as any) }))
+              .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+
+            const emptyPanel = sortedPanels.find((panel) => !panel.ownerEmail);
+            if (emptyPanel) {
+              await updateDoc(doc(db, 'panels', emptyPanel.id), { ownerEmail: email });
+              assignedPanelId = emptyPanel.id;
+            }
+          } catch (panelAssignError) {
+            console.error('Panel auto-assign skipped:', panelAssignError);
+          }
+        }
+
+        // 사용자 문서 저장 실패도 가입 자체를 막지 않음
         try {
           await setDoc(doc(db, 'users', userCredential.user.uid), {
             name,
             email,
-            role: 'user',
-            panelId: null,
+            role: isAdminSignup ? 'admin' : 'user',
+            panelId: assignedPanelId,
           }, { merge: true });
         } catch (profileError) {
           console.error('User profile create skipped:', profileError);

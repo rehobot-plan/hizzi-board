@@ -25,6 +25,26 @@ export default function Home() {
   const [draggedPanelId, setDraggedPanelId] = useState<string | null>(null);
   const router = useRouter();
 
+  const getUserPanel = (email: string) => panels.find((p) => p.ownerEmail === email);
+
+  const isUnassignedUser = (u: { role?: string; email: string; panelId?: string }) => {
+    if (u.role === 'admin') return false;
+    const linkedByOwner = !!getUserPanel(u.email);
+    const linkedByPanelId = !!u.panelId;
+    return !linkedByOwner && !linkedByPanelId;
+  };
+
+  const sortedUsers = users
+    .slice()
+    .sort((a, b) => {
+      const aUnassigned = isUnassignedUser(a);
+      const bUnassigned = isUnassignedUser(b);
+      if (aUnassigned !== bUnassigned) return aUnassigned ? -1 : 1;
+      return a.name.localeCompare(b.name, 'ko');
+    });
+
+  const unassignedCount = users.filter((u) => isUnassignedUser(u)).length;
+
   useEffect(() => {
     const cleanup = initPostListener();
     return cleanup;
@@ -197,7 +217,10 @@ export default function Home() {
               {adminTab === 'users' ? (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-base font-semibold text-[#2C1810]">관리자 - 사용자 관리</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-semibold text-[#2C1810]">관리자 - 사용자 관리</h2>
+                      <span className="text-xs text-[#C17B6B]">미배정 {unassignedCount}명</span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setShowAddPanelModal(true)}
@@ -211,13 +234,21 @@ export default function Home() {
                     <p>로딩 중...</p>
                   ) : (
                     <div className="space-y-2">
-                      {users.map((u) => {
-                        const userPanel = panels.find((p) => p.ownerEmail === u.email);
+                      {sortedUsers.map((u) => {
+                        const userPanel = getUserPanel(u.email);
                         const isCurrentAdmin = user?.email === u.email && user?.role === 'admin';
+                        const isUnassigned = isUnassignedUser(u);
                         return (
                           <div key={u.id} className="flex justify-between items-center bg-white p-2 border rounded gap-3">
                             <div className="min-w-0">
-                              <p className="text-sm font-medium">{u.name} ({u.email})</p>
+                              <p className="text-sm font-medium flex items-center gap-2">
+                                <span>{u.name} ({u.email})</span>
+                                {isUnassigned && (
+                                  <span className="text-[10px] px-2 py-0.5 border" style={{ color: '#C17B6B', borderColor: '#C17B6B', background: '#FFF5F2' }}>
+                                    패널 미배정
+                                  </span>
+                                )}
+                              </p>
                               <p className="text-xs text-gray-500">담당 패널: {userPanel?.name || '없음'}</p>
                             </div>
                             <div className="flex items-center gap-2">
