@@ -89,39 +89,16 @@ function addYears(date: Date, n: number): Date {
   return d;
 }
 
-function isNonWorkingDay(ds: string): boolean {
-  const date = new Date(ds + 'T00:00:00');
-  const day = date.getDay();
-  const isWeekend = day === 0 || day === 6;
-  return isWeekend || !!HOLIDAYS_2026[ds];
+function getPrevDateStr(date: Date): string {
+  const d = new Date(date);
+  d.setDate(d.getDate() - 1);
+  return toDS(d);
 }
 
-function findPrevConnectedDate(ds: string, hasDate: (v: string) => boolean): string | null {
-  let cursor = addDays(new Date(ds + 'T00:00:00'), -1);
-  const first = toDS(cursor);
-  if (hasDate(first)) return first;
-
-  while (isNonWorkingDay(toDS(cursor))) {
-    cursor = addDays(cursor, -1);
-    const key = toDS(cursor);
-    if (hasDate(key)) return key;
-  }
-
-  return null;
-}
-
-function findNextConnectedDate(ds: string, hasDate: (v: string) => boolean): string | null {
-  let cursor = addDays(new Date(ds + 'T00:00:00'), 1);
-  const first = toDS(cursor);
-  if (hasDate(first)) return first;
-
-  while (isNonWorkingDay(toDS(cursor))) {
-    cursor = addDays(cursor, 1);
-    const key = toDS(cursor);
-    if (hasDate(key)) return key;
-  }
-
-  return null;
+function getNextDateStr(date: Date): string {
+  const d = new Date(date);
+  d.setDate(d.getDate() + 1);
+  return toDS(d);
 }
 
 export default function Calendar() {
@@ -232,23 +209,25 @@ export default function Calendar() {
         rawCalendar: ev,
       }));
 
-    const userLeaveDateMap = new Map<string, Set<string>>();
-    leaveEvents.forEach((ev: any) => {
-      const userId = ev.userId || '';
-      if (!userId || !ev.date) return;
-      if (!userLeaveDateMap.has(userId)) userLeaveDateMap.set(userId, new Set<string>());
-      userLeaveDateMap.get(userId)!.add(ev.date);
-    });
-
     const leaveBlocks = leaveEvents
       .filter((ev: any) => ev.date === ds)
       .map((ev: any) => {
         const isHalf = ev.type === 'half_am' || ev.type === 'half_pm';
         const typeLabel = ev.type === 'full' ? '연차' : (ev.type === 'half_am' ? '오전반차' : '오후반차');
-        const dateSet = userLeaveDateMap.get(ev.userId || '') || new Set<string>();
-        const hasDate = (value: string) => dateSet.has(value);
-        const hasPrev = !!findPrevConnectedDate(ev.date, hasDate);
-        const hasNext = !!findNextConnectedDate(ev.date, hasDate);
+        const currentDate = new Date(ev.date + 'T00:00:00');
+        const prevDateStr = getPrevDateStr(currentDate);
+        const nextDateStr = getNextDateStr(currentDate);
+
+        const hasPrev = leaveEvents.some((e: any) =>
+          e.userId === ev.userId &&
+          e.date === prevDateStr
+        );
+
+        const hasNext = leaveEvents.some((e: any) =>
+          e.userId === ev.userId &&
+          e.date === nextDateStr
+        );
+
         const isStart = !hasPrev;
         const isEnd = !hasNext;
         const isSingle = isStart && isEnd;
