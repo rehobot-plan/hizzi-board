@@ -142,6 +142,10 @@ export default function Calendar() {
   const [selectedEndDate, setSelectedEndDate] = useState('');
   const ignoreNextClickRef = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: 'single' | 'repeat' | 'leave';
+    target: any;
+  } | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -445,7 +449,10 @@ export default function Calendar() {
   };
 
   const handleDeleteSingle = async (ev: CalendarEvent) => {
-    if (!confirm('이 일정을 삭제할까요?')) return;
+    setDeleteConfirm({ type: 'single', target: ev });
+  };
+
+  const executeDeleteSingle = async (ev: CalendarEvent) => {
     setLoading(true);
     try {
       await deleteDoc(doc(db, 'calendarEvents', ev.id));
@@ -457,7 +464,10 @@ export default function Calendar() {
 
   const handleDeleteRepeat = async (ev: CalendarEvent) => {
     if (!ev.repeatGroupId) return;
-    if (!confirm('이 날짜 이후의 반복 일정을 모두 삭제할까요?')) return;
+    setDeleteConfirm({ type: 'repeat', target: ev });
+  };
+
+  const executeDeleteRepeat = async (ev: CalendarEvent) => {
     setLoading(true);
     try {
       const snap = await getDocs(collection(db, 'calendarEvents'));
@@ -473,7 +483,10 @@ export default function Calendar() {
 
   const handleLeaveDelete = async (ev: any) => {
     if (!canEditLeave(ev)) return;
-    if (!confirm('이 연차를 삭제할까요?')) return;
+    setDeleteConfirm({ type: 'leave', target: ev });
+  };
+
+  const executeLeaveDelete = async (ev: any) => {
     setLoading(true);
     try {
       await deleteLeaveEvent(ev.id);
@@ -576,7 +589,7 @@ export default function Calendar() {
                       setLeaveMemo(ev.rawLeave.memo || '');
                     }
                   }}
-                    style={{ fontSize: 10, color: '#fff', background: ev.color || '#C17B6B', padding: '1px 4px', marginBottom: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0, marginLeft: isStart || isSingle ? 0 : -3, marginRight: isEnd || isSingle ? 0 : -3 }}>
+                    style={{ fontSize: 10, color: '#fff', background: ev.color || '#C17B6B', cursor: 'pointer', padding: '1px 4px', marginBottom: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0, marginLeft: isStart || isSingle ? 0 : -3, marginRight: isEnd || isSingle ? 0 : -3 }}>
                     {ev.source === 'leave' ? (ev.displayTitle || '\u00A0') : (isStart || isSingle ? ev.title : '\u00A0')}
                   </div>
                 );
@@ -830,8 +843,11 @@ export default function Calendar() {
       {showDetail && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 380 }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>일정 상세</span>
+              {canEditCalendar(showDetail) && (
+                <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>✎ 편집 가능</span>
+              )}
             </div>
             <div style={{ padding: '16px 20px' }}>
               {canEditCalendar(showDetail) ? (
@@ -883,8 +899,11 @@ export default function Calendar() {
       {showLeaveDetail && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 380 }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>연차 상세</span>
+              {canEditLeave(showLeaveDetail) && (
+                <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>✎ 편집 가능</span>
+              )}
             </div>
             <div style={{ padding: '16px 20px' }}>
               {canEditLeave(showLeaveDetail) ? (
@@ -932,6 +951,48 @@ export default function Calendar() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 340 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>
+                {deleteConfirm.type === 'repeat' ? '반복 일정 삭제' : deleteConfirm.type === 'leave' ? '연차 삭제' : '일정 삭제'}
+              </span>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6 }}>
+                {deleteConfirm.type === 'repeat'
+                  ? '이 날짜 이후의 반복 일정을 모두 삭제할까요?'
+                  : deleteConfirm.type === 'leave'
+                  ? '이 연차를 삭제할까요?'
+                  : '이 일정을 삭제할까요?'}
+              </p>
+              <p style={{ fontSize: 11, color: '#9E8880', marginTop: 4 }}>삭제된 내용은 복구할 수 없습니다.</p>
+            </div>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={async () => {
+                  if (deleteConfirm.type === 'single') await executeDeleteSingle(deleteConfirm.target);
+                  if (deleteConfirm.type === 'repeat') await executeDeleteRepeat(deleteConfirm.target);
+                  if (deleteConfirm.type === 'leave') await executeLeaveDelete(deleteConfirm.target);
+                  setDeleteConfirm(null);
+                }}
+                disabled={loading}
+                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#C17B6B', color: '#FDF8F4', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}
+              >
+                {loading ? '삭제 중...' : '삭제'}
+              </button>
             </div>
           </div>
         </div>
