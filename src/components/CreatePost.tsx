@@ -22,6 +22,7 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
 
   const [type, setType] = useState<'text' | 'image' | 'link' | 'file'>('text');
   const [category, setCategory] = useState('');
+  const [taskType, setTaskType] = useState<'work' | 'personal'>('work');
   const [visibility, setVisibility] = useState<'all' | 'me' | 'specific'>('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [content, setContent] = useState('');
@@ -78,6 +79,7 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
       author: user.email!,
       category: category || '전체',
       visibleTo: visibility === 'all' ? [] : visibleTo,
+      taskType: category === '할일' ? taskType : undefined,
     });
 
     onClose();
@@ -146,7 +148,11 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
               {['전체', ...allCategories].map(cat => (
                 <button
                   key={cat}
-                  onClick={() => setCategory(cat === '전체' ? '' : cat)}
+                  onClick={() => {
+                    const val = cat === '전체' ? '' : cat;
+                    setCategory(val);
+                    if (cat === '할일') setVisibility('me');
+                  }}
                   style={{
                     padding: '6px 12px',
                     fontSize: 10,
@@ -169,6 +175,7 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
 
           {/* 공개 범위 */}
           <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {(['all', 'me', 'specific'] as const).map((v) => {
@@ -214,6 +221,35 @@ export default function CreatePost({ panelId, onClose, categories }: CreatePostP
               </div>
             )}
           </div>
+
+          {/* 구분 (할일 카테고리일 때만) */}
+          {category === '할일' && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>구분</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {(['work', 'personal'] as const).map(t => {
+                  const labels = { work: '업무', personal: '개인' };
+                  const activeColor = t === 'work' ? '#C17B6B' : '#9E8880';
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setTaskType(t)}
+                      style={{
+                        padding: '5px 14px',
+                        border: `1px solid ${taskType === t ? activeColor : '#EDE5DC'}`,
+                        background: taskType === t ? (t === 'work' ? '#FFF5F2' : '#F5F0EE') : '#fff',
+                        fontSize: 10, letterSpacing: '0.06em',
+                        color: taskType === t ? activeColor : '#9E8880',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {labels[t]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* 내용 입력 */}
           <div>

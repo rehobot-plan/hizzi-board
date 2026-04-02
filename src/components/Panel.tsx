@@ -6,6 +6,7 @@ import { usePanelStore } from "@/store/panelStore";
 import { useAuthStore } from "@/store/authStore";
 import PostItem from "./PostItem";
 import CreatePost from "./CreatePost";
+import TodoItem from "./TodoItem";
 
 interface PanelProps {
   id: string;
@@ -17,7 +18,7 @@ interface PanelProps {
 }
 
 // [마이그레이션 필요] 기존 Firestore 카테고리: 결재 → 첨부파일로 변경 필요
-const DEFAULT_CATEGORIES = ["공지", "메모", "첨부파일"];
+const DEFAULT_CATEGORIES = ["공지", "할일", "메모", "첨부파일"];
 const BASE_CATEGORIES = ["전체", ...DEFAULT_CATEGORIES];
 
 
@@ -35,6 +36,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [categoryList, setCategoryList] = useState<string[]>(categories || DEFAULT_CATEGORIES);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const { posts, deletePost } = usePostStore();
   const { user } = useAuthStore();
@@ -218,17 +220,92 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
       </div>
       {/* 게시물 목록 */}
       <div className="flex-1 overflow-y-auto px-5">
-        {filteredPosts.length === 0 ? (
-          <p className="text-[#C1B6A6] text-center text-xs py-4 leading-relaxed">게시물이 없습니다</p>
+        {activeCategory === "할일" ? (
+          (() => {
+            const isOwner = user && ownerEmail === user?.email;
+            const canEdit = !!(user && (user.role === "admin" || isOwner));
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            const todoAll = posts.filter(p =>
+              p.panelId === id && p.category === "할일" &&
+              (() => {
+                if (!user) return false;
+                const v = p.visibleTo;
+                if (!v || v.length === 0) return true;
+                if (user.role === "admin") return true;
+                if (p.author === user.email) return true;
+                return v.includes(user.email ?? "");
+              })()
+            );
+
+            const activeTodos = todoAll
+              .filter(p => !p.completed)
+              .sort((a, b) => {
+                if (a.starred && !b.starred) return -1;
+                if (!a.starred && b.starred) return 1;
+                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+              });
+
+            const completedTodos = todoAll
+              .filter(p => p.completed)
+              .sort((a, b) => {
+                const aT = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+                const bT = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+                return bT - aT;
+              });
+
+            return (
+              <>
+                {activeTodos.length === 0 && !showCompleted && (
+                  <p className="text-[#C1B6A6] text-center text-xs py-4">할일이 없습니다</p>
+                )}
+                {activeTodos.map(post => (
+                  <TodoItem key={post.id} post={post} canEdit={canEdit} />
+                ))}
+                <button
+                  onClick={() => setShowCompleted(v => !v)}
+                  style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', letterSpacing: '0.06em', display: 'block', width: '100%', textAlign: 'left' }}
+                >
+                  {showCompleted ? '▲ 완료된 할일 숨기기' : `▼ 완료된 할일 보기 (${completedTodos.length})`}
+                </button>
+                {showCompleted && (
+                  <div style={{ borderTop: '1px solid #EDE5DC', paddingTop: 4 }}>
+                    {completedTodos.length === 0 ? (
+                      <p style={{ fontSize: 11, color: '#C4B8B0', padding: '8px 0' }}>완료된 할일이 없습니다</p>
+                    ) : completedTodos.map(post => {
+                      const formatDate = (d: Date) => {
+                        const dt = d instanceof Date ? d : new Date(d);
+                        return dt.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+                      };
+                      const isWork = post.taskType === 'work';
+                      return (
+                        <div key={post.id} style={{ display: 'flex', gap: 8, padding: '6px 0', borderBottom: '1px solid #EDE5DC', alignItems: 'center' }}>
+                          <span style={{ fontSize: 10, color: '#C17B6B', flexShrink: 0 }}>✓</span>
+                          <span style={{ fontSize: 11, color: '#9E8880', textDecoration: 'line-through', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.content}</span>
+                          <span style={{ fontSize: 9, padding: '1px 5px', background: isWork ? '#FFF5F2' : '#F5F0EE', color: isWork ? '#C17B6B' : '#9E8880', flexShrink: 0 }}>{isWork ? '업무' : '개인'}</span>
+                          <span style={{ fontSize: 10, color: '#C4B8B0', flexShrink: 0 }}>작성 {formatDate(post.createdAt)}</span>
+                          <span style={{ fontSize: 10, color: '#C4B8B0', flexShrink: 0 }}>완료 {post.completedAt ? formatDate(new Date(post.completedAt)) : '-'}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            );
+          })()
         ) : (
-          filteredPosts.map((post) => (
-            <div
-              key={post.id}
-              className="group relative py-3 border-b border-[#EDE5DC] hover:border-l-2 hover:border-l-[#C17B6B] pl-2"
-            >
-              <PostItem post={post} />
-            </div>
-          ))
+          <>
+            {filteredPosts.length === 0 ? (
+              <p className="text-[#C1B6A6] text-center text-xs py-4 leading-relaxed">게시물이 없습니다</p>
+            ) : (
+              filteredPosts.map((post) => (
+                <div key={post.id} className="group relative py-3 border-b border-[#EDE5DC] hover:border-l-2 hover:border-l-[#C17B6B] pl-2">
+                  <PostItem post={post} />
+                </div>
+              ))
+            )}
+          </>
         )}
       </div>
       {/* CreatePost 모달 */}

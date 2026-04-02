@@ -23,6 +23,10 @@ export interface Post {
   category?: string;
   visibleTo?: string[];
   attachments?: PostAttachment[];
+  taskType?: 'work' | 'personal';
+  starred?: boolean;
+  completed?: boolean;
+  completedAt?: Date;
 }
 
 interface PostState {
