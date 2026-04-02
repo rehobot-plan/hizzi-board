@@ -56,7 +56,11 @@ export default function GlobalMenu() {
             {group.actions.map((action, ai) => (
               <button
                 key={ai}
-                onClick={() => { closeMenu(); action.onClick(); }}
+                onClick={() => {
+                  const fn = action.onClick;
+                  closeMenu();
+                  setTimeout(() => fn(), 0);
+                }}
                 style={{
                   display: 'block', width: '100%', padding: '8px 14px',
                   textAlign: 'left', fontSize: 12,
