@@ -11,7 +11,6 @@ import Panel from '@/components/Panel';
 import Calendar from '@/components/Calendar';
 import NoticeArea from '@/components/NoticeArea';
 import LeaveManager from '@/components/LeaveManager';
-import GlobalMenu from '@/components/GlobalMenu';
 
 export default function Home() {
   const { user, loading: authLoading, signOut, recoveryOrphanAccount } = useAuthStore();
@@ -147,7 +146,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex bg-[#FDF8F4]">
-      <GlobalMenu />
       {/* 사이드바: 모바일에서 숨김 */}
       <aside
         className="flex-col justify-between min-h-screen w-[200px] bg-[#5C1F1F] py-8 px-6 hidden md:flex"

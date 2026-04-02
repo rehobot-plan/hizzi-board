@@ -5,7 +5,6 @@ import { Post, usePostStore } from '@/store/postStore';
 import { usePanelStore } from '@/store/panelStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
-import { useUIStore } from '@/store/uiStore';
 
 interface PostItemProps {
   post: Post;
@@ -14,6 +13,8 @@ interface PostItemProps {
 export default function PostItem({ post }: PostItemProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
@@ -30,7 +31,6 @@ export default function PostItem({ post }: PostItemProps) {
   const { updatePost, deletePost } = usePostStore();
   const { panels } = usePanelStore();
   const { users } = useUserStore();
-  const { openMenu } = useUIStore();
 
   const panel = panels.find(p => p.id === post.panelId);
   const REMOVED_TABS = ['결재', '전체'];
@@ -56,36 +56,11 @@ export default function PostItem({ post }: PostItemProps) {
     e.stopPropagation();
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-
-    const groups = [
-      {
-        actions: [
-          {
-            label: '편집',
-            onClick: () => { setEditContent(post.content); setIsEditOpen(true); },
-            color: '#2C1810',
-            hoverBg: '#FDF8F4',
-          },
-          {
-            label: '삭제',
-            onClick: () => setIsDeleteOpen(true),
-            color: '#C17B6B',
-            hoverBg: '#FFF5F2',
-          },
-        ],
-      },
-      ...(movableCats.length > 0 ? [{
-        groupLabel: '탭 이동',
-        actions: movableCats.map(cat => ({
-          label: '→ ' + cat,
-          onClick: () => updatePost(post.id, { category: cat }),
-          color: '#9E8880',
-          hoverBg: '#FDF8F4',
-        })),
-      }] : []),
-    ];
-
-    openMenu(rect.left, rect.bottom + 4, groups);
+    const estMenuH = 80 + movableCats.length * 30;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top = spaceBelow < estMenuH ? rect.top - estMenuH - 4 : rect.bottom + 4;
+    setMenuPos({ top, left: rect.right - 160 });
+    setShowMenu(true);
   };
 
   const handleDelete = async () => {
@@ -186,7 +161,7 @@ export default function PostItem({ post }: PostItemProps) {
             ref={btnRef}
             onClick={handleMenuOpen}
             style={{
-              position: 'absolute', top: 10, right: -24,
+              position: 'absolute', top: 10, right: 0,
               background: 'none', border: 'none', cursor: 'pointer',
               color: isHovered ? '#9E8880' : 'transparent',
               fontSize: 16, padding: '4px 8px', lineHeight: 1,
@@ -204,6 +179,65 @@ export default function PostItem({ post }: PostItemProps) {
         </div>
       </div>
 
+      {/* ··· 메뉴 — TodoItem과 동일한 방식 */}
+      {showMenu && canEdit && (
+        <>
+          {/* 투명 오버레이 */}
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+            onClick={() => setShowMenu(false)}
+          />
+          {/* 메뉴 본체 */}
+          <div
+            style={{
+              position: 'fixed',
+              top: menuPos.top,
+              left: menuPos.left,
+              background: '#fff',
+              border: '1px solid #EDE5DC',
+              zIndex: 9999,
+              minWidth: 160,
+              boxShadow: '0 4px 12px rgba(44,20,16,0.12)',
+            }}
+          >
+            <button
+              onClick={() => { setShowMenu(false); setEditContent(post.content); setIsEditOpen(true); }}
+              style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              편집
+            </button>
+            <button
+              onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }}
+              style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              삭제
+            </button>
+            {movableCats.length > 0 && (
+              <>
+                <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
+                <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
+                {movableCats.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => { setShowMenu(false); updatePost(post.id, { category: cat }); }}
+                    style={{ display: 'block', width: '100%', padding: '6px 14px', textAlign: 'left', fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    → {cat}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* 삭제 확인 모달 */}
       {isDeleteOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
           <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 360 }}>
@@ -233,6 +267,7 @@ export default function PostItem({ post }: PostItemProps) {
         </div>
       )}
 
+      {/* 이미지 확대 모달 */}
       {isModalOpen && post.type === 'image' && !imageError && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -273,6 +308,7 @@ export default function PostItem({ post }: PostItemProps) {
         </div>
       )}
 
+      {/* 편집 모달 */}
       {isEditOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
           <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480 }}>
