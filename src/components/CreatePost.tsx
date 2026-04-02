@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { usePostStore } from '@/store/postStore';
 import { useUserStore } from '@/store/userStore';
@@ -30,14 +30,6 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
 
   const allCategories = categories || BASE_CATEGORIES;
   const nonAdminUsers = users.filter(u => u.email !== user?.email && u.role !== 'admin');
@@ -184,6 +176,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
           {/* 공개 범위 */}
           <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {(['all', 'me', 'specific'] as const).map((v) => {
