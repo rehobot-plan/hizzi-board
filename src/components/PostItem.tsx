@@ -15,6 +15,7 @@ export default function PostItem({ post }: PostItemProps) {
   const [imageError, setImageError] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -32,7 +33,7 @@ export default function PostItem({ post }: PostItemProps) {
 
   const panel = panels.find(p => p.id === post.panelId);
   const REMOVED_TABS = ['결재', '전체'];
-  const DEFAULT_TABS = ['공지', '메모', '첨부파일'];
+  const DEFAULT_TABS = ['공지', '할일', '메모', '첨부파일'];
   const rawCats = panel?.categories?.filter(c => !REMOVED_TABS.includes(c)) || [];
   const validCats = rawCats.length > 0 ? rawCats : DEFAULT_TABS;
   const movableCats = validCats.filter(c => c !== post.category);
@@ -71,10 +72,10 @@ export default function PostItem({ post }: PostItemProps) {
   };
 
   const handleDelete = async () => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
     setIsDeleting(true);
     try {
       await deletePost(post.id);
+      setIsDeleteOpen(false);
       setContextMenu(null);
     } catch (e) {
       console.error(e);
@@ -200,13 +201,13 @@ export default function PostItem({ post }: PostItemProps) {
               편집
             </button>
             <button
-              onClick={handleDelete}
+              onClick={() => { setIsDeleteOpen(true); setContextMenu(null); }}
               disabled={isDeleting}
               style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+              onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
-              {isDeleting ? '삭제 중...' : '삭제'}
+              삭제
             </button>
             {movableCats.length > 0 && (
               <>
@@ -225,6 +226,36 @@ export default function PostItem({ post }: PostItemProps) {
                 ))}
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {isDeleteOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 360 }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 삭제</span>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6 }}>이 게시물을 삭제할까요?</p>
+              <p style={{ fontSize: 11, color: '#9E8880', marginTop: 4 }}>삭제된 게시물은 복구할 수 없습니다.</p>
+            </div>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
+              <button
+                onClick={() => setIsDeleteOpen(false)}
+                style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#C17B6B', color: '#FDF8F4', border: 'none', cursor: isDeleting ? 'not-allowed' : 'pointer' }}
+              >
+                {isDeleting ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
           </div>
         </div>
       )}
