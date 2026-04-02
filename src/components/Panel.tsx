@@ -485,7 +485,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             ) : (
               <>
                 {(showAllPosts ? filteredPosts : filteredPosts.slice(0, 5)).map((post) => (
-                  <div key={post.id} style={{ overflow: 'visible' }}>
+                  <div key={post.id} style={{ overflow: 'visible', position: 'relative' }}>
                     {activeCategory === "전체" && post.category && post.category !== "전체" && (
                       <span style={{
                         fontSize: 9,
