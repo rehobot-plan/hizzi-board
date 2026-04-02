@@ -18,7 +18,7 @@ interface PanelProps {
 }
 
 // [마이그레이션 필요] 기존 Firestore 카테고리: 결재 → 첨부파일로 변경 필요
-const DEFAULT_CATEGORIES = ["공지", "할일", "메모", "첨부파일"];
+const DEFAULT_CATEGORIES = ["할일", "메모", "첨부파일"];
 const BASE_CATEGORIES = ["전체", ...DEFAULT_CATEGORIES];
 
 
