@@ -147,7 +147,8 @@ export default function PostItem({ post }: PostItemProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
-          padding: '12px 0',
+          padding: '12px 16px',
+          margin: '0 -20px',
           borderBottom: '1px solid #EDE5DC',
           background: isHovered ? '#FDF8F4' : '#fff',
           transition: 'background 0.15s ease',
