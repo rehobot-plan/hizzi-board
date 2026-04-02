@@ -62,11 +62,6 @@ export const usePostStore = create<PostState>((set, get) => ({
     }
   },
   updatePost: async (postId: string, updates) => {
-    set((state) => ({
-      posts: state.posts.map((p) =>
-        p.id === postId ? { ...p, ...updates, updatedAt: new Date() } : p
-      ),
-    }));
     try {
       await updateDoc(doc(db, 'posts', postId), {
         ...updates,
@@ -74,17 +69,21 @@ export const usePostStore = create<PostState>((set, get) => ({
       });
     } catch (error) {
       console.error('Error updating post:', error);
+      set((state) => ({
+        posts: state.posts.map((p) =>
+          p.id === postId ? { ...p, ...updates, updatedAt: new Date() } : p
+        ),
+      }));
     }
   },
   deletePost: async (postId: string) => {
-    set((state) => ({
-      posts: state.posts.filter((p) => p.id !== postId),
-    }));
     try {
       await deleteDoc(doc(db, 'posts', postId));
     } catch (error) {
       console.error('Error deleting post:', error);
-      // 실패 시 롤백 없음 (onSnapshot이 다시 동기화)
+      set((state) => ({
+        posts: state.posts.filter((p) => p.id !== postId),
+      }));
     }
   },
 }));
