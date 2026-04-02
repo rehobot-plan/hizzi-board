@@ -11,6 +11,7 @@ interface TodoItemProps {
 export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const { updatePost, deletePost } = usePostStore();
   const [checking, setChecking] = useState(false);
+  const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   const isWork = post.taskType === 'work';
@@ -18,24 +19,23 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const tagBg = isWork ? '#FFF5F2' : '#F5F0EE';
   const tagLabel = isWork ? '업무' : '개인';
 
-  const formatDateTime = (date: Date) => {
-    const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
-
   const formatDate = (date: Date) => {
     const d = date instanceof Date ? date : new Date(date);
     return d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
   };
 
   const handleCheck = async () => {
-    if (!canEdit) return;
+    if (!canEdit || checking || justChecked) return;
+    setJustChecked(true);
     setChecking(true);
-    await updatePost(post.id, {
-      completed: true,
-      completedAt: new Date(),
-    });
-    setChecking(false);
+    // 0.6초 시각적 피드백 후 완료 처리
+    setTimeout(async () => {
+      await updatePost(post.id, {
+        completed: true,
+        completedAt: new Date(),
+      });
+      setChecking(false);
+    }, 600);
   };
 
   const handleStar = async () => {
@@ -61,14 +61,22 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       borderBottom: '1px solid #EDE5DC',
       borderLeft: post.starred ? '2px solid #C17B6B' : '2px solid transparent',
       paddingLeft: post.starred ? 8 : 0,
-      transition: 'all 0.15s',
+      opacity: justChecked ? 0.4 : 1,
+      transition: 'opacity 0.5s ease, transform 0.5s ease',
+      transform: justChecked ? 'translateX(8px)' : 'translateX(0)',
       position: 'relative',
     }}>
       {/* 별표 */}
       {canEdit && (
         <button
           onClick={handleStar}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: post.starred ? '#C17B6B' : '#EDE5DC', flexShrink: 0, marginTop: 1 }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: 0, fontSize: 14,
+            color: post.starred ? '#C17B6B' : '#EDE5DC',
+            flexShrink: 0, marginTop: 1,
+            transition: 'color 0.2s',
+          }}
         >
           ★
         </button>
@@ -78,17 +86,20 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       {canEdit && (
         <button
           onClick={handleCheck}
-          disabled={checking || post.completed}
+          disabled={checking || justChecked}
           style={{
             width: 16, height: 16,
-            border: `1.5px solid ${post.completed ? '#C17B6B' : '#EDE5DC'}`,
-            background: post.completed ? '#C17B6B' : '#fff',
-            cursor: post.completed ? 'default' : 'pointer',
+            border: `1.5px solid ${justChecked ? '#C17B6B' : '#EDE5DC'}`,
+            background: justChecked ? '#C17B6B' : '#fff',
+            cursor: justChecked ? 'default' : 'pointer',
             flexShrink: 0, marginTop: 2,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.3s ease',
           }}
         >
-          {post.completed && <span style={{ color: '#fff', fontSize: 10, lineHeight: 1 }}>✓</span>}
+          {justChecked && (
+            <span style={{ color: '#fff', fontSize: 10, lineHeight: 1 }}>✓</span>
+          )}
         </button>
       )}
 
@@ -96,9 +107,10 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 13, lineHeight: 1.5,
-          textDecoration: post.completed ? 'line-through' : 'none',
-          color: post.completed ? '#9E8880' : '#2C1810',
+          textDecoration: justChecked ? 'line-through' : 'none',
+          color: justChecked ? '#9E8880' : '#2C1810',
           whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          transition: 'all 0.3s ease',
         }}>
           {post.content}
         </div>
@@ -109,26 +121,44 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           <span style={{ fontSize: 10, color: '#C4B8B0' }}>
             {formatDate(post.createdAt)}
           </span>
+          {justChecked && (
+            <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>
+              완료 ✓
+            </span>
+          )}
         </div>
       </div>
 
       {/* 더보기 메뉴 */}
-      {canEdit && (
+      {canEdit && !justChecked && (
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <button
             onClick={() => setShowMenu(v => !v)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 16, padding: '0 4px', lineHeight: 1 }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#C4B8B0', fontSize: 16, padding: '4px 8px', lineHeight: 1,
+            }}
           >
             ···
           </button>
           {showMenu && (
             <div
-              style={{ position: 'absolute', right: 0, top: 20, background: '#fff', border: '1px solid #EDE5DC', zIndex: 10, minWidth: 80 }}
+              style={{
+                position: 'absolute', right: 0, top: 24,
+                background: '#fff', border: '1px solid #EDE5DC',
+                zIndex: 10, minWidth: 80,
+              }}
               onMouseLeave={() => setShowMenu(false)}
             >
               <button
                 onClick={handleDelete}
-                style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
+                style={{
+                  display: 'block', width: '100%', padding: '7px 12px',
+                  textAlign: 'left', fontSize: 11, color: '#C17B6B',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
               >
                 삭제
               </button>
