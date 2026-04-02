@@ -447,6 +447,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           panelId={id}
           onClose={() => setShowCreate(false)}
           categories={categoryList}
+          defaultCategory={activeCategory}
         />
       )}
       {/* 카테고리 추가 모달 */}

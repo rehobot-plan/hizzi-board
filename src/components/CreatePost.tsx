@@ -11,19 +11,20 @@ interface CreatePostProps {
   panelId: string;
   onClose: () => void;
   categories?: string[];
+  defaultCategory?: string;
 }
 
 const BASE_CATEGORIES = ['공지', '메모', '첨부파일'];
 
-export default function CreatePost({ panelId, onClose, categories }: CreatePostProps) {
+export default function CreatePost({ panelId, onClose, categories, defaultCategory }: CreatePostProps) {
   const { user } = useAuthStore();
   const { addPost } = usePostStore();
   const { users } = useUserStore();
 
   const [type, setType] = useState<'text' | 'image' | 'link' | 'file'>('text');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState(defaultCategory && defaultCategory !== '전체' ? defaultCategory : '');
   const [taskType, setTaskType] = useState<'work' | 'personal'>('work');
-  const [visibility, setVisibility] = useState<'all' | 'me' | 'specific'>('all');
+  const [visibility, setVisibility] = useState<'all' | 'me' | 'specific'>(defaultCategory === '할일' ? 'me' : 'all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [content, setContent] = useState('');
   const [uploading, setUploading] = useState(false);
