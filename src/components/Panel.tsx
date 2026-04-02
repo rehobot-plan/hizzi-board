@@ -37,6 +37,8 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [selectedCompleted, setSelectedCompleted] = useState<string[]>([]);
+  const [selectMode, setSelectMode] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
 
   const { posts, deletePost } = usePostStore();
@@ -305,15 +307,34 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             const CompletedRow = ({ p }: { p: typeof completedTodos[0] }) => {
               const [showTooltip, setShowTooltip] = useState(false);
               const isWork = p.taskType === 'work';
+              const isSelected = selectedCompleted.includes(p.id);
               return (
                 <div
-                  key={p.id}
-                  style={{ display: 'flex', gap: 8, padding: '6px 0', borderBottom: '1px solid #EDE5DC', alignItems: 'center', position: 'relative' }}
+                  style={{
+                    display: 'flex', gap: 8, padding: '6px 0',
+                    borderBottom: '1px solid #EDE5DC', alignItems: 'center',
+                    position: 'relative',
+                    background: isSelected ? '#FFF5F2' : 'transparent',
+                  }}
                   onMouseEnter={() => setShowTooltip(true)}
                   onMouseLeave={() => setShowTooltip(false)}
                 >
-                  {/* 복구 버튼 */}
-                  {canEdit && (
+                  {/* 선택 모드 체크박스 */}
+                  {selectMode && canEdit && (
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {
+                        setSelectedCompleted(prev =>
+                          prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]
+                        );
+                      }}
+                      style={{ flexShrink: 0, cursor: 'pointer', accentColor: '#C17B6B' }}
+                    />
+                  )}
+
+                  {/* 복구 버튼 (선택 모드 아닐 때만) */}
+                  {!selectMode && canEdit && (
                     <button
                       onClick={async () => {
                         await usePostStore.getState().updatePost(p.id, {
@@ -337,7 +358,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                     {p.completedAt ? formatTime(new Date(p.completedAt)) : '-'}
                   </span>
                   {/* 호버 툴팁 */}
-                  {showTooltip && (
+                  {showTooltip && !selectMode && (
                     <div style={{
                       position: 'absolute', bottom: '100%', right: 0,
                       background: '#2C1810', color: '#FDF8F4',
@@ -369,6 +390,55 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                 </button>
 
                 {showCompleted && (
+                  <>
+                    {canEdit && completedTodos.length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, padding: '6px 0', alignItems: 'center', borderBottom: '1px solid #EDE5DC' }}>
+                        {/* 선택 모드 토글 */}
+                        <button
+                          onClick={() => {
+                            setSelectMode(v => !v);
+                            setSelectedCompleted([]);
+                          }}
+                          style={{ fontSize: 10, color: selectMode ? '#C17B6B' : '#9E8880', background: 'none', border: `1px solid ${selectMode ? '#C17B6B' : '#EDE5DC'}`, cursor: 'pointer', padding: '2px 8px', letterSpacing: '0.04em' }}
+                        >
+                          {selectMode ? '선택 취소' : '선택'}
+                        </button>
+
+                        {/* 선택 삭제 */}
+                        {selectMode && selectedCompleted.length > 0 && (
+                          <button
+                            onClick={async () => {
+                              for (const id of selectedCompleted) {
+                                await usePostStore.getState().deletePost(id);
+                              }
+                              setSelectedCompleted([]);
+                              setSelectMode(false);
+                            }}
+                            style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}
+                          >
+                            선택 삭제 ({selectedCompleted.length})
+                          </button>
+                        )}
+
+                        {/* 전체 삭제 */}
+                        {!selectMode && (
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm(`완료된 할일 ${completedTodos.length}개를 모두 삭제할까요?`)) return;
+                              for (const p of completedTodos) {
+                                await usePostStore.getState().deletePost(p.id);
+                              }
+                              setSelectedCompleted([]);
+                              setSelectMode(false);
+                            }}
+                            style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}
+                          >
+                            전체 삭제 ({completedTodos.length})
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                   <div style={{ borderTop: '1px solid #EDE5DC', paddingTop: 4 }}>
                     {/* 오늘 완료 */}
                     {todayCompleted.length === 0 && pastCompleted.length === 0 && (
@@ -394,6 +464,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                       </>
                     )}
                   </div>
+                  </>
                 )}
               </>
             );
