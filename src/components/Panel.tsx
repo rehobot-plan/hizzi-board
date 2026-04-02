@@ -57,10 +57,10 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     } else if (activeCategory !== "전체") {
       if (!post.category || post.category !== activeCategory) return false;
     }
-    if (!user) return false;
-    const userEmail = user.email ?? "";
+    const userEmail = user?.email ?? "";
     const visibleTo = post.visibleTo;
     if (!visibleTo || visibleTo.length === 0) return true;
+    if (!user) return false;
     if (user.role === "admin") return true;
     if (post.author === userEmail) return true;
     if (visibleTo.includes(userEmail)) return true;
