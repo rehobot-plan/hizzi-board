@@ -187,13 +187,25 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
         {!isEditing ? (
           <h3
             className="text-xs font-bold text-[#2C1810] uppercase tracking-widest select-none"
-            style={{ letterSpacing: "0.18em" }}
-            onClick={() => canRename && setIsEditing(true)}
-            tabIndex={0}
-            onBlur={() => setIsEditing(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") savePanelName();
+            style={{
+              letterSpacing: "0.18em",
+              cursor: canRename ? 'pointer' : 'default',
+              borderBottom: canRename ? '1px dashed transparent' : 'none',
+              transition: 'border-color 0.15s, color 0.15s',
             }}
+            onClick={() => canRename && setIsEditing(true)}
+            onMouseEnter={e => {
+              if (canRename) {
+                e.currentTarget.style.borderBottomColor = '#EDE5DC';
+                e.currentTarget.style.color = '#7A2828';
+              }
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderBottomColor = 'transparent';
+              e.currentTarget.style.color = '#2C1810';
+            }}
+            tabIndex={0}
+            title={canRename ? '클릭하여 이름 변경' : ''}
           >
             {panelName}
           </h3>

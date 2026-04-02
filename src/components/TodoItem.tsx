@@ -136,7 +136,10 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             onClick={() => setShowMenu(v => !v)}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: '#C4B8B0', fontSize: 16, padding: '4px 8px', lineHeight: 1,
+              color: '#C4B8B0', fontSize: 16,
+              padding: '8px 12px',
+              lineHeight: 1,
+              margin: '-8px -12px',
             }}
           >
             ···
