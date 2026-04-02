@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Post, usePostStore } from '@/store/postStore';
 import { usePanelStore } from '@/store/panelStore';
 import { useAuthStore } from '@/store/authStore';
@@ -14,6 +14,7 @@ export default function PostItem({ post }: PostItemProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
@@ -25,6 +26,8 @@ export default function PostItem({ post }: PostItemProps) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
 
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const { updatePost, deletePost } = usePostStore();
   const { panels } = usePanelStore();
@@ -37,6 +40,31 @@ export default function PostItem({ post }: PostItemProps) {
   const validCats = rawCats.length > 0 ? rawCats : DEFAULT_TABS;
   const movableCats = validCats.filter(c => c !== post.category);
   const canEdit = user && (user.email === post.author || user.role === 'admin');
+
+  // 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
+          btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMenu]);
+
+  const handleMenuOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    const menuHeight = 40 + movableCats.length * 32 + (movableCats.length > 0 ? 32 : 0);
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top = spaceBelow < menuHeight ? rect.top - menuHeight : rect.bottom + 4;
+    const right = window.innerWidth - rect.right;
+    setMenuPos({ top, right });
+    setShowMenu(v => !v);
+  };
 
   const getAuthorName = (email: string) => {
     const u = users.find(u => u.email === email);
@@ -132,7 +160,7 @@ export default function PostItem({ post }: PostItemProps) {
     <>
       <div
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => { setIsHovered(false); setShowMenu(false); }}
+        onMouseLeave={() => setIsHovered(false)}
         style={{
           padding: '12px 0',
           borderBottom: '1px solid #EDE5DC',
@@ -145,63 +173,20 @@ export default function PostItem({ post }: PostItemProps) {
       >
         {/* ··· 버튼 */}
         {canEdit && (
-          <div style={{ position: 'absolute', top: 10, right: 0, zIndex: 10 }}>
-            <button
-              onClick={e => { e.stopPropagation(); setShowMenu(v => !v); }}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: isHovered ? '#9E8880' : 'transparent',
-                fontSize: 16, padding: '4px 8px', lineHeight: 1,
-                transition: 'color 0.15s',
-              }}
-            >
-              ···
-            </button>
-            {showMenu && (
-              <div
-                style={{
-                  position: 'absolute', right: 0, top: 28,
-                  background: '#fff', border: '1px solid #EDE5DC',
-                  zIndex: 50, minWidth: 160, boxShadow: '0 2px 8px rgba(44,20,16,0.08)',
-                }}
-                onClick={e => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => { setEditContent(post.content); setIsEditOpen(true); setShowMenu(false); }}
-                  style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                >
-                  편집
-                </button>
-                <button
-                  onClick={() => { setIsDeleteOpen(true); setShowMenu(false); }}
-                  style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                >
-                  삭제
-                </button>
-                {movableCats.length > 0 && (
-                  <>
-                    <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
-                    <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
-                    {movableCats.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={async () => { await updatePost(post.id, { category: cat }); setShowMenu(false); }}
-                        style={{ display: 'block', width: '100%', padding: '6px 14px', textAlign: 'left', fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                      >
-                        → {cat}
-                      </button>
-                    ))}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          <button
+            ref={btnRef}
+            onClick={handleMenuOpen}
+            style={{
+              position: 'absolute', top: 10, right: 0,
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: isHovered ? '#9E8880' : 'transparent',
+              fontSize: 16, padding: '4px 8px', lineHeight: 1,
+              transition: 'color 0.15s',
+              zIndex: 10,
+            }}
+          >
+            ···
+          </button>
         )}
 
         {renderContent()}
@@ -210,6 +195,58 @@ export default function PostItem({ post }: PostItemProps) {
           <span>{formatDate(post.createdAt)}</span>
         </div>
       </div>
+
+      {/* ··· 드롭다운 메뉴 — fixed position으로 뷰포트 기준 */}
+      {showMenu && canEdit && (
+        <div
+          ref={menuRef}
+          style={{
+            position: 'fixed',
+            top: menuPos.top,
+            right: menuPos.right,
+            background: '#fff',
+            border: '1px solid #EDE5DC',
+            zIndex: 9999,
+            minWidth: 160,
+            boxShadow: '0 4px 12px rgba(44,20,16,0.12)',
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button
+            onClick={() => { setEditContent(post.content); setIsEditOpen(true); setShowMenu(false); }}
+            style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            편집
+          </button>
+          <button
+            onClick={() => { setIsDeleteOpen(true); setShowMenu(false); }}
+            style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            삭제
+          </button>
+          {movableCats.length > 0 && (
+            <>
+              <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
+              <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
+              {movableCats.map(cat => (
+                <button
+                  key={cat}
+                  onClick={async () => { await updatePost(post.id, { category: cat }); setShowMenu(false); }}
+                  style={{ display: 'block', width: '100%', padding: '6px 14px', textAlign: 'left', fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  → {cat}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
 
       {/* 삭제 확인 모달 */}
       {isDeleteOpen && (
