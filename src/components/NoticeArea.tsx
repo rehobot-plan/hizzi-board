@@ -60,15 +60,15 @@ export default function NoticeArea() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 20px',
           borderBottom: '1px solid #EDE5DC',
-          background: '#FDF8F4',
+          background: '#7A2828',
         }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#FDF8F4' }}>
             공지사항
           </span>
           {allNotices.length > 3 && (
             <button
               onClick={() => setExpanded(e => !e)}
-              style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.06em' }}
+              style={{ fontSize: 10, color: 'rgba(253,248,244,0.6)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.06em' }}
             >
               {expanded ? '▲ 접기' : `▼ 더보기 (${allNotices.length - 3}개 더)`}
             </button>
