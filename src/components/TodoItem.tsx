@@ -18,31 +18,38 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const tagBg = isWork ? '#FFF5F2' : '#F5F0EE';
   const tagLabel = isWork ? '업무' : '개인';
 
+  const formatDateTime = (date: Date) => {
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (date: Date) => {
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  };
+
   const handleCheck = async () => {
     if (!canEdit) return;
     setChecking(true);
-    const now = new Date();
     await updatePost(post.id, {
       completed: true,
-      completedAt: now,
+      completedAt: new Date(),
     });
     setChecking(false);
   };
 
   const handleStar = async () => {
     if (!canEdit) return;
-    await updatePost(post.id, { starred: !post.starred });
+    await updatePost(post.id, {
+      starred: !post.starred,
+      starredAt: post.starred ? null : new Date(),
+    });
   };
 
   const handleDelete = async () => {
     if (!canEdit) return;
     await deletePost(post.id);
     setShowMenu(false);
-  };
-
-  const formatDate = (date: Date) => {
-    const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
   };
 
   return (
@@ -54,7 +61,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       borderBottom: '1px solid #EDE5DC',
       borderLeft: post.starred ? '2px solid #C17B6B' : '2px solid transparent',
       paddingLeft: post.starred ? 8 : 0,
-      opacity: post.completed ? 0.5 : 1,
       transition: 'all 0.15s',
       position: 'relative',
     }}>
@@ -74,10 +80,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           onClick={handleCheck}
           disabled={checking || post.completed}
           style={{
-            width: 16, height: 16, border: `1.5px solid ${post.completed ? '#C17B6B' : '#EDE5DC'}`,
+            width: 16, height: 16,
+            border: `1.5px solid ${post.completed ? '#C17B6B' : '#EDE5DC'}`,
             background: post.completed ? '#C17B6B' : '#fff',
             cursor: post.completed ? 'default' : 'pointer',
-            flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, marginTop: 2,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
           {post.completed && <span style={{ color: '#fff', fontSize: 10, lineHeight: 1 }}>✓</span>}

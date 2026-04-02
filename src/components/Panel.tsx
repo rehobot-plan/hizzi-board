@@ -225,7 +225,9 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             const isOwner = user && ownerEmail === user?.email;
             const canEdit = !!(user && (user.role === "admin" || isOwner));
             const today = new Date();
-            today.setHours(0,0,0,0);
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
 
             const todoAll = posts.filter(p =>
               p.panelId === id && p.category === "할일" &&
@@ -239,14 +241,21 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
               })()
             );
 
+            // 활성 할일: 별표 누른 시각 최신순 → 일반은 작성순
             const activeTodos = todoAll
               .filter(p => !p.completed)
               .sort((a, b) => {
                 if (a.starred && !b.starred) return -1;
                 if (!a.starred && b.starred) return 1;
+                if (a.starred && b.starred) {
+                  const aT = a.starredAt ? new Date(a.starredAt).getTime() : 0;
+                  const bT = b.starredAt ? new Date(b.starredAt).getTime() : 0;
+                  return bT - aT;
+                }
                 return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
               });
 
+            // 완료 할일 전체 (완료 시각 최신순)
             const completedTodos = todoAll
               .filter(p => p.completed)
               .sort((a, b) => {
@@ -254,6 +263,90 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                 const bT = b.completedAt ? new Date(b.completedAt).getTime() : 0;
                 return bT - aT;
               });
+
+            // 오늘 완료 / 이전 완료 분리
+            const todayCompleted = completedTodos.filter(p => {
+              if (!p.completedAt) return false;
+              const ct = new Date(p.completedAt);
+              return ct >= today && ct < tomorrow;
+            });
+
+            const pastCompleted = completedTodos.filter(p => {
+              if (!p.completedAt) return false;
+              const ct = new Date(p.completedAt);
+              return ct < today;
+            });
+
+            // 이전 완료 날짜별 그룹핑
+            const pastGrouped: Record<string, typeof pastCompleted> = {};
+            pastCompleted.forEach(p => {
+              const dt = p.completedAt ? new Date(p.completedAt) : new Date();
+              const key = dt.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+              if (!pastGrouped[key]) pastGrouped[key] = [];
+              pastGrouped[key].push(p);
+            });
+
+            const formatTime = (d: Date) => {
+              const dt = d instanceof Date ? d : new Date(d);
+              return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            };
+            const formatDate = (d: Date) => {
+              const dt = d instanceof Date ? d : new Date(d);
+              return dt.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+            };
+            const formatDateTime = (d: Date) => {
+              const dt = d instanceof Date ? d : new Date(d);
+              return dt.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            };
+
+            const CompletedRow = ({ p }: { p: typeof completedTodos[0] }) => {
+              const [showTooltip, setShowTooltip] = useState(false);
+              const isWork = p.taskType === 'work';
+              return (
+                <div
+                  key={p.id}
+                  style={{ display: 'flex', gap: 8, padding: '6px 0', borderBottom: '1px solid #EDE5DC', alignItems: 'center', position: 'relative' }}
+                  onMouseEnter={() => setShowTooltip(true)}
+                  onMouseLeave={() => setShowTooltip(false)}
+                >
+                  {/* 복구 버튼 */}
+                  {canEdit && (
+                    <button
+                      onClick={async () => {
+                        await usePostStore.getState().updatePost(p.id, {
+                          completed: false,
+                          completedAt: null,
+                        });
+                      }}
+                      style={{ fontSize: 10, color: '#C17B6B', flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      title="할일로 복구"
+                    >
+                      ✓
+                    </button>
+                  )}
+                  <span style={{ fontSize: 11, color: '#9E8880', textDecoration: 'line-through', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.content}
+                  </span>
+                  <span style={{ fontSize: 9, padding: '1px 5px', background: isWork ? '#FFF5F2' : '#F5F0EE', color: isWork ? '#C17B6B' : '#9E8880', flexShrink: 0 }}>
+                    {isWork ? '업무' : '개인'}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#C4B8B0', flexShrink: 0 }}>
+                    {p.completedAt ? formatTime(new Date(p.completedAt)) : '-'}
+                  </span>
+                  {/* 호버 툴팁 */}
+                  {showTooltip && (
+                    <div style={{
+                      position: 'absolute', bottom: '100%', right: 0,
+                      background: '#2C1810', color: '#FDF8F4',
+                      fontSize: 10, padding: '4px 8px', whiteSpace: 'nowrap',
+                      zIndex: 20, pointerEvents: 'none',
+                    }}>
+                      작성 {formatDateTime(new Date(p.createdAt))} → 완료 {p.completedAt ? formatDateTime(new Date(p.completedAt)) : '-'}
+                    </div>
+                  )}
+                </div>
+              );
+            };
 
             return (
               <>
@@ -263,32 +356,40 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                 {activeTodos.map(post => (
                   <TodoItem key={post.id} post={post} canEdit={canEdit} />
                 ))}
+
+                {/* 완료된 할일 토글 버튼 */}
                 <button
                   onClick={() => setShowCompleted(v => !v)}
                   style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', letterSpacing: '0.06em', display: 'block', width: '100%', textAlign: 'left' }}
                 >
                   {showCompleted ? '▲ 완료된 할일 숨기기' : `▼ 완료된 할일 보기 (${completedTodos.length})`}
                 </button>
+
                 {showCompleted && (
                   <div style={{ borderTop: '1px solid #EDE5DC', paddingTop: 4 }}>
-                    {completedTodos.length === 0 ? (
+                    {/* 오늘 완료 */}
+                    {todayCompleted.length === 0 && pastCompleted.length === 0 && (
                       <p style={{ fontSize: 11, color: '#C4B8B0', padding: '8px 0' }}>완료된 할일이 없습니다</p>
-                    ) : completedTodos.map(post => {
-                      const formatDate = (d: Date) => {
-                        const dt = d instanceof Date ? d : new Date(d);
-                        return dt.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
-                      };
-                      const isWork = post.taskType === 'work';
-                      return (
-                        <div key={post.id} style={{ display: 'flex', gap: 8, padding: '6px 0', borderBottom: '1px solid #EDE5DC', alignItems: 'center' }}>
-                          <span style={{ fontSize: 10, color: '#C17B6B', flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 11, color: '#9E8880', textDecoration: 'line-through', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.content}</span>
-                          <span style={{ fontSize: 9, padding: '1px 5px', background: isWork ? '#FFF5F2' : '#F5F0EE', color: isWork ? '#C17B6B' : '#9E8880', flexShrink: 0 }}>{isWork ? '업무' : '개인'}</span>
-                          <span style={{ fontSize: 10, color: '#C4B8B0', flexShrink: 0 }}>작성 {formatDate(post.createdAt)}</span>
-                          <span style={{ fontSize: 10, color: '#C4B8B0', flexShrink: 0 }}>완료 {post.completedAt ? formatDate(new Date(post.completedAt)) : '-'}</span>
-                        </div>
-                      );
-                    })}
+                    )}
+                    {todayCompleted.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 10, color: '#C4B8B0', padding: '6px 0 2px', letterSpacing: '0.06em' }}>오늘</div>
+                        {todayCompleted.map(p => <CompletedRow key={p.id} p={p} />)}
+                      </>
+                    )}
+
+                    {/* 이전 완료 - 날짜별 그룹 */}
+                    {pastCompleted.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 10, color: '#C4B8B0', padding: '8px 0 2px', letterSpacing: '0.06em', borderTop: todayCompleted.length > 0 ? '1px solid #EDE5DC' : 'none', marginTop: todayCompleted.length > 0 ? 4 : 0 }}>이전</div>
+                        {Object.entries(pastGrouped).map(([date, items]) => (
+                          <div key={date}>
+                            <div style={{ fontSize: 10, color: '#C4B8B0', padding: '4px 0 2px', fontWeight: 600 }}>{date}</div>
+                            {items.map(p => <CompletedRow key={p.id} p={p} />)}
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 )}
               </>

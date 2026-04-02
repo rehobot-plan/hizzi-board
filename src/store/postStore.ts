@@ -25,8 +25,9 @@ export interface Post {
   attachments?: PostAttachment[];
   taskType?: 'work' | 'personal';
   starred?: boolean;
+  starredAt?: Date | null;
   completed?: boolean;
-  completedAt?: Date;
+  completedAt?: Date | null;
 }
 
 interface PostState {
