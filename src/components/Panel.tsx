@@ -236,7 +236,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
         </div>
       </div>
       {/* 게시물 목록 */}
-      <div className="flex-1 overflow-y-auto px-5">
+      <div className="flex-1 overflow-y-auto px-5" style={{ overflowX: 'visible' }}>
         {activeCategory === "할일" ? (
           (() => {
             const isOwner = user && ownerEmail === user?.email;
@@ -488,7 +488,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             ) : (
               <>
                 {(showAllPosts ? filteredPosts : filteredPosts.slice(0, 5)).map((post) => (
-                  <div key={post.id} className="group relative py-3 border-b border-[#EDE5DC] hover:border-l-2 hover:border-l-[#C17B6B] pl-2">
+                  <div key={post.id} className="group relative py-3 border-b border-[#EDE5DC] hover:border-l-2 hover:border-l-[#C17B6B] pl-2" style={{ overflow: 'visible' }}>
                     {activeCategory === "전체" && post.category && post.category !== "전체" && (
                       <span style={{
                         fontSize: 9,

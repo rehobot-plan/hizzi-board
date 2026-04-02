@@ -186,7 +186,7 @@ export default function PostItem({ post }: PostItemProps) {
             ref={btnRef}
             onClick={handleMenuOpen}
             style={{
-              position: 'absolute', top: 10, right: 0,
+              position: 'absolute', top: 10, right: -24,
               background: 'none', border: 'none', cursor: 'pointer',
               color: isHovered ? '#9E8880' : 'transparent',
               fontSize: 16, padding: '4px 8px', lineHeight: 1,
