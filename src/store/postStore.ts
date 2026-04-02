@@ -155,6 +155,8 @@ export const initPostListener = () => {
         ...d,
         createdAt: d.createdAt?.toDate ? d.createdAt.toDate() : (d.createdAt || new Date()),
         updatedAt: d.updatedAt?.toDate ? d.updatedAt.toDate() : (d.updatedAt || d.createdAt || new Date()),
+        completedAt: d.completedAt?.toDate ? d.completedAt.toDate() : (d.completedAt || null),
+        starredAt: d.starredAt?.toDate ? d.starredAt.toDate() : (d.starredAt || null),
       };
     }) as Post[];
     usePostStore.setState({ posts, loading: false });
