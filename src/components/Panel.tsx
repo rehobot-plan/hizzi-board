@@ -19,7 +19,7 @@ interface PanelProps {
 
 // [마이그레이션 필요] 기존 Firestore 카테고리: 결재 → 첨부파일로 변경 필요
 const DEFAULT_CATEGORIES = ["할일"];
-const BASE_CATEGORIES = ["전체", ...DEFAULT_CATEGORIES];
+const BASE_CATEGORIES = [...DEFAULT_CATEGORIES];
 
 
 
@@ -30,7 +30,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const panelNameInputRef = useRef<HTMLInputElement>(null);
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [tabNameDraft, setTabNameDraft] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("전체");
+  const [activeCategory, setActiveCategory] = useState<string>("할일");
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategory, setNewCategory] = useState("");
   const [categoryList, setCategoryList] = useState<string[]>(categories || DEFAULT_CATEGORIES);
@@ -54,7 +54,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     if (post.completed && post.category === '할일') return false;
     if (activeCategory === "첨부파일") {
       if (!post.attachments || post.attachments.length === 0) return false;
-    } else if (activeCategory !== "전체") {
+    } else {
       if (!post.category || post.category !== activeCategory) return false;
     }
     const userEmail = user?.email ?? "";
@@ -116,7 +116,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     >
       {/* 탭 영역 */}
       <div className="flex gap-4 mb-0 border-b border-[#EDE5DC] bg-[#FDF8F4] px-5 pt-4 pb-0">
-        {["전체", ...categoryList].map((cat) => {
+        {categoryList.map((cat) => {
           const isBase = BASE_CATEGORIES.includes(cat);
           return (
             <div key={cat} className="relative flex items-center group">
@@ -172,15 +172,6 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             </div>
           );
         })}
-        {canAddCategory && (
-          <button
-            className="px-3 py-2 border-b-2 border-transparent text-[10px] uppercase tracking-widest text-[#C17B6B]"
-            style={{ background: "transparent" }}
-            onClick={() => setShowCategoryModal(true)}
-          >
-            +
-          </button>
-        )}
       </div>
       {/* 패널 제목 영역 */}
       <div className="flex justify-between items-center px-5 py-4 border-b border-[#EDE5DC] bg-white">
