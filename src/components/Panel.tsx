@@ -37,6 +37,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showPastCompleted, setShowPastCompleted] = useState(false);
   const [selectedCompleted, setSelectedCompleted] = useState<string[]>([]);
   const [selectMode, setSelectMode] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
@@ -454,11 +455,16 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                       </>
                     )}
 
-                    {/* 이전 완료 - 날짜별 그룹 */}
+                    {/* 이전 완료 - 별도 토글 */}
                     {pastCompleted.length > 0 && (
                       <>
-                        <div style={{ fontSize: 10, color: '#C4B8B0', padding: '8px 0 2px', letterSpacing: '0.06em', borderTop: todayCompleted.length > 0 ? '1px solid #EDE5DC' : 'none', marginTop: todayCompleted.length > 0 ? 4 : 0 }}>이전</div>
-                        {Object.entries(pastGrouped).map(([date, items]) => (
+                        <button
+                          onClick={() => setShowPastCompleted(v => !v)}
+                          style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', letterSpacing: '0.06em', display: 'block', width: '100%', textAlign: 'left', borderTop: todayCompleted.length > 0 ? '1px solid #EDE5DC' : 'none', marginTop: todayCompleted.length > 0 ? 4 : 0 }}
+                        >
+                          {showPastCompleted ? '▲ 이전 완료 숨기기' : `▼ 이전 완료 보기 (${pastCompleted.length})`}
+                        </button>
+                        {showPastCompleted && Object.entries(pastGrouped).map(([date, items]) => (
                           <div key={date}>
                             <div style={{ fontSize: 10, color: '#C4B8B0', padding: '4px 0 2px', fontWeight: 600 }}>{date}</div>
                             {items.map(p => <CompletedRow key={p.id} p={p} />)}
