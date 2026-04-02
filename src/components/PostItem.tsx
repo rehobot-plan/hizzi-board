@@ -137,7 +137,7 @@ export default function PostItem({ post }: PostItemProps) {
           </a>
         );
       default:
-        return <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{post.content}</p>;
+        return <p style={{ fontSize: 13, color: isHovered ? '#7A2828' : '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', transition: 'color 0.15s ease' }}>{post.content}</p>;
     }
   };
 
@@ -148,10 +148,9 @@ export default function PostItem({ post }: PostItemProps) {
         onMouseLeave={() => setIsHovered(false)}
         style={{
           padding: '12px 0',
-          paddingLeft: 8,
           borderBottom: '1px solid #EDE5DC',
-          borderLeft: isHovered ? '2px solid #C17B6B' : '2px solid transparent',
-          transition: 'border-color 0.15s ease',
+          background: isHovered ? '#FDF8F4' : '#fff',
+          transition: 'background 0.15s ease',
           cursor: 'default',
           position: 'relative',
         }}
@@ -173,7 +172,7 @@ export default function PostItem({ post }: PostItemProps) {
           </button>
         )}
         {renderContent()}
-        <div style={{ fontSize: 11, color: '#9E8880', marginTop: 4, display: 'flex', gap: 8 }}>
+        <div style={{ fontSize: 11, color: isHovered ? '#C17B6B' : '#9E8880', marginTop: 4, display: 'flex', gap: 8, transition: 'color 0.15s ease' }}>
           <span>{getAuthorName(post.author)}</span>
           <span>{formatDate(post.createdAt)}</span>
         </div>
