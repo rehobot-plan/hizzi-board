@@ -50,8 +50,10 @@ export default function PostItem({ post }: PostItemProps) {
         setShowMenu(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, [showMenu]);
 
   const handleMenuOpen = (e: React.MouseEvent) => {
@@ -63,7 +65,7 @@ export default function PostItem({ post }: PostItemProps) {
     const top = spaceBelow < menuHeight ? rect.top - menuHeight : rect.bottom + 4;
     const right = window.innerWidth - rect.right;
     setMenuPos({ top, right });
-    setShowMenu(v => !v);
+    setShowMenu(true);
   };
 
   const getAuthorName = (email: string) => {
