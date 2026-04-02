@@ -148,10 +148,10 @@ export default function PostItem({ post }: PostItemProps) {
         onMouseLeave={() => setIsHovered(false)}
         style={{
           padding: '12px 0',
+          paddingLeft: 8,
           borderBottom: '1px solid #EDE5DC',
           borderLeft: isHovered ? '2px solid #C17B6B' : '2px solid transparent',
-          paddingLeft: isHovered ? 8 : 0,
-          transition: 'all 0.15s ease',
+          transition: 'border-color 0.15s ease',
           cursor: 'default',
           position: 'relative',
         }}
