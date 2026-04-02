@@ -180,60 +180,53 @@ export default function PostItem({ post }: PostItemProps) {
 
       {/* ··· 메뉴 — TodoItem과 동일한 방식 */}
       {showMenu && canEdit && (
-        <>
-          {/* 투명 오버레이 */}
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
-            onClick={() => setShowMenu(false)}
-          />
-          {/* 메뉴 본체 */}
-          <div
-            style={{
-              position: 'fixed',
-              top: menuPos.top,
-              left: menuPos.left,
-              background: '#fff',
-              border: '1px solid #EDE5DC',
-              zIndex: 9999,
-              minWidth: 160,
-              boxShadow: '0 4px 12px rgba(44,20,16,0.12)',
-            }}
+        <div
+          style={{
+            position: 'fixed',
+            top: menuPos.top,
+            left: menuPos.left,
+            background: '#fff',
+            border: '1px solid #EDE5DC',
+            zIndex: 9999,
+            minWidth: 160,
+            boxShadow: '0 4px 12px rgba(44,20,16,0.12)',
+          }}
+          onMouseLeave={() => setShowMenu(false)}
+        >
+          <button
+            onClick={() => { setShowMenu(false); setEditContent(post.content); setIsEditOpen(true); }}
+            style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >
-            <button
-              onClick={() => { setShowMenu(false); setEditContent(post.content); setIsEditOpen(true); }}
-              style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-            >
-              편집
-            </button>
-            <button
-              onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }}
-              style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-            >
-              삭제
-            </button>
-            {movableCats.length > 0 && (
-              <>
-                <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
-                <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
-                {movableCats.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => { setShowMenu(false); updatePost(post.id, { category: cat }); }}
-                    style={{ display: 'block', width: '100%', padding: '6px 14px', textAlign: 'left', fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                  >
-                    → {cat}
-                  </button>
-                ))}
-              </>
-            )}
-          </div>
-        </>
+            편집
+          </button>
+          <button
+            onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }}
+            style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            삭제
+          </button>
+          {movableCats.length > 0 && (
+            <>
+              <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
+              <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
+              {movableCats.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => { setShowMenu(false); updatePost(post.id, { category: cat }); }}
+                  style={{ display: 'block', width: '100%', padding: '6px 14px', textAlign: 'left', fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  → {cat}
+                </button>
+              ))}
+            </>
+          )}
+        </div>
       )}
 
       {/* 삭제 확인 모달 */}
