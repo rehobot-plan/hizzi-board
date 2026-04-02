@@ -266,7 +266,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
 
             // 오늘 완료 / 이전 완료 분리
             const todayCompleted = completedTodos.filter(p => {
-              if (!p.completedAt) return false;
+              if (!p.completedAt) return true; // completedAt 없으면 오늘로 처리
               const ct = new Date(p.completedAt);
               return ct >= today && ct < tomorrow;
             });
@@ -402,6 +402,25 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             ) : (
               filteredPosts.map((post) => (
                 <div key={post.id} className="group relative py-3 border-b border-[#EDE5DC] hover:border-l-2 hover:border-l-[#C17B6B] pl-2">
+                  {activeCategory === "전체" && post.category && post.category !== "전체" && (
+                    <span style={{
+                      fontSize: 9,
+                      padding: '1px 6px',
+                      marginBottom: 4,
+                      display: 'inline-block',
+                      letterSpacing: '0.06em',
+                      background: post.category === '할일' ? '#FFF5F2'
+                        : post.category === '공지' ? '#F5F0EE'
+                        : post.category === '메모' ? '#F0F5F5'
+                        : '#F5F5F0',
+                      color: post.category === '할일' ? '#C17B6B'
+                        : post.category === '공지' ? '#7A2828'
+                        : post.category === '메모' ? '#5C7A7A'
+                        : '#9E8880',
+                    }}>
+                      {post.category}
+                    </span>
+                  )}
                   <PostItem post={post} />
                 </div>
               ))
