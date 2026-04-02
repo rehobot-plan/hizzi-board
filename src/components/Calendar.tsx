@@ -142,6 +142,7 @@ export default function Calendar() {
   const [selectedEndDate, setSelectedEndDate] = useState('');
   const ignoreNextClickRef = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: 'single' | 'repeat' | 'leave';
     target: any;
@@ -562,9 +563,13 @@ export default function Calendar() {
                 openAddModal(ds, ds);
               }}
               onMouseDown={() => onMouseDown(date)}
-              onMouseEnter={() => onMouseEnter(date)}
               onMouseUp={onMouseUp}
-              style={{ minHeight: 72, borderRight: '0.5px solid #EDE5DC', borderBottom: '0.5px solid #EDE5DC', padding: '4px 3px', cursor: 'pointer', background: dragSelected ? '#FFF5F2' : isToday ? '#FFFAF7' : '#fff', userSelect: 'none' }}
+              onMouseEnter={() => {
+                onMouseEnter(date);
+                if (!isDragging) setHoveredDate(ds);
+              }}
+              onMouseLeave={() => setHoveredDate(null)}
+              style={{ minHeight: 72, borderRight: '0.5px solid #EDE5DC', borderBottom: '0.5px solid #EDE5DC', padding: '4px 3px', cursor: 'pointer', background: dragSelected ? '#FFF5F2' : isToday ? '#FFFAF7' : hoveredDate === ds ? '#F5EDE6' : '#fff', userSelect: 'none' }}
             >
               <div style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, color: isToday ? '#C17B6B' : isHol || isSun ? '#C17B6B' : isSat ? '#6B8BC1' : '#2C1810', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: isToday ? '50%' : 0, background: isToday ? '#F5E6E0' : 'transparent', marginBottom: 2 }}>
                 {date.getDate()}
@@ -589,6 +594,8 @@ export default function Calendar() {
                       setLeaveMemo(ev.rawLeave.memo || '');
                     }
                   }}
+                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.82'; }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
                     style={{ fontSize: 10, color: '#fff', background: ev.color || '#C17B6B', cursor: 'pointer', padding: '1px 4px', marginBottom: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0, marginLeft: isStart || isSingle ? 0 : -3, marginRight: isEnd || isSingle ? 0 : -3 }}>
                     {ev.source === 'leave' ? (ev.displayTitle || '\u00A0') : (isStart || isSingle ? ev.title : '\u00A0')}
                   </div>
