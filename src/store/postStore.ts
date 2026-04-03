@@ -27,6 +27,8 @@ export interface Post {
   completed?: boolean;
   completedAt?: Date | null;
   pinned?: boolean;
+  requestId?: string;
+  requestFrom?: string;
 }
 
 interface PostState {

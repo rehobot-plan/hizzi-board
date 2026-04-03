@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import PostItem from "./PostItem";
 import CreatePost from "./CreatePost";
 import TodoItem from "./TodoItem";
+import TodoRequestBadge from "./TodoRequestBadge";
 
 interface PanelProps {
   id: string;
@@ -216,6 +217,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           />
         )}
         <div className="flex items-center gap-2">
+          {isOwner && <TodoRequestBadge />}
           {canCreate && (
             <button
               onClick={() => setShowCreate(true)}

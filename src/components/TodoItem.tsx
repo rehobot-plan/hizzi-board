@@ -207,6 +207,11 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
           <span style={{ fontSize: 9, padding: '1px 6px', background: tagBg, color: tagColor, letterSpacing: '0.06em' }}>{tagLabel}</span>
           <span style={{ fontSize: 10, color: '#C4B8B0' }}>{formatDate(post.createdAt)}</span>
+          {post.requestFrom && (
+            <span style={{ fontSize: 9, padding: '1px 6px', background: '#F5F0EE', color: '#9E8880', letterSpacing: '0.06em' }}>
+              {post.requestFrom.split('@')[0]} 요청
+            </span>
+          )}
           {justChecked && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>완료</span>}
         </div>
       </div>

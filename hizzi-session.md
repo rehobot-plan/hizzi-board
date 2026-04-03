@@ -120,28 +120,26 @@ git checkout src/components/[파일명].tsx
 - 공지사항 최신순 정렬 + 핀 고정
 - 핵심 버그 수정 (taskType undefined, storage export, Firestore Rules 등)
 - 할일 기능 추가 (이미지/파일/링크 렌더링, 수정 기능)
-- 게시물 구조 전면 개편 (텍스트 + 첨부파일 분리)
+- 게시물 구조 전면 개편 (텍스트 + 첨부파일 분리) 확인 완료
 - hizzi-uxui-design.md 생성
-- 협업패턴_가이드.md 업데이트 (코드 분석 후 명령 원칙 추가)
-- hizzi-session.md 업데이트 (협업 원칙 반영)
+- **TodoItem ··· 메뉴 Portal 방식으로 위치 버그 완전 해결**
+  - overflow 체인 문제 → createPortal로 document.body에 직접 마운트
+  - F12 콘솔 디버깅으로 부모 overflow 체인 추적
+- **PostItem ··· 메뉴 right 기준 고정**
+- **메모 첨부파일 텍스트 없이 게시 가능** (CreatePost.tsx)
+- **협업패턴_가이드.md 대폭 업데이트**
+  - 연관 파일 구조 파악 원칙
+  - overflow/Portal 패턴
+  - F12 콘솔 디버깅 패턴
+  - Claude 베스트 적극 제안 원칙
+- **hizzi-session.md 업데이트**
 
 ---
 
 ## 🔴 남은 작업 (우선순위 순)
 
 ### 즉시
-- [ ] **TodoItem ··· 메뉴 위치 버그 수정** ← 지금
-  - 이미지 없는 경우에도 메뉴가 화면 밖으로 나가는 문제
-  - right 기준 고정으로 수정 필요
-  - PostItem.tsx 코드 분석 후 같은 버그 있으면 함께 수정
-- [ ] **메모(PostItem) ··· 메뉴가 버튼에서 너무 멀리 표시되는 버그**
-  - PostItem.tsx 코드 분석 후 수정
-- [ ] **메모 첨부파일 업로드 시 텍스트 없이 게시 가능하도록**
-  - CreatePost.tsx 또는 Panel.tsx 분석 후 수정
-- [ ] 게시물 구조 개편 빌드 완료 및 배포
-  - Panel.tsx: post.attachments → post.attachment
-  - TodoItem.tsx: post.caption 참조 제거
-- [ ] 할일 요청 기능 (B안 - 패널 상단 뱃지)
+- [ ] 할일 요청 기능 (B안 - 패널 상단 뱃지) ← 다음
   - 요청자 + 지정인만 보기 / 전체 공개 옵션
   - 수락 시 내 할일에 추가
 - [ ] 달력 개인/업무 구분
