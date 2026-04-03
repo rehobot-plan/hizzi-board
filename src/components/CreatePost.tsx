@@ -145,7 +145,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
   const handleRequestSubmit = async () => {
     if (!requestTitle.trim() || requestTo.length === 0) return;
-    if (!myPanel) return;
+    const fromPanelId = myPanel?.id || 'admin';
     setRequestSubmitting(true);
     try {
       const isTeam = requestTo.length > 1;
@@ -163,7 +163,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
         await addRequest({
           fromEmail: myEmail,
-          fromPanelId: myPanel.id,
+          fromPanelId: fromPanelId,
           toEmail,
           toPanelId: toPanel.id,
           title: requestTitle.trim(),
