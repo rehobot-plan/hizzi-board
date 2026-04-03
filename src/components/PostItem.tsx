@@ -235,20 +235,6 @@ export default function PostItem({ post }: PostItemProps) {
             onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
           >삭제</button>
-          {movableCats.length > 0 && (
-            <>
-              <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
-              <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
-              {movableCats.map(cat => (
-                <button key={cat}
-                  onClick={() => { setShowMenu(false); updatePost(post.id, { category: cat }); }}
-                  style={{ display: 'block', width: '100%', padding: '6px 14px', textAlign: 'left', fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                >→ {cat}</button>
-              ))}
-            </>
-          )}
         </div>
       )}
 

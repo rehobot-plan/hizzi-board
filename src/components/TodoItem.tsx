@@ -28,6 +28,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [checking, setChecking] = useState(false);
   const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.caption || post.content);
@@ -39,6 +40,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
   const isWork = post.taskType === 'work';
   const tagColor = isWork ? '#C17B6B' : '#9E8880';
@@ -223,12 +225,19 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       {/* 더보기 메뉴 */}
       {canEdit && !justChecked && (
         <div style={{ position: 'relative', flexShrink: 0 }}>
-          <button onClick={() => setShowMenu(v => !v)}
+          <button
+            ref={menuBtnRef}
+            onClick={() => {
+              if (!menuBtnRef.current) return;
+              const rect = menuBtnRef.current.getBoundingClientRect();
+              setMenuPos({ top: rect.bottom + 4, left: rect.right - 100 });
+              setShowMenu(v => !v);
+            }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 16, padding: '8px 12px', lineHeight: 1, margin: '-8px -12px', transition: 'color 0.15s ease' }}>
             ···
           </button>
           {showMenu && (
-            <div style={{ position: 'absolute', right: 0, top: 24, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 80, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
+            <div style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 80, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
               onMouseLeave={() => setShowMenu(false)}>
               <button onClick={handleEditOpen}
                 style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -254,33 +263,30 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>할일 수정</span>
           </div>
           <div style={{ padding: '20px' }}>
-            {(post.type === 'text' || post.type === 'link' || post.type === 'image' || post.type === 'file') && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>
-                  {post.type === 'text' || post.type === 'link' ? '내용' : '설명'}
-                </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>내용</div>
+              {post.type === 'text' || post.type === 'link' ? (
                 <textarea
                   value={editContent}
                   onChange={e => setEditContent(e.target.value)}
                   rows={3}
                   style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
                 />
-              </div>
-            )}
+              ) : (
+                <div style={{ fontSize: 13, color: '#9E8880', padding: '8px 0', borderBottom: '1px solid #EDE5DC' }}>
+                  {post.content?.split('/').pop()?.split('?')[0]?.slice(0, 40) || '파일'}
+                </div>
+              )}
+            </div>
 
             {(post.type === 'image' || post.type === 'file') && (
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>파일 교체</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>첨부파일</div>
                 <div onClick={() => fileInputRef.current?.click()}
-                  style={{ border: '1px dashed #EDE5DC', padding: 16, textAlign: 'center', cursor: 'pointer' }}>
+                  style={{ border: '1px dashed #EDE5DC', padding: 12, textAlign: 'center', cursor: 'pointer' }}>
                   <div style={{ fontSize: 11, color: '#9E8880' }}>
-                    {newFile ? newFile.name : '새 파일을 클릭하여 교체'}
+                    {newFile ? newFile.name : '클릭하여 파일 교체'}
                   </div>
-                  {!newFile && (
-                    <div style={{ fontSize: 10, color: '#C4B8B0', marginTop: 4 }}>
-                      현재: {post.content?.split('/').pop()?.split('?')[0]?.slice(0, 30) || '파일'}
-                    </div>
-                  )}
                 </div>
                 <input ref={fileInputRef} type="file"
                   accept={post.type === 'image' ? 'image/*' : '*'}
@@ -292,13 +298,13 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>구분</div>
               <div style={{ display: 'flex', gap: 6 }}>
-                {(['work', 'personal'] as const).map(task => {
+                {(['work', 'personal'] as const).map(t => {
                   const labels = { work: '업무', personal: '개인' };
-                  const activeColor = task === 'work' ? '#C17B6B' : '#9E8880';
+                  const activeColor = t === 'work' ? '#C17B6B' : '#9E8880';
                   return (
-                    <button key={task} onClick={() => setEditTaskType(task)}
-                      style={{ padding: '5px 14px', border: `1px solid ${editTaskType === task ? activeColor : '#EDE5DC'}`, background: editTaskType === task ? (task === 'work' ? '#FFF5F2' : '#F5F0EE') : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editTaskType === task ? activeColor : '#9E8880', cursor: 'pointer' }}>
-                      {labels[task]}
+                    <button key={t} onClick={() => setEditTaskType(t)}
+                      style={{ padding: '5px 14px', border: `1px solid ${editTaskType === t ? activeColor : '#EDE5DC'}`, background: editTaskType === t ? (t === 'work' ? '#FFF5F2' : '#F5F0EE') : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editTaskType === t ? activeColor : '#9E8880', cursor: 'pointer' }}>
+                      {labels[t]}
                     </button>
                   );
                 })}
@@ -306,14 +312,14 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             </div>
 
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>보이는 범위</div>
               <div style={{ display: 'flex', gap: 6 }}>
-                {(['all', 'me'] as const).map(visibility => {
-                  const labels = { all: '전체 공개', me: '나만 보기' };
+                {(['me', 'all'] as const).map(v => {
+                  const labels = { me: '나만', all: '전체' };
                   return (
-                    <button key={visibility} onClick={() => setEditVisibility(visibility)}
-                      style={{ padding: '5px 12px', border: `1px solid ${editVisibility === visibility ? '#2C1810' : '#EDE5DC'}`, background: editVisibility === visibility ? '#FDF8F4' : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editVisibility === visibility ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
-                      {labels[visibility]}
+                    <button key={v} onClick={() => setEditVisibility(v)}
+                      style={{ padding: '5px 12px', border: `1px solid ${editVisibility === v ? '#2C1810' : '#EDE5DC'}`, background: editVisibility === v ? '#FDF8F4' : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editVisibility === v ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
+                      {labels[v]}
                     </button>
                   );
                 })}
