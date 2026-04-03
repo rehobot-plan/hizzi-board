@@ -558,19 +558,36 @@ export default function Calendar() {
           return (
             <div
               key={wi + '-' + di}
-              onClick={() => {
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onMouseDown(date);
+              }}
+              onMouseUp={(e) => {
+                e.preventDefault();
+                if (dragStart && dragEnd) {
+                  const s = dragStart <= dragEnd ? dragStart : dragEnd;
+                  const e2 = dragStart <= dragEnd ? dragEnd : dragStart;
+                  if (toDS(s) !== toDS(e2)) {
+                    ignoreNextClickRef.current = true;
+                  }
+                  openAddModal(toDS(s), toDS(e2));
+                }
+                setIsDragging(false);
+                setDragStart(null);
+                setDragEnd(null);
+              }}
+              onClick={(e) => {
                 if (ignoreNextClickRef.current) {
                   ignoreNextClickRef.current = false;
                   return;
                 }
-                 const dayEvs = getEventsForDay(date);
-                 if (dayEvs.length > 0) return;
-                 setSelectedStartDate(ds);
-                 setSelectedEndDate(ds);
-                 openAddModal(ds, ds);
+                const target = e.target as HTMLElement;
+                const clickedEvent = target.closest('[data-event="true"]');
+                if (clickedEvent) return;
+                setSelectedStartDate(ds);
+                setSelectedEndDate(ds);
+                openAddModal(ds, ds);
               }}
-              onMouseDown={() => onMouseDown(date)}
-              onMouseUp={onMouseUp}
               onMouseEnter={() => {
                 onMouseEnter(date);
                 if (!isDragging) setHoveredDate(ds);
@@ -587,7 +604,7 @@ export default function Calendar() {
                 const isStart = ev.source === 'leave' ? !!ev.isSegmentStart : ev.startDate === ds;
                 const isEnd = ev.source === 'leave' ? !!ev.isSegmentEnd : ev.endDate === ds;
                 return (
-                  <div key={ev.id} onClick={e => {
+                  <div key={ev.id} data-event="true" onClick={e => {
                     e.stopPropagation();
                     setForm({ title: ev.title, startDate: ev.startDate, endDate: ev.endDate, color: ev.color });
                     if (ev.source === 'calendar' && ev.rawCalendar) {
