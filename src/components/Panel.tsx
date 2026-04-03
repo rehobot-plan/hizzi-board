@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { usePostStore } from "@/store/postStore";
 import { usePanelStore } from "@/store/panelStore";
 import { useAuthStore } from "@/store/authStore";
+import { useTodoRequestStore } from "@/store/todoRequestStore";
 import PostItem from "./PostItem";
 import CreatePost from "./CreatePost";
 import TodoItem from "./TodoItem";
@@ -44,6 +45,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [showAllPosts, setShowAllPosts] = useState(false);
 
   const { posts, deletePost } = usePostStore();
+  const { reactivateRequest } = useTodoRequestStore();
   const { user } = useAuthStore();
   const { updatePanel } = usePanelStore();
 
@@ -349,6 +351,9 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                           completed: false,
                           completedAt: null,
                         });
+                        if (p.requestId) {
+                          await reactivateRequest(p.requestId);
+                        }
                       }}
                       style={{ fontSize: 10, color: '#C17B6B', flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                       title="할일로 복구"

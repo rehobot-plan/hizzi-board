@@ -36,6 +36,7 @@ interface TodoRequestState {
   rejectRequest: (requestId: string, reason: string) => Promise<void>;
   cancelRequest: (requestId: string) => Promise<void>;
   completeRequest: (requestId: string) => Promise<void>;
+  reactivateRequest: (requestId: string) => Promise<void>;
 }
 
 export const useTodoRequestStore = create<TodoRequestState>((set) => ({
@@ -136,6 +137,17 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
       });
     } catch (e) {
       console.error('Error completing request:', e);
+    }
+  },
+
+  reactivateRequest: async (requestId: string) => {
+    try {
+      await updateDoc(doc(db, 'todoRequests', requestId), {
+        status: 'accepted',
+        resolvedAt: null,
+      });
+    } catch (e) {
+      console.error('Error reactivating request:', e);
     }
   },
 }));

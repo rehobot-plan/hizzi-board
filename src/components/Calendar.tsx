@@ -564,6 +564,15 @@ export default function Calendar() {
               }}
               onMouseUp={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                const target = e.target as HTMLElement;
+                const clickedEvent = target.closest('[data-event="true"]');
+                if (clickedEvent) {
+                  setIsDragging(false);
+                  setDragStart(null);
+                  setDragEnd(null);
+                  return;
+                }
                 if (dragStart && dragEnd) {
                   const s = dragStart <= dragEnd ? dragStart : dragEnd;
                   const e2 = dragStart <= dragEnd ? dragEnd : dragStart;
@@ -582,8 +591,7 @@ export default function Calendar() {
                   return;
                 }
                 const target = e.target as HTMLElement;
-                const clickedEvent = target.closest('[data-event="true"]');
-                if (clickedEvent) return;
+                if (target.closest('[data-event="true"]')) return;
                 setSelectedStartDate(ds);
                 setSelectedEndDate(ds);
                 openAddModal(ds, ds);
