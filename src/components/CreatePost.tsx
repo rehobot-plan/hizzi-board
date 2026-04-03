@@ -145,6 +145,8 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
   const handleRequestSubmit = async () => {
     if (!requestTitle.trim() || requestTo.length === 0) return;
+    // 관리자가 특정 패널에서 보낼 경우 해당 패널 오너를 발신자로
+    const panelOwnerEmail = myPanel?.ownerEmail || myEmail;
     const fromPanelId = myPanel?.id || 'admin';
     setRequestSubmitting(true);
     try {
@@ -158,11 +160,11 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
         if (!toPanel) continue;
 
         let visibleTo: string[] = [];
-        if (requestVisibility === 'requestOnly') visibleTo = [myEmail, ...requestTo];
-        else if (requestVisibility === 'specific') visibleTo = [myEmail, ...requestTo, ...requestSelectedUsers];
+        if (requestVisibility === 'requestOnly') visibleTo = [panelOwnerEmail, ...requestTo];
+        else if (requestVisibility === 'specific') visibleTo = [panelOwnerEmail, ...requestTo, ...requestSelectedUsers];
 
         await addRequest({
-          fromEmail: myEmail,
+          fromEmail: panelOwnerEmail,
           fromPanelId: fromPanelId,
           toEmail,
           toPanelId: toPanel.id,
