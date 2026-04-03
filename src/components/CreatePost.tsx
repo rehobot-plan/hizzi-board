@@ -90,6 +90,8 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
       visibleTo.push(...selectedUsers);
     }
 
+    console.log('저장 시도:', { panelId, category, content: finalContent.slice(0,20), visibleTo: visibility === 'all' ? [] : visibleTo });
+
     await addPost({
       panelId,
       type,
