@@ -155,6 +155,11 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
         ? requestTo.map(email => users.find(u => u.email === email)?.name || email.split('@')[0]).join(', ')
         : null;
 
+      // 팀 요청이면 공유 ID 생성
+      const teamRequestId = isTeam
+        ? `team_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+        : null;
+
       for (const toEmail of requestTo) {
         const toPanel = panels.find(p => p.ownerEmail === toEmail);
         if (!toPanel) continue;
@@ -163,7 +168,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
         if (requestVisibility === 'requestOnly') visibleTo = [panelOwnerEmail, ...requestTo];
         else if (requestVisibility === 'specific') visibleTo = [panelOwnerEmail, ...requestTo, ...requestSelectedUsers];
 
-        await addRequest({
+        const requestData: any = {
           fromEmail: panelOwnerEmail,
           fromPanelId: fromPanelId,
           toEmail,
@@ -173,7 +178,10 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
           dueDate: requestDueDate || undefined,
           visibleTo,
           teamLabel: teamLabel || undefined,
-        });
+          teamRequestId: teamRequestId || undefined,
+        };
+
+        await addRequest(requestData);
       }
       onClose();
     } catch (err) {

@@ -21,6 +21,7 @@ export interface TodoRequest {
   rejectReason?: string;
   createdAt: Date;
   teamLabel?: string;
+  teamRequestId?: string;
   resolvedAt?: Date | null;
 }
 
@@ -80,21 +81,33 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
         requestDueDate: req.dueDate || null,
       });
 
-      // 기한 있으면 달력에 자동 등록
       if (req.dueDate) {
-        await addDoc(collection(db, 'calendarEvents'), {
-          title: req.teamLabel ? `[Team] ${req.title}` : `[요청] ${req.title}`,
-          startDate: req.dueDate,
-          endDate: req.dueDate,
-          authorId: req.toEmail,
-          authorName,
-          color: '#C17B6B',
-          createdAt: new Date(),
-          repeat: { type: 'none' },
-          requestId,
-          requestFrom: req.fromEmail,
-          requestTitle: req.title,
-        });
+        // 팀 요청이면 같은 teamRequestId로 이미 등록된 달력 있는지 확인
+        let shouldAddCalendar = true;
+        if (req.teamRequestId) {
+          const { getDocs, query, collection: col, where } = await import('firebase/firestore');
+          const existing = await getDocs(
+            query(col(db, 'calendarEvents'), where('teamRequestId', '==', req.teamRequestId))
+          );
+          if (!existing.empty) shouldAddCalendar = false;
+        }
+        if (shouldAddCalendar) {
+          const assigneeNames = req.teamLabel || authorName;
+          await addDoc(collection(db, 'calendarEvents'), {
+            title: req.teamLabel ? `[Team] ${req.title}` : `[요청] ${req.title}`,
+            startDate: req.dueDate,
+            endDate: req.dueDate,
+            authorId: req.toEmail,
+            authorName: req.teamLabel ? `담당: ${assigneeNames}` : authorName,
+            color: '#C17B6B',
+            createdAt: new Date(),
+            repeat: { type: 'none' },
+            requestId,
+            requestFrom: req.fromEmail,
+            requestTitle: req.title,
+            teamRequestId: req.teamRequestId || null,
+          });
+        }
       }
 
       await updateDoc(doc(db, 'todoRequests', requestId), {
