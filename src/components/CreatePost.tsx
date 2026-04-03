@@ -62,7 +62,8 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
   const handleSubmit = async () => {
     if (!user) return;
-    if (!content.trim()) return;
+    const hasAttachment = (attachType === 'image' || attachType === 'file') && attachFile || (attachType === 'link' && attachLink.trim());
+    if (!content.trim() && !hasAttachment) return;
 
     setUploading(true);
 
