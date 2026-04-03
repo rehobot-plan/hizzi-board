@@ -152,6 +152,7 @@ export default function Calendar() {
     type: 'single' | 'repeat' | 'leave';
     target: any;
   } | null>(null);
+  const [showMoreDate, setShowMoreDate] = useState<string | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -607,7 +608,7 @@ export default function Calendar() {
                 {date.getDate()}
               </div>
               {isHol && <div style={{ fontSize: 9, color: '#C17B6B', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginBottom: 1 }}>{HOLIDAYS_2026[ds]}</div>}
-              {dayEvs.slice(0, 2).map(ev => {
+              {dayEvs.slice(0, 3).map(ev => {
                 const isSingle = ev.source === 'leave' ? !!ev.isSingleSegment : ev.startDate === ev.endDate;
                 const isStart = ev.source === 'leave' ? !!ev.isSegmentStart : ev.startDate === ds;
                 const isEnd = ev.source === 'leave' ? !!ev.isSegmentEnd : ev.endDate === ds;
@@ -633,7 +634,17 @@ export default function Calendar() {
                   </div>
                 );
               })}
-              {dayEvs.length > 2 && <div style={{ fontSize: 9, color: '#9E8880' }}>+{dayEvs.length - 2}</div>}
+              {dayEvs.length > 3 && (
+                <div
+                  data-event="true"
+                  onClick={e => { e.stopPropagation(); setShowMoreDate(ds); }}
+                  style={{ fontSize: 9, color: '#C17B6B', cursor: 'pointer', padding: '1px 2px' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#7A2828'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#C17B6B'; }}
+                >
+                  +{dayEvs.length - 3} 더보기
+                </div>
+              )}
             </div>
           );
         }))}
@@ -904,7 +915,11 @@ export default function Calendar() {
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>담당자</span>
-                        <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>{toUser?.name || showDetail.authorId}</span>
+                        <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>
+                          {showDetail.authorName?.startsWith('담당:')
+                            ? showDetail.authorName.replace('담당: ', '')
+                            : (toUser?.name || showDetail.authorId)}
+                        </span>
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>업무</span>
@@ -1073,6 +1088,52 @@ export default function Calendar() {
           </div>
         </div>
       )}
+
+      {showMoreDate && (() => {
+        const date = new Date(showMoreDate + 'T00:00:00');
+        const moreEvs = getEventsForDay(date);
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70 }}
+            onClick={() => setShowMoreDate(null)}>
+            <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 320, maxHeight: '70vh', overflowY: 'auto' }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid #EDE5DC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2C1810' }}>
+                  {showMoreDate.replace(/-/g, '.')} 일정
+                </span>
+                <button onClick={() => setShowMoreDate(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9E8880', fontSize: 18, lineHeight: 1 }}>×</button>
+              </div>
+              <div style={{ padding: '8px 0' }}>
+                {moreEvs.map(ev => (
+                  <div key={ev.id} onClick={() => {
+                    setShowMoreDate(null);
+                    setForm({ title: ev.title, startDate: ev.startDate, endDate: ev.endDate, color: ev.color });
+                    if (ev.source === 'calendar' && ev.rawCalendar) {
+                      setShowLeaveDetail(null);
+                      setShowDetail(ev.rawCalendar);
+                    }
+                    if (ev.source === 'leave' && ev.rawLeave) {
+                      setShowDetail(null);
+                      setShowLeaveDetail(ev.rawLeave);
+                      setLeaveType(ev.rawLeave.type || 'full');
+                      setLeaveMemo(ev.rawLeave.memo || '');
+                    }
+                  }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px', cursor: 'pointer', borderBottom: '0.5px solid #EDE5DC' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#FDF8F4'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: ev.color || '#C17B6B', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: '#2C1810', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {ev.source === 'leave' ? (ev.displayTitle || ev.title) : ev.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
