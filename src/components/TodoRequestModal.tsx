@@ -52,7 +52,7 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
   );
   const inprogressList = allMine.filter(r => r.status === 'accepted');
   const doneList = allMine.filter(r =>
-    r.status === 'rejected' || r.status === 'cancelled'
+    r.status === 'rejected' || r.status === 'cancelled' || r.status === 'completed'
   );
 
   const pendingCount = receivedList.length;

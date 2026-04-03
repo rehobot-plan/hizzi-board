@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Post, usePostStore } from '@/store/postStore';
+import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 
@@ -26,6 +27,7 @@ const CheckIcon = () => (
 
 export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const { updatePost, deletePost } = usePostStore();
+  const { completeRequest } = useTodoRequestStore();
   const [checking, setChecking] = useState(false);
   const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -68,6 +70,9 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     setChecking(true);
     setTimeout(async () => {
       await updatePost(post.id, { completed: true, completedAt: new Date() });
+      if (post.requestId) {
+        await completeRequest(post.requestId);
+      }
       setChecking(false);
     }, 600);
   };
@@ -218,9 +223,24 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           <span style={{ fontSize: 9, padding: '1px 6px', background: tagBg, color: tagColor, letterSpacing: '0.06em' }}>{tagLabel}</span>
           <span style={{ fontSize: 10, color: '#C4B8B0' }}>{formatDate(post.createdAt)}</span>
           {post.requestFrom && (
-            <span style={{ fontSize: 9, padding: '1px 6px', background: '#F5F0EE', color: '#9E8880', letterSpacing: '0.06em' }}>
-              {post.requestFrom.split('@')[0]} 요청
-            </span>
+            <>
+              {/* 왼쪽 테라코타 라인 */}
+              <div style={{
+                position: 'absolute', left: 0, top: 0, bottom: 0,
+                width: 2,
+                background: '#C17B6B',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }} />
+              <span style={{
+                fontSize: 9, padding: '1px 6px',
+                background: '#FCEEE9', color: '#A0503A',
+                border: '0.5px solid #C17B6B',
+                letterSpacing: '0.06em',
+              }}>
+                FROM {post.requestFrom.split('@')[0]}
+              </span>
+            </>
           )}
           {justChecked && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>완료</span>}
         </div>
