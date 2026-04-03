@@ -93,6 +93,15 @@ export default function TodoRequestModal({ onClose }: Props) {
 
       {/* 제목 */}
       <p style={{ fontSize: 13, color: '#2C1810', fontWeight: 600, marginBottom: 4 }}>{r.title}</p>
+      {/* 팀 요청 표시 */}
+      {r.teamLabel && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
+          <span style={{ fontSize: 9, padding: '1px 6px', background: '#F5F0EE', color: '#9E8880', letterSpacing: '0.06em' }}>
+            TEAM
+          </span>
+          <span style={{ fontSize: 11, color: '#9E8880' }}>{r.teamLabel}</span>
+        </div>
+      )}
 
       {/* 내용 */}
       {r.content && (
