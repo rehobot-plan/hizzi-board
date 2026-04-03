@@ -42,11 +42,16 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
 
   addRequest: async (data) => {
     try {
-      await addDoc(collection(db, 'todoRequests'), {
+      const docData: any = {
         ...data,
         status: 'pending',
         createdAt: serverTimestamp(),
+      };
+      // undefined 필드 제거 (Firestore 저장 불가)
+      Object.keys(docData).forEach(key => {
+        if (docData[key] === undefined) delete docData[key];
       });
+      await addDoc(collection(db, 'todoRequests'), docData);
     } catch (e) {
       console.error('Error adding request:', e);
     }
