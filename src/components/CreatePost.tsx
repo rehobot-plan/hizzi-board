@@ -9,7 +9,7 @@ import { storage } from '@/lib/firebase';
 
 interface CreatePostProps {
   panelId: string;
-  onClose: () => void;
+  onClose: (savedCategory?: string) => void;
   categories?: string[];
   defaultCategory?: string;
 }
@@ -105,7 +105,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
     }
     await addPost(postData);
 
-    onClose();
+    onClose(category);
   };
 
   const typeCards = [
@@ -337,7 +337,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
         {/* 푸터 */}
         <div style={{ padding: '14px 24px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button
-            onClick={onClose}
+            onClick={() => onClose()}
             style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             취소

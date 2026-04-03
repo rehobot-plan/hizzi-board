@@ -76,7 +76,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         opacity: justChecked ? 0.4 : 1,
         transition: 'opacity 0.5s ease, transform 0.5s ease, background 0.15s ease',
         transform: justChecked ? 'translateX(8px)' : 'translateX(0)',
-        background: isHovered && !justChecked ? '#FDF8F4' : 'transparent',
+        background: isHovered && !justChecked ? '#FDF8F4' : '#fff',
       }}
     >
       {/* 별표 선 레이어 */}

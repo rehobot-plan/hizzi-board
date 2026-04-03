@@ -525,7 +525,12 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
       {showCreate && (
         <CreatePost
           panelId={id}
-          onClose={() => setShowCreate(false)}
+          onClose={(savedCategory?: string) => {
+            setShowCreate(false);
+            if (savedCategory && categoryList.includes(savedCategory)) {
+              setActiveCategory(savedCategory);
+            }
+          }}
           categories={categoryList}
           defaultCategory={activeCategory}
         />
