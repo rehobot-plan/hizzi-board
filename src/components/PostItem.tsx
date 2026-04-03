@@ -5,6 +5,8 @@ import { Post, usePostStore } from '@/store/postStore';
 import { usePanelStore } from '@/store/panelStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/lib/firebase';
 
 interface PostItemProps {
   post: Post;
@@ -37,6 +39,9 @@ export default function PostItem({ post }: PostItemProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
+  const [editVisibility, setEditVisibility] = useState<'all' | 'me'>('all');
+  const [newFile, setNewFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -46,6 +51,7 @@ export default function PostItem({ post }: PostItemProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const btnRef = useRef<HTMLButtonElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
   const { updatePost, deletePost } = usePostStore();
   const { panels } = usePanelStore();
@@ -95,15 +101,27 @@ export default function PostItem({ post }: PostItemProps) {
   };
 
   const handleEdit = async () => {
-    if (!editContent.trim()) return;
+    if (!editContent.trim() && post.type === 'text') return;
     setIsUpdating(true);
     try {
-      await updatePost(post.id, { content: editContent.trim() });
+      let finalContent = editContent;
+      if (newFile && (post.type === 'image' || post.type === 'file')) {
+        setUploading(true);
+        const storageRef = ref(storage, `uploads/${post.panelId}/${Date.now()}_${newFile.name}`);
+        await uploadBytes(storageRef, newFile);
+        finalContent = await getDownloadURL(storageRef);
+        setUploading(false);
+      }
+      await updatePost(post.id, {
+        content: finalContent,
+        visibleTo: editVisibility === 'all' ? [] : [post.author],
+      });
       setIsEditOpen(false);
     } catch (e) {
       console.error(e);
     } finally {
       setIsUpdating(false);
+      setUploading(false);
     }
   };
 
@@ -224,7 +242,13 @@ export default function PostItem({ post }: PostItemProps) {
           onMouseLeave={() => setShowMenu(false)}
         >
           <button
-            onClick={() => { setShowMenu(false); setEditContent(post.content); setIsEditOpen(true); }}
+            onClick={() => {
+              setShowMenu(false);
+              setEditContent(post.content);
+              setEditVisibility(!post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me');
+              setNewFile(null);
+              setIsEditOpen(true);
+            }}
             style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
@@ -292,16 +316,57 @@ export default function PostItem({ post }: PostItemProps) {
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 수정</span>
             </div>
             <div style={{ padding: '16px 20px' }}>
-              <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4}
-                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
-                disabled={isUpdating} />
+              {(post.type === 'text' || post.type === 'link') && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>내용</div>
+                  <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4}
+                    style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
+                    disabled={isUpdating} />
+                </div>
+              )}
+
+              {(post.type === 'image' || post.type === 'file') && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>첨부파일</div>
+                  <div onClick={() => fileInputRef.current?.click()}
+                    style={{ border: '1px dashed #EDE5DC', padding: 16, textAlign: 'center', cursor: 'pointer' }}>
+                    <div style={{ fontSize: 11, color: '#9E8880' }}>
+                      {newFile ? newFile.name : '클릭하여 파일 교체'}
+                    </div>
+                    {!newFile && (
+                      <div style={{ fontSize: 10, color: '#C4B8B0', marginTop: 4 }}>
+                        현재: {post.content?.split('/').pop()?.split('?')[0]?.slice(0, 30) || '파일'}
+                      </div>
+                    )}
+                  </div>
+                  <input ref={fileInputRef} type="file"
+                    accept={post.type === 'image' ? 'image/*' : '*'}
+                    onChange={e => { const file = e.target.files?.[0]; if (file) setNewFile(file); }}
+                    style={{ display: 'none' }} />
+                </div>
+              )}
+
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>보이는 범위</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['all', 'me'] as const).map(v => {
+                    const labels = { all: '전체 공개', me: '나만 보기' };
+                    return (
+                      <button key={v} onClick={() => setEditVisibility(v)}
+                        style={{ padding: '5px 12px', border: `1px solid ${editVisibility === v ? '#2C1810' : '#EDE5DC'}`, background: editVisibility === v ? '#FDF8F4' : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editVisibility === v ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
+                        {labels[v]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
               <button onClick={() => setIsEditOpen(false)}
                 style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
-              <button onClick={handleEdit} disabled={isUpdating}
+              <button onClick={handleEdit} disabled={isUpdating || uploading}
                 style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}>
-                {isUpdating ? '수정 중...' : '저장'}
+                {uploading ? '업로드 중...' : isUpdating ? '수정 중...' : '저장'}
               </button>
             </div>
           </div>

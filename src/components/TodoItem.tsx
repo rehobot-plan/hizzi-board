@@ -233,7 +233,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
               setMenuPos({ top: rect.bottom + 4, left: rect.right - 100 });
               setShowMenu(v => !v);
             }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 16, padding: '8px 12px', lineHeight: 1, margin: '-8px -12px', transition: 'color 0.15s ease' }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 16, padding: '8px 12px', lineHeight: 1, transition: 'color 0.15s ease' }}>
             ···
           </button>
           {showMenu && (
