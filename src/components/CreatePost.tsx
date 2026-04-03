@@ -250,28 +250,48 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
               {/* 기한 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>
-                  언제까지 <span style={{ fontWeight: 400, color: '#C4B8B0' }}>(선택)</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880' }}>
+                    언제까지 <span style={{ fontWeight: 400, color: '#C4B8B0' }}>(선택)</span>
+                  </div>
+                  {requestDueDate && (
+                    <button onClick={() => { setRequestDueDate(''); setRequestDueDateInput(''); }}
+                      style={{ fontSize: 10, color: '#C4B8B0', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      ✕ 초기화
+                    </button>
+                  )}
                 </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input
-                    type="date"
-                    value={requestDueDate}
-                    onChange={e => handleCalendarDate(e.target.value)}
-                    style={{ border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', flex: 1 }}
-                  />
-                  <span style={{ fontSize: 11, color: '#C4B8B0' }}>또는</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <input
                     type="text"
                     value={requestDueDateInput}
                     onChange={e => handleDueDateInput(e.target.value)}
                     placeholder="20260410"
                     maxLength={8}
-                    style={{ border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', width: 90, textAlign: 'center' }}
+                    style={{ border: 'none', borderBottom: `1px solid ${requestDueDate ? '#C17B6B' : '#EDE5DC'}`, padding: '8px 0', fontSize: 14, color: '#2C1810', outline: 'none', background: 'transparent', width: 120, letterSpacing: '0.08em' }}
+                  />
+                  {requestDueDate ? (
+                    <span style={{ fontSize: 12, color: '#2C1810' }}>
+                      {new Date(requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 11, color: '#C4B8B0' }}>yyyymmdd 형식</span>
+                  )}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <input
+                    type="date"
+                    value={requestDueDate}
+                    onChange={e => handleCalendarDate(e.target.value)}
+                    style={{ fontSize: 11, color: '#9E8880', border: 'none', outline: 'none', background: 'transparent', cursor: 'pointer' }}
                   />
                 </div>
                 {requestDueDate && (
-                  <div style={{ fontSize: 10, color: '#C17B6B', marginTop: 4 }}>
+                  <div style={{ fontSize: 10, color: '#C17B6B', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                      <rect x="1" y="2" width="12" height="11" rx="1" stroke="#C17B6B" strokeWidth="1.2"/>
+                      <path d="M4 1v2M10 1v2M1 5h12" stroke="#C17B6B" strokeWidth="1.2"/>
+                    </svg>
                     수락 시 달력에 자동 등록됩니다
                   </div>
                 )}
