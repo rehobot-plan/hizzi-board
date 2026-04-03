@@ -78,10 +78,13 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
   // yyyymmdd → yyyy-mm-dd 변환
   const parseDateInput = (val: string): string => {
+    // yyyymmdd 형식
     const digits = val.replace(/\D/g, '');
     if (digits.length === 8) {
       return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}`;
     }
+    // yyyy-mm-dd 형식 직접 입력
+    if (val.match(/^\d{4}-\d{2}-\d{2}$/)) return val;
     return '';
   };
 
@@ -89,7 +92,6 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
     setRequestDueDateInput(val);
     const parsed = parseDateInput(val);
     if (parsed) setRequestDueDate(parsed);
-    else if (val.match(/^\d{4}-\d{2}-\d{2}$/)) setRequestDueDate(val);
     else setRequestDueDate('');
   };
 
@@ -261,30 +263,44 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
                     </button>
                   )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="text"
-                    value={requestDueDateInput}
-                    onChange={e => handleDueDateInput(e.target.value)}
-                    placeholder="20260410"
-                    maxLength={8}
-                    style={{ border: 'none', borderBottom: `1px solid ${requestDueDate ? '#C17B6B' : '#EDE5DC'}`, padding: '8px 0', fontSize: 14, color: '#2C1810', outline: 'none', background: 'transparent', width: 120, letterSpacing: '0.08em' }}
-                  />
-                  {requestDueDate ? (
-                    <span style={{ fontSize: 12, color: '#2C1810' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+                  {requestDueDate && !requestDueDateInput.includes('-') ? (
+                    <span
+                      onClick={() => { setRequestDueDateInput(''); }}
+                      style={{ fontSize: 13, color: '#2C1810', borderBottom: '1px solid #C17B6B', padding: '8px 0', cursor: 'text', flex: 1, letterSpacing: '0.02em' }}>
                       {new Date(requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
                     </span>
                   ) : (
-                    <span style={{ fontSize: 11, color: '#C4B8B0' }}>yyyymmdd 형식</span>
+                    <input
+                      type="text"
+                      value={requestDueDateInput}
+                      onChange={e => handleDueDateInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && requestDueDate) {
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
+                      onBlur={() => {
+                        if (!requestDueDate) setRequestDueDateInput('');
+                      }}
+                      placeholder="yyyy-mm-dd"
+                      style={{ border: 'none', borderBottom: `1px solid ${requestDueDate ? '#C17B6B' : '#EDE5DC'}`, padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', flex: 1, letterSpacing: '0.04em' }}
+                      autoFocus={!!requestDueDateInput}
+                    />
                   )}
-                </div>
-                <div style={{ marginTop: 8 }}>
-                  <input
-                    type="date"
-                    value={requestDueDate}
-                    onChange={e => handleCalendarDate(e.target.value)}
-                    style={{ fontSize: 11, color: '#9E8880', border: 'none', outline: 'none', background: 'transparent', cursor: 'pointer' }}
-                  />
+                  {/* 달력 아이콘 — 숨겨진 date input 트리거 */}
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ cursor: 'pointer', color: '#C4B8B0' }}>
+                      <rect x="1" y="2" width="12" height="11" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+                      <path d="M4 1v2M10 1v2M1 5h12" stroke="currentColor" strokeWidth="1.2"/>
+                    </svg>
+                    <input
+                      type="date"
+                      value={requestDueDate}
+                      onChange={e => { handleCalendarDate(e.target.value); setRequestDueDateInput(''); }}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
+                    />
+                  </div>
                 </div>
                 {requestDueDate && (
                   <div style={{ fontSize: 10, color: '#C17B6B', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
