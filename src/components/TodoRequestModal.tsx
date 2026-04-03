@@ -6,6 +6,7 @@ import { usePostStore } from '@/store/postStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { usePanelStore } from '@/store/panelStore';
+import { useEscClose } from '@/hooks/useEscClose';
 
 interface Props {
   onClose: () => void;
@@ -26,13 +27,7 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
   const [rejectReason, setRejectReason] = useState('');
   const [accepting, setAccepting] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  useEscClose(onClose, true);
 
   const myEmail = user?.email ?? '';
   const myName = users.find(u => u.email === myEmail)?.name || myEmail;

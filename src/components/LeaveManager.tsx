@@ -13,6 +13,7 @@ import {
   LeaveType,
   useLeaveStore,
 } from '@/store/leaveStore';
+import { useEscClose } from '@/hooks/useEscClose';
 
 const LEAVE_TYPE_LABEL: Record<LeaveType, string> = {
   full: '전일',
@@ -70,6 +71,8 @@ export default function LeaveManager() {
 
   const isAdmin = user?.role === 'admin';
   const canViewAllLedger = leaveViewPermission === 'all';
+
+  useEscClose(() => setShowAdd(false), showAdd);
 
   const selectedUser = useMemo(() => {
     if (!employees.length) return null;

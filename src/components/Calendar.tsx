@@ -8,6 +8,7 @@ import { useToastStore } from '@/store/toastStore';
 import { LeaveType, useLeaveStore } from '@/store/leaveStore';
 import { useUserStore } from '@/store/userStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
+import { useEscClose } from '@/hooks/useEscClose';
 
 const HOLIDAYS_2026: Record<string, string> = {
   '2026-01-01':'신정','2026-01-28':'설날연휴','2026-01-29':'설날연휴','2026-01-30':'설날연휴',
@@ -153,6 +154,15 @@ export default function Calendar() {
     target: any;
   } | null>(null);
   const [showMoreDate, setShowMoreDate] = useState<string | null>(null);
+
+  const anyModalOpen = showAdd || !!showDetail || !!showLeaveDetail || !!deleteConfirm || !!showMoreDate;
+  useEscClose(() => {
+    if (showMoreDate) { setShowMoreDate(null); return; }
+    if (deleteConfirm) { setDeleteConfirm(null); return; }
+    if (showLeaveDetail) { setShowLeaveDetail(null); return; }
+    if (showDetail) { setShowDetail(null); return; }
+    if (showAdd) { setShowAdd(false); return; }
+  }, anyModalOpen);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);

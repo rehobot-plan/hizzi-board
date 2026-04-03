@@ -6,6 +6,7 @@ import { Post, usePostStore } from '@/store/postStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
+import { useEscClose } from '@/hooks/useEscClose';
 
 interface TodoItemProps {
   post: Post;
@@ -34,14 +35,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isEditOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsEditOpen(false);
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isEditOpen]);
+  useEscClose(() => setIsEditOpen(false), isEditOpen);
 
   const [editContent, setEditContent] = useState(post.content);
   const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(

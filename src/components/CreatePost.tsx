@@ -8,6 +8,7 @@ import { usePanelStore } from '@/store/panelStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
+import { useEscClose } from '@/hooks/useEscClose';
 
 interface CreatePostProps {
   panelId: string;
@@ -62,13 +63,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   const otherUsers = users.filter(u => u.email !== myEmail && u.role !== 'admin');
   const nonAdminUsers = users.filter(u => u.email !== myEmail && u.role !== 'admin');
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  useEscClose(onClose, true);
 
   const toggleUser = (email: string) => {
     setSelectedUsers(prev =>
