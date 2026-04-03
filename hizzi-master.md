@@ -1,17 +1,17 @@
-# Hizzi Board — 마스터 문서
+# Hizzi Board — 프로젝트 마스터 문서
 
-> 이 파일은 프로젝트 전체 기술 정보 + 미래 방향을 담고 있습니다.
-> hizzi-session.md 와 함께 새 세션에 첨부하세요.
+> 새 세션 시작 시 이 파일 + hizzi-session.md + hizzi-uxui-design.md 함께 첨부하세요.
 
 ---
 
 ## 1. 프로젝트 개요
 
-**프로젝트명:** Hizzi Board  
-**URL:** https://hizzi-board.vercel.app  
-**목적:** 패션 쇼핑몰 사내 온라인 게시판 + 공유 달력 + 팀 협업 플랫폼  
-**브랜드 방향:** ZARA / COS 스타일 — 미니멀, 에디토리얼, 고급스러운 패션 브랜드 인트라넷  
-**현재 상태:** 팀원 6명 실사용 중, 안정적 운영 중
+**프로젝트명:** Hizzi Board
+**URL:** https://hizzi-board.vercel.app
+**목적:** 패션 브랜드 히찌 사내 협업 플랫폼 (게시판 + 달력 + 할일 + 연차)
+**브랜드 방향:** ZARA / COS 스타일 — 미니멀, 에디토리얼, 고급스러운 패션 브랜드 인트라넷
+**팀:** 6명 실사용 중
+**글로벌 목표:** 처음부터 단단하게 구조 설계 — 속도보다 정확성
 
 ---
 
@@ -34,8 +34,8 @@
 
 ```
 작업 경로: D:\Dropbox\Dropbox\hizzi-board
-GitHub: rehobot-plan/hizzi-Board
 Firebase 프로젝트: hizzi-board
+serviceAccount.json: D:\Dropbox\Dropbox\serviceAccount.json (상위 폴더)
 ```
 
 ### 핵심 파일 구조
@@ -43,62 +43,55 @@ Firebase 프로젝트: hizzi-board
 ```
 src/
 ├── app/
-│   ├── page.tsx               # 메인 페이지
-│   ├── login/page.tsx         # 로그인
-│   ├── signup/page.tsx        # 회원가입
-│   ├── leave/page.tsx         # 연차 열람 페이지 (별도 라우트)
-│   └── globals.css
+│   ├── page.tsx
+│   ├── leave/page.tsx
+│   ├── login/page.tsx
+│   └── signup/page.tsx
 ├── components/
-│   ├── Panel.tsx
-│   ├── PostItem.tsx
-│   ├── CreatePost.tsx
-│   ├── Calendar.tsx
-│   ├── NoticeArea.tsx
-│   └── LeaveManager.tsx       # 관리자 연차 관리
+│   ├── Panel.tsx         # 게시판 패널 (탭: 할일/메모)
+│   ├── PostItem.tsx      # 게시물 아이템 (레이어 패턴)
+│   ├── TodoItem.tsx      # 할일 아이템 (레이어 패턴)
+│   ├── CreatePost.tsx    # 게시물 작성 (텍스트+첨부파일 구조)
+│   ├── Calendar.tsx      # 공유 달력
+│   ├── NoticeArea.tsx    # 공지사항 (핀고정/최신순)
+│   └── LeaveManager.tsx  # 연차 관리
 ├── store/
 │   ├── authStore.ts
 │   ├── postStore.ts
 │   ├── panelStore.ts
 │   ├── userStore.ts
-│   ├── leaveStore.ts          # calcAnnualLeave, calcConfirmedLeave 등
+│   ├── leaveStore.ts
 │   └── toastStore.ts
 └── lib/
-    └── firebase.ts
+    └── firebase.ts       # db, auth, storage 모두 export 필수!
 ```
 
 ---
 
-## 4. 색상 팔레트 (디자인 시스템)
+## 4. Firestore 데이터 구조
 
-```
-사이드바 배경:    #5C1F1F  딥 로즈브라운
-메인 배경:        #FDF8F4  크림 베이지
-카드 배경:        #FFFFFF
-포인트:           #C17B6B  뮤트 테라코타
-활성 상태:        #7A2828  미디엄 브라운
-주 텍스트:        #2C1810  다크 브라운
-보조 텍스트:      #9E8880  모카 그레이
-테두리:           #EDE5DC  웜 베이지
-배지 배경:        #F5E6E0
-모달 오버레이:    rgba(44,20,16,0.4)
-```
-
-### 타이포그래피
-```
-섹션 제목: 10-11px, font-weight 700, letter-spacing 0.1em, uppercase
-본문: 13px, line-height 1.6, color #2C1810
-메타: 11px, color #9E8880
-```
-
----
-
-## 5. Firestore 데이터 구조
-
-### users
+### posts (2026.04.03 구조 개편)
 ```typescript
 {
-  id, name, email, role?, panelId?,
-  leaveViewPermission?: 'none' | 'me' | 'all'
+  id: string,
+  panelId: string,
+  content: string,           // 텍스트 (항상 필수)
+  attachment?: {             // 첨부파일 (선택사항)
+    type: 'image' | 'file' | 'link',
+    url: string,
+    name?: string,
+  },
+  author: string,
+  category: string,          // '할일' | '메모' | '공지'
+  visibleTo: string[],       // [] = 전체공개
+  taskType?: 'work' | 'personal',
+  starred?: boolean,
+  starredAt?: Date | null,
+  completed?: boolean,
+  completedAt?: Date | null,
+  pinned?: boolean,
+  createdAt: Date,
+  updatedAt: Date,
 }
 ```
 
@@ -106,19 +99,7 @@ src/
 ```typescript
 {
   id, name, ownerEmail?, position?,
-  categories?: string[]
-}
-```
-
-### posts
-```typescript
-{
-  id, panelId, type: 'text'|'image'|'link'|'file',
-  content, author: string,
-  category?: string,
-  visibleTo?: string[],
-  createdAt, updatedAt,
-  attachments?: { name, url, size, type }[]
+  categories: ['할일', '메모']
 }
 ```
 
@@ -132,63 +113,22 @@ src/
 }
 ```
 
-### leaveSettings
-```typescript
-{
-  id, userId, userName, joinDate,
-  manualUsedDays, createdAt, updatedAt
-}
-```
+---
 
-### leaveEvents
-```typescript
-{
-  id, userId, userName, userEmail,
-  date, type: 'full'|'half_am'|'half_pm',
-  days: 1|0.5, memo?, confirmed,
-  createdAt, createdBy
-}
+## 5. 패널 구성
+
+```
+panel-1: 유미정 패널 (alwjd7175@gmail.com)
+panel-2: 조향래 패널 (kkjspfox@naver.com)
+panel-3: 김진우 패널 (oilpig85@gmail.com)
+panel-4: 우희훈 패널 (heehun96@naver.com)
+panel-5: 한다슬 패널 (ektmf335@gmail.com)
+panel-6: 홍아현 패널 (we4458@naver.com)
 ```
 
 ---
 
-## 6. 연차 계산 정책
-
-```
-1년 미만: 매월 1일 × 근속월수 (최대 11일)
-1년 이상: 15일 + floor((근속년수-1)/2) (최대 25일)
-합산 최대: 26일 (유리 해석)
-이월: 누적 가능 (소멸 없음)
-예정: 오늘 이후 날짜 연차
-확정: 오늘 포함 이전 날짜 연차
-총사용: 수동입력 + 예정 + 확정
-잔여: 발생 - 총사용 (마이너스 허용, 빨간색)
-```
-
----
-
-## 7. 권한 구조
-
-```
-관리자
-├── 전체 기능
-├── 연차 등록/수정/삭제 (확정 포함)
-└── 모든 직원 연차 대장 관리
-
-leaveViewPermission === 'all'
-├── 전체 직원 연차 표 열람 (수정 불가)
-└── /leave 페이지에서 예정 컬럼 포함 전체 표 열람
-
-leaveViewPermission === 'me'
-└── 본인 연차만 조회
-
-leaveViewPermission === 'none' 또는 없음
-└── 연차 메뉴 숨김
-```
-
----
-
-## 8. 관리자 계정
+## 6. 관리자 계정
 
 ```
 이메일: admin@company.com
@@ -197,88 +137,73 @@ leaveViewPermission === 'none' 또는 없음
 
 ---
 
-## 9. 개발 규칙
+## 7. Firestore Rules (현재 적용)
 
-```
-1. 패치 3회 실패 시 → 파일 완전 새로 작성
-2. 타임존: toISOString() 금지, T00:00:00 로컬시간 사용
-3. Firestore 리스너: useEffect 반환값으로 unsubscribe
-4. 빌드 순서: 검수 → npm run build → commit → vercel --prod
-5. 파일 교체 안 될 때: 파일 탐색기에서 직접 삭제 후 붙여넣기
-```
-
-### 필수 검수 스크립트
-```python
-import sys
-c = open(sys.argv[1]).read()
-assert c.count('{') == c.count('}'), '중괄호 불균형'
-assert c.count('export default') == 1, 'export default 중복'
-assert 'toISOString' not in c, '타임존 버그 위험'
-print('검수 통과')
+```javascript
+posts:   read/create/update/delete — request.auth != null
+panels:  read/write — request.auth != null
+users:   read — request.auth != null
+         write — 본인(auth.uid == userId) 또는 admin
 ```
 
 ---
 
-## 10. 알려진 버그 & 해결책
+## 8. 핵심 개발 규칙
 
-| 버그 | 해결책 |
-|------|--------|
-| 파일 교체 안 됨 | 파일 탐색기에서 직접 삭제 후 붙여넣기 |
-| 빌드 에러 반복 | 파일 완전 새로 작성 |
-| 날짜 하루 밀림 | T00:00:00 로컬시간 사용 |
-| EBUSY 오류 | .next 삭제 후 재빌드 |
-| git 커밋 실패 | git config core.safecrlf false |
-| 파일 인코딩 깨짐 | Get-Content -Encoding UTF8 |
-| 복구 계정 패널 사용 불가 | email 기반 권한 체크로 통일 |
-
----
-
-## 11. UI 컴포넌트 패턴
-
-### 모달
-```tsx
-// 오버레이: rgba(44,20,16,0.4)
-// 카드: background #fff, border 1px solid #EDE5DC, rounded 없음
-// 헤더: 10px uppercase letter-spacing-widest #2C1810
-// 푸터: background #FDF8F4
 ```
-
-### 버튼
-```tsx
-주요: background #2C1810, color #FDF8F4, 10px uppercase
-취소: color #9E8880, background none, border none
-위험: color #C17B6B, border 1px solid #C17B6B
+1. 패치 3회 실패 → 파일 완전 새로 작성
+2. Firestore 저장 안 될 때 → 브라우저 Console(F12) 먼저 확인
+3. undefined 값은 Firestore에 저장 불가
+   → 선택적 필드는 조건부로 추가:
+   if (category === '할일') postData.taskType = taskType;
+4. firebase.ts 수정 시 export 목록 반드시 확인
+   export const storage = getStorage(app); 누락 주의
+5. 타임존: toISOString() 금지, T00:00:00 로컬시간 사용
+6. 빌드 메모리 부족 시:
+   $env:NODE_OPTIONS="--max-old-space-size=4096"; npm run build
+7. 파일 인코딩 깨졌을 때:
+   git checkout src/components/[파일명].tsx
+8. 협업 방식: Claude.ai 설계 → Claude Code 실행
+   Claude Code /clear 후 메모리 확보 필요시 VS Code 터미널 직접 사용
 ```
 
 ---
 
-## 12. 미래 방향 — Rehobot Plan
+## 9. 발생했던 주요 버그 & 해결책
 
-### 히찌보드 → Rehobot 전략
-```
-히찌보드 = 팀 협업 내부 툴 (MVP 테스트베드)
-Rehobot  = 개인 스케줄러 상용화 앱
+| 버그 | 원인 | 해결책 |
+|------|------|--------|
+| 게시물 새로고침 시 사라짐 | taskType: undefined → Firestore 저장 실패 | 선택적 필드 조건부 추가 |
+| 게시물 저장 안 됨 | firebase.ts storage export 누락 | export const storage = getStorage(app) |
+| 삭제 버튼 클릭 안 됨 | 투명 오버레이 div가 클릭 가로챔 | onMouseLeave로 메뉴 닫기 |
+| hover 시 레이아웃 밀림 | padding/border 변경으로 레이아웃 변경 | 레이어 패턴 + border-color만 변경 |
+| Firestore Rules 거부 | update 규칙 누락 + 관리자 panelId 불일치 | Rules 수정 + 조건 완화 |
+| 카테고리 기본값 오류 | allCategories[0]='할일'이 기본값으로 저장 | getInitialCategory 로직 수정 |
+| 빌드 메모리 부족 | JS heap out of memory | NODE_OPTIONS 메모리 증가 |
+| 파일 인코딩 깨짐 | PowerShell Ctrl+V 붙여넣기 오류 | git checkout으로 복구 |
+| 날짜 하루 밀림 | toISOString() UTC 변환 | T00:00:00 로컬시간 사용 |
 
-히찌보드에서 검증한 구조를 그대로 재사용
-UI/UX만 Rehobot 버전으로 재구성
-```
+---
 
-### Rehobot 개발 순서
-```
-1단계: 히찌보드 완전 안정화
-2단계: 히찌보드에 AI 채팅 통합 (실전 테스트)
-3단계: Rehobot — UI/UX 재구성 + 상용화 플랜
-4단계: 구독 모델 (Free / Pro ₩9,900 / Premium ₩19,900)
-```
+## 10. 유용한 명령어
 
-### Rehobot 기술 스택 (예정)
-```
-Next.js 14 + TypeScript + Tailwind
-Firebase (Auth + Firestore)
-Anthropic Claude API
-배포: Vercel
+```powershell
+# 캐시 삭제 후 재빌드
+Remove-Item -Recurse -Force .next; npm run build
+
+# 메모리 늘려서 빌드
+$env:NODE_OPTIONS="--max-old-space-size=4096"; npm run build
+
+# 배포
+git add . && git commit -m "메시지" && npx vercel --prod
+
+# git 파일 복구
+git checkout src/components/[파일명].tsx
+
+# Firestore 데이터 확인 (node scripts 활용)
+node scripts/[스크립트명].js
 ```
 
 ---
 
-*최종 업데이트: 2026.04.01*
+*업데이트: 2026.04.03*
