@@ -17,7 +17,7 @@ export interface TodoRequest {
   content: string;
   dueDate?: string;
   visibleTo: string[];
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
   rejectReason?: string;
   createdAt: Date;
   teamLabel?: string;
@@ -34,6 +34,7 @@ interface TodoRequestState {
     authorName: string,
   ) => Promise<void>;
   rejectRequest: (requestId: string, reason: string) => Promise<void>;
+  cancelRequest: (requestId: string) => Promise<void>;
 }
 
 export const useTodoRequestStore = create<TodoRequestState>((set) => ({
@@ -109,6 +110,17 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
       });
     } catch (e) {
       console.error('Error rejecting request:', e);
+    }
+  },
+
+  cancelRequest: async (requestId) => {
+    try {
+      await updateDoc(doc(db, 'todoRequests', requestId), {
+        status: 'cancelled',
+        resolvedAt: serverTimestamp(),
+      });
+    } catch (e) {
+      console.error('Error cancelling request:', e);
     }
   },
 }));

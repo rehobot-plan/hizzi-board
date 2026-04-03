@@ -11,25 +11,41 @@ interface Props {
   onClose: () => void;
 }
 
+type TabType = 'received' | 'sent' | 'inprogress' | 'done';
+
 export default function TodoRequestModal({ onClose }: Props) {
   const { user } = useAuthStore();
   const { users } = useUserStore();
   const { panels } = usePanelStore();
-  const { requests, acceptRequest, rejectRequest } = useTodoRequestStore();
+  const { requests, acceptRequest, rejectRequest, cancelRequest } = useTodoRequestStore();
   const { addPost } = usePostStore();
 
-  const [tab, setTab] = useState<'received' | 'sent'>('received');
+  const [tab, setTab] = useState<TabType>('received');
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [accepting, setAccepting] = useState<string | null>(null);
 
   const myEmail = user?.email ?? '';
   const myName = users.find(u => u.email === myEmail)?.name || myEmail;
-
   const isAdmin = user?.role === 'admin';
-  const received = isAdmin ? requests : requests.filter(r => r.toEmail === myEmail);
-  const sent = requests.filter(r => r.fromEmail === myEmail);
-  const pendingCount = received.filter(r => r.status === 'pending').length;
+
+  // 탭별 필터링
+  const allMine = isAdmin
+    ? requests
+    : requests.filter(r => r.fromEmail === myEmail || r.toEmail === myEmail);
+
+  const receivedList = allMine.filter(r =>
+    r.status === 'pending' && (isAdmin ? true : r.toEmail === myEmail)
+  );
+  const sentList = allMine.filter(r =>
+    r.status === 'pending' && r.fromEmail === myEmail && (isAdmin ? false : r.toEmail !== myEmail)
+  );
+  const inprogressList = allMine.filter(r => r.status === 'accepted');
+  const doneList = allMine.filter(r =>
+    r.status === 'rejected' || r.status === 'cancelled'
+  );
+
+  const pendingCount = receivedList.length;
 
   const getUser = (email: string) => users.find(u => u.email === email);
 
@@ -41,12 +57,6 @@ export default function TodoRequestModal({ onClose }: Props) {
   const formatDueDate = (d: string) => {
     const dt = new Date(d + 'T00:00:00');
     return dt.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
-  };
-
-  const statusLabel = (status: string) => {
-    if (status === 'pending') return { text: '대기중', color: '#C17B6B' };
-    if (status === 'accepted') return { text: '수락됨', color: '#5C7A5C' };
-    return { text: '반려됨', color: '#9E8880' };
   };
 
   const handleAccept = async (req: TodoRequest) => {
@@ -62,10 +72,10 @@ export default function TodoRequestModal({ onClose }: Props) {
     setRejectReason('');
   };
 
-  const tabStyle = (t: string) => ({
-    padding: '6px 14px',
+  const tabStyle = (t: TabType) => ({
+    padding: '6px 10px',
     fontSize: 10,
-    letterSpacing: '0.08em',
+    letterSpacing: '0.06em',
     textTransform: 'uppercase' as const,
     background: 'none',
     border: 'none',
@@ -73,12 +83,29 @@ export default function TodoRequestModal({ onClose }: Props) {
     color: tab === t ? '#C17B6B' : '#9E8880',
     cursor: 'pointer',
     marginBottom: -1,
+    whiteSpace: 'nowrap' as const,
   });
 
-  const RequestCard = ({ r, mode }: { r: TodoRequest; mode: 'received' | 'sent' }) => (
-    <div style={{ padding: '14px 0', borderBottom: '1px solid #EDE5DC' }}>
+  const statusBadge = (status: string) => {
+    const map: Record<string, { text: string; color: string; bg: string }> = {
+      pending:   { text: '대기중', color: '#C17B6B', bg: '#FFF5F2' },
+      accepted:  { text: '진행중', color: '#5C7A5C', bg: '#F0F5F0' },
+      rejected:  { text: '반려됨', color: '#9E8880', bg: '#F5F0EE' },
+      cancelled: { text: '취소됨', color: '#C4B8B0', bg: '#F8F6F4' },
+    };
+    const s = map[status] || map.pending;
+    return (
+      <span style={{ fontSize: 9, padding: '2px 6px', background: s.bg, color: s.color, letterSpacing: '0.06em' }}>
+        {s.text}
+      </span>
+    );
+  };
+
+  const RequestCard = ({ r, mode }: { r: TodoRequest; mode: 'received' | 'sent' | 'inprogress' | 'done' }) => (
+    <div style={{ padding: '14px 0', borderBottom: '1px solid #EDE5DC', opacity: mode === 'done' ? 0.65 : 1 }}>
+
       {/* 상단: 발신/수신 + 날짜 + 상태 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
         <div>
           <span style={{ fontSize: 11, fontWeight: 600, color: '#2C1810' }}>
             {mode === 'received'
@@ -87,19 +114,19 @@ export default function TodoRequestModal({ onClose }: Props) {
           </span>
           <span style={{ fontSize: 10, color: '#C4B8B0', marginLeft: 8 }}>{formatDate(r.createdAt)}</span>
         </div>
-        <span style={{ fontSize: 10, color: statusLabel(r.status).color, letterSpacing: '0.06em', flexShrink: 0 }}>
-          {statusLabel(r.status).text}
-        </span>
+        {statusBadge(r.status)}
       </div>
 
       {/* 제목 */}
-      <p style={{ fontSize: 13, color: '#2C1810', fontWeight: 600, marginBottom: 4 }}>{r.title}</p>
-      {/* 팀 요청 표시 */}
+      <p style={{ fontSize: 13, color: '#2C1810', fontWeight: 600, marginBottom: 4,
+        textDecoration: mode === 'done' ? 'line-through' : 'none' }}>
+        {r.title}
+      </p>
+
+      {/* 팀 표시 */}
       {r.teamLabel && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
-          <span style={{ fontSize: 9, padding: '1px 6px', background: '#F5F0EE', color: '#9E8880', letterSpacing: '0.06em' }}>
-            TEAM
-          </span>
+          <span style={{ fontSize: 9, padding: '1px 6px', background: '#F5F0EE', color: '#9E8880', letterSpacing: '0.06em' }}>TEAM</span>
           <span style={{ fontSize: 11, color: '#9E8880' }}>{r.teamLabel}</span>
         </div>
       )}
@@ -117,7 +144,7 @@ export default function TodoRequestModal({ onClose }: Props) {
             <path d="M4 1v2M10 1v2M1 5h12" stroke="#C17B6B" strokeWidth="1.2"/>
           </svg>
           <span style={{ fontSize: 11, color: '#C17B6B' }}>기한 {formatDueDate(r.dueDate)}</span>
-          {mode === 'received' && r.status === 'pending' && (
+          {mode === 'received' && (
             <span style={{ fontSize: 10, color: '#C4B8B0' }}>· 수락 시 달력 자동 등록</span>
           )}
         </div>
@@ -128,17 +155,17 @@ export default function TodoRequestModal({ onClose }: Props) {
         <p style={{ fontSize: 11, color: '#C17B6B', marginBottom: 6 }}>반려 사유: {r.rejectReason}</p>
       )}
 
-      {/* 수락/반려 버튼 (받은 요청 + 대기중만) */}
-      {mode === 'received' && r.status === 'pending' && (
+      {/* 수락/반려 버튼 */}
+      {mode === 'received' && (
         <div style={{ marginTop: 10 }}>
           {rejectId !== r.id ? (
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={() => handleAccept(r)} disabled={accepting === r.id}
-                style={{ padding: '6px 16px', fontSize: 10, letterSpacing: '0.06em', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: accepting === r.id ? 'not-allowed' : 'pointer', opacity: accepting === r.id ? 0.6 : 1 }}>
+                style={{ padding: '6px 16px', fontSize: 10, background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: accepting === r.id ? 'not-allowed' : 'pointer', opacity: accepting === r.id ? 0.6 : 1 }}>
                 {accepting === r.id ? '수락 중...' : '수락'}
               </button>
               <button onClick={() => { setRejectId(r.id); setRejectReason(''); }}
-                style={{ padding: '6px 16px', fontSize: 10, letterSpacing: '0.06em', background: 'none', color: '#C17B6B', border: '1px solid #C17B6B', cursor: 'pointer' }}>
+                style={{ padding: '6px 16px', fontSize: 10, background: 'none', color: '#C17B6B', border: '1px solid #C17B6B', cursor: 'pointer' }}>
                 반려
               </button>
             </div>
@@ -161,8 +188,34 @@ export default function TodoRequestModal({ onClose }: Props) {
           )}
         </div>
       )}
+
+      {/* 요청 취소 버튼 (보낸 요청 + pending만) */}
+      {mode === 'sent' && (
+        <div style={{ marginTop: 8 }}>
+          <button onClick={() => cancelRequest(r.id)}
+            style={{ padding: '5px 14px', fontSize: 10, background: 'none', color: '#9E8880', border: '1px solid #EDE5DC', cursor: 'pointer' }}>
+            요청 취소
+          </button>
+        </div>
+      )}
     </div>
   );
+
+  const currentList = () => {
+    if (tab === 'received') return receivedList;
+    if (tab === 'sent') return sentList;
+    if (tab === 'inprogress') return inprogressList;
+    return doneList;
+  };
+
+  const emptyText: Record<TabType, string> = {
+    received: '받은 요청이 없습니다',
+    sent: '보낸 요청이 없습니다',
+    inprogress: '진행 중인 요청이 없습니다',
+    done: '완료된 요청이 없습니다',
+  };
+
+  const cardMode = (t: TabType): 'received' | 'sent' | 'inprogress' | 'done' => t;
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
@@ -180,23 +233,25 @@ export default function TodoRequestModal({ onClose }: Props) {
         {/* 탭 */}
         <div style={{ display: 'flex', borderBottom: '1px solid #EDE5DC', padding: '0 20px' }}>
           <button style={tabStyle('received')} onClick={() => setTab('received')}>
-            받은 요청 {pendingCount > 0 && `(${pendingCount})`}
+            받은 요청{receivedList.length > 0 ? ` (${receivedList.length})` : ''}
           </button>
-          <button style={tabStyle('sent')} onClick={() => setTab('sent')}>보낸 요청</button>
+          <button style={tabStyle('sent')} onClick={() => setTab('sent')}>
+            보낸 요청{sentList.length > 0 ? ` (${sentList.length})` : ''}
+          </button>
+          <button style={tabStyle('inprogress')} onClick={() => setTab('inprogress')}>
+            진행 중{inprogressList.length > 0 ? ` (${inprogressList.length})` : ''}
+          </button>
+          <button style={tabStyle('done')} onClick={() => setTab('done')}>
+            완료{doneList.length > 0 ? ` (${doneList.length})` : ''}
+          </button>
         </div>
 
         {/* 목록 */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
-          {tab === 'received' && (
-            received.length === 0
-              ? <p style={{ fontSize: 12, color: '#C4B8B0', textAlign: 'center', padding: '32px 0' }}>받은 요청이 없습니다</p>
-              : received.map(r => <RequestCard key={r.id} r={r} mode="received" />)
-          )}
-          {tab === 'sent' && (
-            sent.length === 0
-              ? <p style={{ fontSize: 12, color: '#C4B8B0', textAlign: 'center', padding: '32px 0' }}>보낸 요청이 없습니다</p>
-              : sent.map(r => <RequestCard key={r.id} r={r} mode="sent" />)
-          )}
+          {currentList().length === 0
+            ? <p style={{ fontSize: 12, color: '#C4B8B0', textAlign: 'center', padding: '32px 0' }}>{emptyText[tab]}</p>
+            : currentList().map(r => <RequestCard key={r.id} r={r} mode={cardMode(tab)} />)
+          }
         </div>
       </div>
     </div>
