@@ -218,7 +218,7 @@ export default function PostItem({ post }: PostItemProps) {
             style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-          >편집</button>
+          >수정</button>
           <button
             onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }}
             style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -288,12 +288,12 @@ export default function PostItem({ post }: PostItemProps) {
         </div>
       )}
 
-      {/* 편집 모달 */}
+      {/* 수정 모달 */}
       {isEditOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480, zIndex: 1001 }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 편집</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 수정</span>
             </div>
             <div style={{ padding: '16px 20px' }}>
               <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4}
