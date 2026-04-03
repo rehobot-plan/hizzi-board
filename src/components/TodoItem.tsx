@@ -8,6 +8,22 @@ interface TodoItemProps {
   canEdit: boolean;
 }
 
+const StarIcon = ({ filled }: { filled: boolean }) => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path
+      d="M7 1l1.8 3.6L13 5.3l-3 2.9.7 4.1L7 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L7 1z"
+      stroke="#C17B6B" strokeWidth="1.2"
+      fill={filled ? '#C17B6B' : 'none'}
+    />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+    <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const { updatePost, deletePost } = usePostStore();
   const [checking, setChecking] = useState(false);
@@ -28,12 +44,8 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     if (!canEdit || checking || justChecked) return;
     setJustChecked(true);
     setChecking(true);
-    // 0.6초 시각적 피드백 후 완료 처리
     setTimeout(async () => {
-      await updatePost(post.id, {
-        completed: true,
-        completedAt: new Date(),
-      });
+      await updatePost(post.id, { completed: true, completedAt: new Date() });
       setChecking(false);
     }, 600);
   };
@@ -58,27 +70,35 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       alignItems: 'flex-start',
       gap: 8,
       padding: '10px 0',
+      paddingLeft: 8,
       borderBottom: '1px solid #EDE5DC',
-      borderLeft: post.starred ? '2px solid #C17B6B' : '2px solid transparent',
-      paddingLeft: post.starred ? 8 : 0,
+      position: 'relative',
       opacity: justChecked ? 0.4 : 1,
       transition: 'opacity 0.5s ease, transform 0.5s ease',
       transform: justChecked ? 'translateX(8px)' : 'translateX(0)',
-      position: 'relative',
     }}>
-      {/* 별표 */}
+
+      {/* 레이어 1: 별표 선 효과 (레이아웃 변경 없이) */}
+      <div style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0,
+        width: 2,
+        background: post.starred ? '#C17B6B' : 'transparent',
+        transition: 'background 0.15s ease',
+        pointerEvents: 'none',
+      }} />
+
+      {/* 별표 버튼 */}
       {canEdit && (
         <button
           onClick={handleStar}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            padding: 0, fontSize: 14,
-            color: post.starred ? '#C17B6B' : '#EDE5DC',
-            flexShrink: 0, marginTop: 1,
-            transition: 'color 0.2s',
+            padding: 0, flexShrink: 0, marginTop: 1,
+            display: 'flex', alignItems: 'center',
+            transition: 'opacity 0.15s ease',
           }}
         >
-          ★
+          <StarIcon filled={!!post.starred} />
         </button>
       )}
 
@@ -94,12 +114,10 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             cursor: justChecked ? 'default' : 'pointer',
             flexShrink: 0, marginTop: 2,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.3s ease',
+            transition: 'all 0.15s ease',
           }}
         >
-          {justChecked && (
-            <span style={{ color: '#fff', fontSize: 10, lineHeight: 1 }}>✓</span>
-          )}
+          {justChecked && <CheckIcon />}
         </button>
       )}
 
@@ -110,7 +128,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           textDecoration: justChecked ? 'line-through' : 'none',
           color: justChecked ? '#9E8880' : '#2C1810',
           whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          transition: 'all 0.3s ease',
+          transition: 'all 0.15s ease',
         }}>
           {post.content}
         </div>
@@ -122,9 +140,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             {formatDate(post.createdAt)}
           </span>
           {justChecked && (
-            <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>
-              완료 ✓
-            </span>
+            <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>완료</span>
           )}
         </div>
       </div>
@@ -137,9 +153,9 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               color: '#C4B8B0', fontSize: 16,
-              padding: '8px 12px',
-              lineHeight: 1,
+              padding: '8px 12px', lineHeight: 1,
               margin: '-8px -12px',
+              transition: 'color 0.15s ease',
             }}
           >
             ···
@@ -149,17 +165,14 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
               style={{
                 position: 'absolute', right: 0, top: 24,
                 background: '#fff', border: '1px solid #EDE5DC',
-                zIndex: 10, minWidth: 80,
+                zIndex: 100, minWidth: 80,
+                boxShadow: '0 4px 12px rgba(44,20,16,0.08)',
               }}
               onMouseLeave={() => setShowMenu(false)}
             >
               <button
                 onClick={handleDelete}
-                style={{
-                  display: 'block', width: '100%', padding: '7px 12px',
-                  textAlign: 'left', fontSize: 11, color: '#C17B6B',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                }}
+                style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'none')}
               >

@@ -28,6 +28,7 @@ export interface Post {
   starredAt?: Date | null;
   completed?: boolean;
   completedAt?: Date | null;
+  pinned?: boolean;
 }
 
 interface PostState {

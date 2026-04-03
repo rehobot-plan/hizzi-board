@@ -10,6 +10,25 @@ interface PostItemProps {
   post: Post;
 }
 
+const FileIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
+    <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
+  </svg>
+);
+
+const ChevronDownIcon = () => (
+  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+    <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+  </svg>
+);
+
+const ChevronUpIcon = () => (
+  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+    <path d="M2 6.5l3-3 3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+  </svg>
+);
+
 export default function PostItem({ post }: PostItemProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -34,7 +53,7 @@ export default function PostItem({ post }: PostItemProps) {
 
   const panel = panels.find(p => p.id === post.panelId);
   const REMOVED_TABS = ['결재', '전체'];
-  const DEFAULT_TABS = ['공지', '할일', '메모', '첨부파일'];
+  const DEFAULT_TABS = ['할일', '메모'];
   const rawCats = panel?.categories?.filter(c => !REMOVED_TABS.includes(c)) || [];
   const validCats = rawCats.length > 0 ? rawCats : DEFAULT_TABS;
   const movableCats = validCats.filter(c => c !== post.category);
@@ -110,13 +129,9 @@ export default function PostItem({ post }: PostItemProps) {
       case 'image':
         if (imageError) return <p style={{ fontSize: 12, color: '#9E8880', fontStyle: 'italic' }}>이미지를 불러올 수 없습니다</p>;
         return (
-          <img
-            src={post.content}
-            alt="게시물 이미지"
+          <img src={post.content} alt="게시물 이미지"
             style={{ maxWidth: '100%', height: 'auto', cursor: 'pointer', display: 'block' }}
-            onClick={() => setIsModalOpen(true)}
-            onError={() => setImageError(true)}
-          />
+            onClick={() => setIsModalOpen(true)} onError={() => setImageError(true)} />
         );
       case 'link':
         return (
@@ -129,15 +144,16 @@ export default function PostItem({ post }: PostItemProps) {
         return (
           <a href={post.content} target="_blank" rel="noopener noreferrer"
             style={{ fontSize: 13, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
-              <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
-            </svg>
+            <FileIcon />
             {post.content?.split('/').pop()?.split('?')[0] || '첨부파일'}
           </a>
         );
       default:
-        return <p style={{ fontSize: 13, color: isHovered ? '#7A2828' : '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', transition: 'color 0.15s ease' }}>{post.content}</p>;
+        return (
+          <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', transition: 'color 0.15s ease' }}>
+            {post.content}
+          </p>
+        );
     }
   };
 
@@ -148,49 +164,53 @@ export default function PostItem({ post }: PostItemProps) {
         onMouseLeave={() => setIsHovered(false)}
         style={{
           padding: '12px 0',
+          paddingLeft: 8,
           borderBottom: '1px solid #EDE5DC',
-          background: isHovered ? '#FDF8F4' : '#fff',
-          transition: 'background 0.15s ease',
-          cursor: 'default',
           position: 'relative',
+          cursor: 'default',
         }}
       >
-        {canEdit && (
-          <button
-            ref={btnRef}
-            onClick={handleMenuOpen}
-            style={{
-              position: 'absolute', top: 10, right: 0,
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: isHovered ? '#9E8880' : 'transparent',
-              fontSize: 16, padding: '4px 8px', lineHeight: 1,
-              transition: 'color 0.15s',
-              zIndex: 10,
-            }}
-          >
-            ···
-          </button>
-        )}
-        {renderContent()}
-        <div style={{ fontSize: 11, color: isHovered ? '#C17B6B' : '#9E8880', marginTop: 4, display: 'flex', gap: 8, transition: 'color 0.15s ease' }}>
-          <span>{getAuthorName(post.author)}</span>
-          <span>{formatDate(post.createdAt)}</span>
+        {/* 레이어 1: hover 배경 */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: isHovered ? '#FDF8F4' : 'transparent',
+          transition: 'background 0.15s ease',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
+
+        {/* 레이어 2: hover 텍스트 색상 (내용 위에 올라가지 않게 포인터 없음) */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {canEdit && (
+            <button
+              ref={btnRef}
+              onClick={handleMenuOpen}
+              style={{
+                position: 'absolute', top: -2, right: 0,
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: isHovered ? '#9E8880' : 'transparent',
+                fontSize: 16, padding: '4px 8px', lineHeight: 1,
+                transition: 'color 0.15s ease',
+                zIndex: 10,
+              }}
+            >
+              ···
+            </button>
+          )}
+          <div style={{ color: isHovered ? '#7A2828' : '#2C1810', transition: 'color 0.15s ease' }}>
+            {renderContent()}
+          </div>
+          <div style={{ fontSize: 11, color: isHovered ? '#C17B6B' : '#9E8880', marginTop: 4, display: 'flex', gap: 8, transition: 'color 0.15s ease' }}>
+            <span>{getAuthorName(post.author)}</span>
+            <span>{formatDate(post.createdAt)}</span>
+          </div>
         </div>
       </div>
 
-      {/* ··· 메뉴 — TodoItem과 동일한 방식 */}
+      {/* ··· 메뉴 */}
       {showMenu && canEdit && (
         <div
-          style={{
-            position: 'fixed',
-            top: menuPos.top,
-            left: menuPos.left,
-            background: '#fff',
-            border: '1px solid #EDE5DC',
-            zIndex: 9999,
-            minWidth: 160,
-            boxShadow: '0 4px 12px rgba(44,20,16,0.12)',
-          }}
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 160, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
           onMouseLeave={() => setShowMenu(false)}
         >
           <button
@@ -198,41 +218,34 @@ export default function PostItem({ post }: PostItemProps) {
             style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-          >
-            편집
-          </button>
+          >편집</button>
           <button
             onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }}
             style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-          >
-            삭제
-          </button>
+          >삭제</button>
           {movableCats.length > 0 && (
             <>
               <div style={{ borderTop: '1px solid #EDE5DC', margin: '4px 0' }} />
               <div style={{ padding: '4px 14px', fontSize: 10, color: '#C4B8B0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>탭 이동</div>
               {movableCats.map(cat => (
-                <button
-                  key={cat}
+                <button key={cat}
                   onClick={() => { setShowMenu(false); updatePost(post.id, { category: cat }); }}
                   style={{ display: 'block', width: '100%', padding: '6px 14px', textAlign: 'left', fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                >
-                  → {cat}
-                </button>
+                >→ {cat}</button>
               ))}
             </>
           )}
         </div>
       )}
 
-      {/* 삭제 확인 모달 */}
+      {/* 삭제 모달 */}
       {isDeleteOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
-          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 360 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 360, zIndex: 1001 }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 삭제</span>
             </div>
@@ -241,17 +254,12 @@ export default function PostItem({ post }: PostItemProps) {
               <p style={{ fontSize: 11, color: '#9E8880', marginTop: 4 }}>삭제된 게시물은 복구할 수 없습니다.</p>
             </div>
             <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
-              <button
-                onClick={() => setIsDeleteOpen(false)}
-                style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
+              <button onClick={() => setIsDeleteOpen(false)}
+                style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>
                 취소
               </button>
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#C17B6B', color: '#FDF8F4', border: 'none', cursor: isDeleting ? 'not-allowed' : 'pointer' }}
-              >
+              <button onClick={handleDelete} disabled={isDeleting}
+                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#C17B6B', color: '#FDF8F4', border: 'none', cursor: isDeleting ? 'not-allowed' : 'pointer' }}>
                 {isDeleting ? '삭제 중...' : '삭제'}
               </button>
             </div>
@@ -261,68 +269,42 @@ export default function PostItem({ post }: PostItemProps) {
 
       {/* 이미지 확대 모달 */}
       {isModalOpen && post.type === 'image' && !imageError && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => { setIsModalOpen(false); setZoom(1); setDragPos({ x: 0, y: 0 }); }}
-        >
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => { setIsModalOpen(false); setZoom(1); setDragPos({ x: 0, y: 0 }); }}>
           <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{Math.round(zoom * 100)}%</span>
-            <button
-              onClick={e => { e.stopPropagation(); setZoom(1); setDragPos({ x: 0, y: 0 }); }}
-              style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', border: 'none', padding: '4px 8px', fontSize: 11, cursor: 'pointer' }}
-            >
+            <button onClick={e => { e.stopPropagation(); setZoom(1); setDragPos({ x: 0, y: 0 }); }}
+              style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', border: 'none', padding: '4px 8px', fontSize: 11, cursor: 'pointer' }}>
               초기화
             </button>
           </div>
-          <div
-            style={{ overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh' }}
-            onWheel={handleWheel}
-            onClick={e => e.stopPropagation()}
-          >
-            <img
-              src={post.content}
-              alt="확대 이미지"
-              style={{
-                transform: `scale(${zoom}) translate(${dragPos.x / zoom}px, ${dragPos.y / zoom}px)`,
-                transition: isDragging ? 'none' : 'transform 0.1s',
-                cursor: isDragging ? 'grabbing' : 'grab',
-                display: 'block',
-                maxWidth: '90vw',
-                maxHeight: '90vh',
-              }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              draggable={false}
-            />
+          <div style={{ overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh' }}
+            onWheel={handleWheel} onClick={e => e.stopPropagation()}>
+            <img src={post.content} alt="확대 이미지"
+              style={{ transform: `scale(${zoom}) translate(${dragPos.x / zoom}px, ${dragPos.y / zoom}px)`, transition: isDragging ? 'none' : 'transform 0.1s', cursor: isDragging ? 'grabbing' : 'grab', display: 'block', maxWidth: '90vw', maxHeight: '90vh' }}
+              onMouseDown={handleMouseDown} onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} draggable={false} />
           </div>
         </div>
       )}
 
       {/* 편집 모달 */}
       {isEditOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
-          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480, zIndex: 1001 }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 편집</span>
             </div>
             <div style={{ padding: '16px 20px' }}>
-              <textarea
-                value={editContent}
-                onChange={e => setEditContent(e.target.value)}
-                rows={4}
+              <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4}
                 style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
-                disabled={isUpdating}
-              />
+                disabled={isUpdating} />
             </div>
             <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
-              <button onClick={() => setIsEditOpen(false)} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
-              <button
-                onClick={handleEdit}
-                disabled={isUpdating}
-                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}
-              >
+              <button onClick={() => setIsEditOpen(false)}
+                style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
+              <button onClick={handleEdit} disabled={isUpdating}
+                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}>
                 {isUpdating ? '수정 중...' : '저장'}
               </button>
             </div>
