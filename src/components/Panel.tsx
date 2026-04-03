@@ -54,7 +54,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     // 완료된 할일은 전체/할일 탭에서 숨김
     if (post.completed && post.category === '할일') return false;
     if (activeCategory === "첨부파일") {
-      if (!post.attachments || post.attachments.length === 0) return false;
+      if (!post.attachment) return false;
     } else {
       if (!post.category || post.category !== activeCategory) return false;
     }

@@ -31,7 +31,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editContent, setEditContent] = useState(post.caption || post.content);
+  const [editContent, setEditContent] = useState(post.content);
   const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(
     !post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me'
   );
@@ -77,7 +77,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   };
 
   const handleEditOpen = () => {
-    setEditContent(post.caption || (post.type === 'text' || post.type === 'link' ? post.content : ''));
+    setEditContent(post.content);
     setEditVisibility(!post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me');
     setEditTaskType(post.taskType || 'work');
     setNewFile(null);
@@ -86,33 +86,28 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   };
 
   const handleEditSave = async () => {
-    if ((post.type === 'text' || post.type === 'link') && !editContent.trim()) return;
+    if (!editContent.trim()) return;
     setIsUpdating(true);
     try {
-      let finalContent = post.content;
+      let attachment = post.attachment;
 
-      if (newFile && (post.type === 'image' || post.type === 'file')) {
+      if (newFile && post.attachment && (post.attachment.type === 'image' || post.attachment.type === 'file')) {
         setUploading(true);
         const storageRef = ref(storage, `uploads/${post.panelId}/${Date.now()}_${newFile.name}`);
         await uploadBytes(storageRef, newFile);
-        finalContent = await getDownloadURL(storageRef);
+        const url = await getDownloadURL(storageRef);
+        attachment = { type: post.attachment.type, url, name: newFile.name };
         setUploading(false);
-      } else if (post.type === 'text' || post.type === 'link') {
-        finalContent = editContent.trim();
       }
 
       const updates: any = {
-        content: finalContent,
+        content: editContent.trim(),
         taskType: editTaskType,
         visibleTo: editVisibility === 'all' ? [] : [post.author],
       };
 
-      if ((post.type === 'image' || post.type === 'file') && editContent.trim()) {
-        updates.caption = editContent.trim();
-      } else if (post.type === 'image' || post.type === 'file') {
-        updates.caption = null;
-      } else if (post.type === 'text' || post.type === 'link') {
-        updates.caption = null;
+      if (attachment) {
+        updates.attachment = attachment;
       }
 
       await updatePost(post.id, updates);
@@ -126,40 +121,34 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   };
 
   const renderContent = () => {
-    if (post.type === 'image') {
+    if (post.attachment?.type === 'image') {
       return (
         <>
-          <img src={post.content} alt="할일 이미지"
+          <img src={post.attachment.url} alt="할일 이미지"
             style={{ maxWidth: '100%', height: 'auto', display: 'block', opacity: justChecked ? 0.5 : 1 }}
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          {post.caption && (
-            <p style={{ fontSize: 12, color: '#9E8880', marginTop: 4, lineHeight: 1.5 }}>{post.caption}</p>
-          )}
         </>
       );
     }
-    if (post.type === 'file') {
+    if (post.attachment?.type === 'file') {
       return (
         <>
-          <a href={post.content} target="_blank" rel="noopener noreferrer"
+          <a href={post.attachment.url} target="_blank" rel="noopener noreferrer"
             style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 4 }}>
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
               <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
               <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
             </svg>
-            {post.content?.split('/').pop()?.split('?')[0] || '첨부파일'}
+            {post.attachment.name || post.attachment.url.split('/').pop()?.split('?')[0] || '첨부파일'}
           </a>
-          {post.caption && (
-            <p style={{ fontSize: 12, color: '#9E8880', marginTop: 4, lineHeight: 1.5 }}>{post.caption}</p>
-          )}
         </>
       );
     }
-    if (post.type === 'link') {
+    if (post.attachment?.type === 'link') {
       return (
-        <a href={post.content} target="_blank" rel="noopener noreferrer"
+        <a href={post.attachment.url} target="_blank" rel="noopener noreferrer"
           style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>
-          {post.content}
+          {post.attachment.url}
         </a>
       );
     }
@@ -265,21 +254,15 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           <div style={{ padding: '20px' }}>
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>내용</div>
-              {post.type === 'text' || post.type === 'link' ? (
-                <textarea
-                  value={editContent}
-                  onChange={e => setEditContent(e.target.value)}
-                  rows={3}
-                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
-                />
-              ) : (
-                <div style={{ fontSize: 13, color: '#9E8880', padding: '8px 0', borderBottom: '1px solid #EDE5DC' }}>
-                  {post.content?.split('/').pop()?.split('?')[0]?.slice(0, 40) || '파일'}
-                </div>
-              )}
+              <textarea
+                value={editContent}
+                onChange={e => setEditContent(e.target.value)}
+                rows={3}
+                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
+              />
             </div>
 
-            {(post.type === 'image' || post.type === 'file') && (
+            {post.attachment && (post.attachment.type === 'image' || post.attachment.type === 'file') && (
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>첨부파일</div>
                 <div onClick={() => fileInputRef.current?.click()}
@@ -289,7 +272,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                   </div>
                 </div>
                 <input ref={fileInputRef} type="file"
-                  accept={post.type === 'image' ? 'image/*' : '*'}
+                  accept={post.attachment.type === 'image' ? 'image/*' : '*'}
                   onChange={e => { const file = e.target.files?.[0]; if (file) setNewFile(file); }}
                   style={{ display: 'none' }} />
               </div>
