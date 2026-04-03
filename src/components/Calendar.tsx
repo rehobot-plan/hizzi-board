@@ -349,7 +349,7 @@ export default function Calendar() {
     setSelectedStartDate(startStr);
     setSelectedEndDate(endStr);
     setWeeklyDay(DAY_KEYS[d.getDay()]);
-    setForm({ title: '', startDate: startStr, endDate: endStr, color: getEventColor() });
+    setForm({ title: '', startDate: startStr, endDate: endStr, color: getEventColor(), _taskType: 'work', _visibility: 'all' } as any);
     setAddMode('calendar');
     setLeaveTargetUserId(currentAppUser?.id || '');
     setLeaveType('full');
@@ -675,10 +675,12 @@ export default function Calendar() {
                           : '#854F0B'
                         : leave ? '#3C3489'
                         : '#fff';
-                      const borderLeft = personal
-                        ? `2px solid ${col}`
-                        : leave ? '2px solid #534AB7'
-                        : request ? '3px solid #72243E'
+                      const borderLeft = isStart || isSingle
+                        ? personal
+                          ? `2px solid ${col}`
+                          : leave ? '2px solid #534AB7'
+                          : request ? '3px solid #72243E'
+                          : 'none'
                         : 'none';
                       return {
                         fontSize: 10,
@@ -691,8 +693,10 @@ export default function Calendar() {
                         whiteSpace: 'nowrap' as const,
                         textOverflow: 'ellipsis',
                         borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0,
-                        marginLeft: isStart || isSingle ? 0 : -3,
-                        marginRight: isEnd || isSingle ? 0 : -3,
+                        marginLeft: isStart || isSingle ? 0 : -4,
+                        marginRight: isEnd || isSingle ? 0 : -4,
+                        paddingLeft: isStart || isSingle ? 4 : 0,
+                        paddingRight: isEnd || isSingle ? 4 : 0,
                         borderLeft,
                       };
                     })()}>
@@ -870,14 +874,99 @@ export default function Calendar() {
                 )}
               </div>
 
-              {/* 색상 */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>색상</div>
+              {/* 구분 선택 (업무/개인) */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>구분</div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {COLORS.map(c => (
-                    <div key={c} onClick={() => setForm(f => ({ ...f, color: c }))}
-                      style={{ width: 22, height: 22, borderRadius: '50%', background: c, cursor: 'pointer', border: '2px solid ' + (form.color === c ? '#2C1810' : 'transparent') }} />
+                  {([
+                    { v: 'work', label: '업무', color: '#3B6D11', bg: '#EAF3DE', border: '#639922' },
+                    { v: 'personal', label: '개인', color: '#185FA5', bg: 'rgba(55,138,221,0.1)', border: '#378ADD' },
+                  ] as const).map(opt => (
+                    <button key={opt.v}
+                      onClick={() => {
+                        const vis = (form as any)._visibility || 'all';
+                        setForm(f => ({ ...f, color: getEventColor(opt.v, vis), _taskType: opt.v } as any));
+                      }}
+                      style={{
+                        padding: '5px 14px', fontSize: 10, letterSpacing: '0.06em', cursor: 'pointer',
+                        border: `1px solid ${(form as any)._taskType === opt.v ? opt.border : '#EDE5DC'}`,
+                        background: (form as any)._taskType === opt.v ? opt.bg : '#fff',
+                        color: (form as any)._taskType === opt.v ? opt.color : '#9E8880',
+                      }}>
+                      {opt.label}
+                    </button>
                   ))}
+                </div>
+              </div>
+
+              {/* 공개 범위 */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {([
+                    { v: 'all', label: '전체', solidColor: '#3B6D11', alphaColor: 'rgba(99,153,34,0.15)', border: '#639922' },
+                    { v: 'me', label: '나만', solidColor: '#185FA5', alphaColor: 'rgba(55,138,221,0.15)', border: '#378ADD' },
+                    { v: 'specific', label: '지정', solidColor: '#854F0B', alphaColor: 'rgba(186,117,23,0.15)', border: '#BA7517' },
+                  ] as const).map(opt => {
+                    const taskType = (form as any)._taskType || 'work';
+                    const isPersonalType = taskType === 'personal';
+                    const active = (form as any)._visibility === opt.v;
+                    return (
+                      <button key={opt.v}
+                        onClick={() => {
+                          const taskType = (form as any)._taskType || 'work';
+                          setForm(f => ({ ...f, color: getEventColor(taskType, opt.v), _visibility: opt.v } as any));
+                        }}
+                        style={{
+                          padding: '5px 12px', fontSize: 10, letterSpacing: '0.06em', cursor: 'pointer',
+                          border: `1px solid ${active ? opt.border : '#EDE5DC'}`,
+                          background: active ? (isPersonalType ? opt.alphaColor : opt.alphaColor) : '#fff',
+                          color: active ? opt.solidColor : '#9E8880',
+                        }}>
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 미리보기 */}
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>달력 표시 미리보기</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {(() => {
+                    const col = form.color;
+                    const personal = isPersonal(col);
+                    const leave = isLeave(col);
+                    const request = isRequest(col);
+                    const bgColor = personal
+                      ? col === '#639922' ? 'rgba(99,153,34,0.15)'
+                        : col === '#378ADD' ? 'rgba(55,138,221,0.15)'
+                        : 'rgba(186,117,23,0.15)'
+                      : leave ? 'rgba(83,74,183,0.15)'
+                      : col;
+                    const textColor = personal
+                      ? col === '#639922' ? '#3B6D11'
+                        : col === '#378ADD' ? '#185FA5'
+                        : '#854F0B'
+                      : leave ? '#3C3489'
+                      : '#fff';
+                    const borderLeft = personal
+                      ? `2px solid ${col}`
+                      : leave ? '2px solid #534AB7'
+                      : 'none';
+                    return (
+                      <div style={{
+                        fontSize: 10, color: textColor, background: bgColor,
+                        padding: '2px 8px', borderRadius: 3, borderLeft,
+                        minWidth: 80, maxWidth: 160,
+                        overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                      }}>
+                        {form.title || '일정 제목'}
+                      </div>
+                    );
+                  })()}
+                  <span style={{ fontSize: 10, color: '#C4B8B0' }}>달력에서 이렇게 보여요</span>
                 </div>
               </div>
                 </>
