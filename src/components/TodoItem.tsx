@@ -247,7 +247,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       </div>
 
       {/* 더보기 메뉴 */}
-      {canEdit && !justChecked && (
+      {canEdit && !justChecked && !post.requestId && (
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <button
             ref={menuBtnRef}
