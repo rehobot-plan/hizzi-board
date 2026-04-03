@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useTodoRequestStore, initRequestListener } from '@/store/todoRequestStore';
+import TodoRequestModal from './TodoRequestModal';
 
 export default function TodoRequestBadge() {
   const { user } = useAuthStore();
   const { requests } = useTodoRequestStore();
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -15,29 +17,61 @@ export default function TodoRequestBadge() {
   }, [user?.email]);
 
   const pendingCount = requests.filter(
-    (r) => r.status === 'pending' && r.toEmail === user?.email
+    r => r.status === 'pending' && r.toEmail === user?.email
   ).length;
 
-  if (pendingCount <= 0) return null;
+  const hasAny = requests.some(
+    r => r.fromEmail === user?.email || r.toEmail === user?.email
+  );
 
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: 20,
-        height: 20,
-        padding: '0 6px',
-        border: '1px solid #C17B6B',
-        background: '#FFF5F2',
-        color: '#C17B6B',
-        fontSize: 10,
-        letterSpacing: '0.06em',
-      }}
-      title="대기 중인 할일 요청"
-    >
-      {pendingCount}
-    </span>
+    <>
+      <button
+        onClick={() => setShowModal(true)}
+        style={{
+          position: 'relative',
+          background: 'none',
+          border: '1px solid #EDE5DC',
+          cursor: 'pointer',
+          padding: '4px 8px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          transition: 'all 0.15s ease',
+          color: pendingCount > 0 ? '#C17B6B' : '#9E8880',
+          borderColor: pendingCount > 0 ? '#C17B6B' : '#EDE5DC',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = '#C17B6B';
+          e.currentTarget.style.color = '#C17B6B';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = pendingCount > 0 ? '#C17B6B' : '#EDE5DC';
+          e.currentTarget.style.color = pendingCount > 0 ? '#C17B6B' : '#9E8880';
+        }}
+        title="할일 요청함"
+      >
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <path d="M2 2h10v8H8l-2 2-2-2H2V2z" stroke="currentColor" strokeWidth="1.2"/>
+        </svg>
+        {pendingCount > 0 && (
+          <span style={{
+            background: '#C17B6B',
+            color: '#fff',
+            borderRadius: '50%',
+            width: 15,
+            height: 15,
+            fontSize: 9,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+          }}>
+            {pendingCount}
+          </span>
+        )}
+      </button>
+      {showModal && <TodoRequestModal onClose={() => setShowModal(false)} />}
+    </>
   );
 }
