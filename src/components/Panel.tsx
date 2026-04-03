@@ -228,7 +228,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
         </div>
       </div>
       {/* 게시물 목록 */}
-      <div className="flex-1 px-5" style={{ overflowY: 'auto', overflowX: 'visible' }}>
+      <div className="flex-1 px-5" style={{ overflowY: 'auto', overflowX: 'clip' }}>
         {activeCategory === "할일" ? (
           (() => {
             const isOwner = user && ownerEmail === user?.email;
