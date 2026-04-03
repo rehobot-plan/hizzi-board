@@ -129,9 +129,14 @@ export default function PostItem({ post }: PostItemProps) {
       case 'image':
         if (imageError) return <p style={{ fontSize: 12, color: '#9E8880', fontStyle: 'italic' }}>이미지를 불러올 수 없습니다</p>;
         return (
-          <img src={post.content} alt="게시물 이미지"
-            style={{ maxWidth: '100%', height: 'auto', cursor: 'pointer', display: 'block' }}
-            onClick={() => setIsModalOpen(true)} onError={() => setImageError(true)} />
+          <>
+            <img src={post.content} alt="게시물 이미지"
+              style={{ maxWidth: '100%', height: 'auto', cursor: 'pointer', display: 'block' }}
+              onClick={() => setIsModalOpen(true)} onError={() => setImageError(true)} />
+            {post.caption && (
+              <p style={{ fontSize: 12, color: '#9E8880', marginTop: 4, lineHeight: 1.5 }}>{post.caption}</p>
+            )}
+          </>
         );
       case 'link':
         return (
@@ -142,11 +147,16 @@ export default function PostItem({ post }: PostItemProps) {
         );
       case 'file':
         return (
-          <a href={post.content} target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 13, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FileIcon />
-            {post.content?.split('/').pop()?.split('?')[0] || '첨부파일'}
-          </a>
+          <>
+            <a href={post.content} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 13, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FileIcon />
+              {post.content?.split('/').pop()?.split('?')[0] || '첨부파일'}
+            </a>
+            {post.caption && (
+              <p style={{ fontSize: 12, color: '#9E8880', marginTop: 4, lineHeight: 1.5 }}>{post.caption}</p>
+            )}
+          </>
         );
       default:
         return (

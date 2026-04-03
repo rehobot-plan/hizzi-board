@@ -65,7 +65,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   const handleSubmit = async () => {
     if (!user) return;
     if (!content.trim() && type === 'text') return;
-    if ((type === 'image' || type === 'file') && !file && !content.trim()) return;
+    if ((type === 'image' || type === 'file') && !file) return;
 
     let finalContent = content.trim();
 
@@ -100,6 +100,9 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
       category,
       visibleTo: visibility === 'all' ? [] : visibleTo,
     };
+    if ((type === 'image' || type === 'file') && content.trim()) {
+      postData.caption = content.trim();
+    }
     if (category === '할일') {
       postData.taskType = taskType;
     }
@@ -294,6 +297,13 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
                   {!file && <div style={{ fontSize: 10, color: '#C4B8B0', marginTop: 3 }}>최대 20MB</div>}
                 </div>
                 <input ref={fileInputRef} type="file" accept={type === 'image' ? 'image/*' : '*'} onChange={handleFileChange} style={{ display: 'none' }} />
+                <textarea
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  placeholder="설명을 입력하세요... (선택사항)"
+                  rows={2}
+                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit', marginTop: 8 }}
+                />
               </div>
             ) : type === 'link' ? (
               <input

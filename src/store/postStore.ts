@@ -17,6 +17,7 @@ export interface Post {
   panelId: string;
   type: 'text' | 'image' | 'link' | 'file';
   content: string;
+  caption?: string;
   author: string;
   createdAt: Date;
   updatedAt?: Date;

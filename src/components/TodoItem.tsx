@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Post, usePostStore } from '@/store/postStore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/lib/firebase';
 
 interface TodoItemProps {
   post: Post;
@@ -27,6 +29,16 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editContent, setEditContent] = useState(post.caption || post.content);
+  const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(
+    !post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me'
+  );
+  const [editTaskType, setEditTaskType] = useState<'work' | 'personal'>(post.taskType || 'work');
+  const [newFile, setNewFile] = useState<File | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isWork = post.taskType === 'work';
   const tagColor = isWork ? '#C17B6B' : '#9E8880';
@@ -62,7 +74,98 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     setShowMenu(false);
   };
 
+  const handleEditOpen = () => {
+    setEditContent(post.caption || (post.type === 'text' || post.type === 'link' ? post.content : ''));
+    setEditVisibility(!post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me');
+    setEditTaskType(post.taskType || 'work');
+    setNewFile(null);
+    setShowMenu(false);
+    setIsEditOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if ((post.type === 'text' || post.type === 'link') && !editContent.trim()) return;
+    setIsUpdating(true);
+    try {
+      let finalContent = post.content;
+
+      if (newFile && (post.type === 'image' || post.type === 'file')) {
+        setUploading(true);
+        const storageRef = ref(storage, `uploads/${post.panelId}/${Date.now()}_${newFile.name}`);
+        await uploadBytes(storageRef, newFile);
+        finalContent = await getDownloadURL(storageRef);
+        setUploading(false);
+      } else if (post.type === 'text' || post.type === 'link') {
+        finalContent = editContent.trim();
+      }
+
+      const updates: any = {
+        content: finalContent,
+        taskType: editTaskType,
+        visibleTo: editVisibility === 'all' ? [] : [post.author],
+      };
+
+      if ((post.type === 'image' || post.type === 'file') && editContent.trim()) {
+        updates.caption = editContent.trim();
+      } else if (post.type === 'image' || post.type === 'file') {
+        updates.caption = null;
+      } else if (post.type === 'text' || post.type === 'link') {
+        updates.caption = null;
+      }
+
+      await updatePost(post.id, updates);
+      setIsEditOpen(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUpdating(false);
+      setUploading(false);
+    }
+  };
+
+  const renderContent = () => {
+    if (post.type === 'image') {
+      return (
+        <>
+          <img src={post.content} alt="할일 이미지"
+            style={{ maxWidth: '100%', height: 'auto', display: 'block', opacity: justChecked ? 0.5 : 1 }}
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          {post.caption && (
+            <p style={{ fontSize: 12, color: '#9E8880', marginTop: 4, lineHeight: 1.5 }}>{post.caption}</p>
+          )}
+        </>
+      );
+    }
+    if (post.type === 'file') {
+      return (
+        <>
+          <a href={post.content} target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
+              <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
+            </svg>
+            {post.content?.split('/').pop()?.split('?')[0] || '첨부파일'}
+          </a>
+          {post.caption && (
+            <p style={{ fontSize: 12, color: '#9E8880', marginTop: 4, lineHeight: 1.5 }}>{post.caption}</p>
+          )}
+        </>
+      );
+    }
+    if (post.type === 'link') {
+      return (
+        <a href={post.content} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>
+          {post.content}
+        </a>
+      );
+    }
+    return post.content;
+  };
+
   return (
+    <>
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -108,27 +211,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       {/* 내용 */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease' }}>
-          {post.type === 'image' ? (
-            <img src={post.content} alt="할일 이미지"
-              style={{ maxWidth: '100%', height: 'auto', display: 'block', opacity: justChecked ? 0.5 : 1 }}
-              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          ) : post.type === 'file' ? (
-            <a href={post.content} target="_blank" rel="noopener noreferrer"
-              style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
-                <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
-              </svg>
-              {post.content?.split('/').pop()?.split('?')[0] || '첨부파일'}
-            </a>
-          ) : post.type === 'link' ? (
-            <a href={post.content} target="_blank" rel="noopener noreferrer"
-              style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>
-              {post.content}
-            </a>
-          ) : (
-            post.content
-          )}
+          {renderContent()}
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
           <span style={{ fontSize: 9, padding: '1px 6px', background: tagBg, color: tagColor, letterSpacing: '0.06em' }}>{tagLabel}</span>
@@ -147,6 +230,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           {showMenu && (
             <div style={{ position: 'absolute', right: 0, top: 24, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 80, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
               onMouseLeave={() => setShowMenu(false)}>
+              <button onClick={handleEditOpen}
+                style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                수정
+              </button>
               <button onClick={handleDelete}
                 style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
@@ -158,5 +247,90 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         </div>
       )}
     </div>
+    {isEditOpen && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+        <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480, zIndex: 1001 }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>할일 수정</span>
+          </div>
+          <div style={{ padding: '20px' }}>
+            {(post.type === 'text' || post.type === 'link' || post.type === 'image' || post.type === 'file') && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>
+                  {post.type === 'text' || post.type === 'link' ? '내용' : '설명'}
+                </div>
+                <textarea
+                  value={editContent}
+                  onChange={e => setEditContent(e.target.value)}
+                  rows={3}
+                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
+                />
+              </div>
+            )}
+
+            {(post.type === 'image' || post.type === 'file') && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>파일 교체</div>
+                <div onClick={() => fileInputRef.current?.click()}
+                  style={{ border: '1px dashed #EDE5DC', padding: 16, textAlign: 'center', cursor: 'pointer' }}>
+                  <div style={{ fontSize: 11, color: '#9E8880' }}>
+                    {newFile ? newFile.name : '새 파일을 클릭하여 교체'}
+                  </div>
+                  {!newFile && (
+                    <div style={{ fontSize: 10, color: '#C4B8B0', marginTop: 4 }}>
+                      현재: {post.content?.split('/').pop()?.split('?')[0]?.slice(0, 30) || '파일'}
+                    </div>
+                  )}
+                </div>
+                <input ref={fileInputRef} type="file"
+                  accept={post.type === 'image' ? 'image/*' : '*'}
+                  onChange={e => { const file = e.target.files?.[0]; if (file) setNewFile(file); }}
+                  style={{ display: 'none' }} />
+              </div>
+            )}
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>구분</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {(['work', 'personal'] as const).map(task => {
+                  const labels = { work: '업무', personal: '개인' };
+                  const activeColor = task === 'work' ? '#C17B6B' : '#9E8880';
+                  return (
+                    <button key={task} onClick={() => setEditTaskType(task)}
+                      style={{ padding: '5px 14px', border: `1px solid ${editTaskType === task ? activeColor : '#EDE5DC'}`, background: editTaskType === task ? (task === 'work' ? '#FFF5F2' : '#F5F0EE') : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editTaskType === task ? activeColor : '#9E8880', cursor: 'pointer' }}>
+                      {labels[task]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {(['all', 'me'] as const).map(visibility => {
+                  const labels = { all: '전체 공개', me: '나만 보기' };
+                  return (
+                    <button key={visibility} onClick={() => setEditVisibility(visibility)}
+                      style={{ padding: '5px 12px', border: `1px solid ${editVisibility === visibility ? '#2C1810' : '#EDE5DC'}`, background: editVisibility === visibility ? '#FDF8F4' : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editVisibility === visibility ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
+                      {labels[visibility]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
+            <button onClick={() => setIsEditOpen(false)}
+              style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
+            <button onClick={handleEditSave} disabled={isUpdating || uploading}
+              style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: isUpdating ? 'not-allowed' : 'pointer' }}>
+              {uploading ? '업로드 중...' : isUpdating ? '저장 중...' : '저장'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
