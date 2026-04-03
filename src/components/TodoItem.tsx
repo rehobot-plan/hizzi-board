@@ -108,7 +108,27 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       {/* 내용 */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease' }}>
-          {post.content}
+          {post.type === 'image' ? (
+            <img src={post.content} alt="할일 이미지"
+              style={{ maxWidth: '100%', height: 'auto', display: 'block', opacity: justChecked ? 0.5 : 1 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          ) : post.type === 'file' ? (
+            <a href={post.content} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
+                <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
+              </svg>
+              {post.content?.split('/').pop()?.split('?')[0] || '첨부파일'}
+            </a>
+          ) : post.type === 'link' ? (
+            <a href={post.content} target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>
+              {post.content}
+            </a>
+          ) : (
+            post.content
+          )}
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
           <span style={{ fontSize: 9, padding: '1px 6px', background: tagBg, color: tagColor, letterSpacing: '0.06em' }}>{tagLabel}</span>
