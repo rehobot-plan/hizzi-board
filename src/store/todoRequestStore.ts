@@ -144,13 +144,9 @@ export const initRequestListener = (userEmail: string) => {
           resolvedAt: data.resolvedAt?.toDate ? data.resolvedAt.toDate() : null,
         } as TodoRequest;
       })
-      .filter(r => {
-        // 보낸 사람이거나 받는 사람이면 항상 표시
-        if (r.fromEmail === userEmail || r.toEmail === userEmail) return true;
-        // visibleTo에 포함된 경우만 표시
-        if (r.visibleTo && r.visibleTo.length > 0 && r.visibleTo.includes(userEmail)) return true;
-        return false;
-      });
+      .filter(r =>
+        r.fromEmail === userEmail || r.toEmail === userEmail
+      );
     useTodoRequestStore.setState({ requests, loading: false });
   });
 

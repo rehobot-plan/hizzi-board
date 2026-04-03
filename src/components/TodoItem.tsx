@@ -31,6 +31,16 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isEditOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsEditOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isEditOpen]);
+
   const [editContent, setEditContent] = useState(post.content);
   const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(
     !post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me'

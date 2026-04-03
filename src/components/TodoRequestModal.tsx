@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTodoRequestStore, TodoRequest } from '@/store/todoRequestStore';
 import { usePostStore } from '@/store/postStore';
 import { useAuthStore } from '@/store/authStore';
@@ -24,6 +24,14 @@ export default function TodoRequestModal({ onClose }: Props) {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [accepting, setAccepting] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const myEmail = user?.email ?? '';
   const myName = users.find(u => u.email === myEmail)?.name || myEmail;
