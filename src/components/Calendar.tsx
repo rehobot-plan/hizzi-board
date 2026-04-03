@@ -18,6 +18,25 @@ const HOLIDAYS_2026: Record<string, string> = {
 };
 
 const COLORS = ['#81D8D0','#F4C0D1','#B5D4F4','#C0DD97','#FAC775','#F0997B','#AFA9EC','#D3D1C7'];
+
+const getEventColor = (taskType?: string, visibility?: string): string => {
+  if (taskType === 'work' || !taskType) {
+    if (!visibility || visibility === 'all') return '#3B6D11';
+    if (visibility === 'me') return '#185FA5';
+    return '#854F0B';
+  }
+  // personal
+  if (!visibility || visibility === 'all') return '#639922';
+  if (visibility === 'me') return '#378ADD';
+  return '#BA7517';
+};
+
+const isPersonal = (color: string) =>
+  color === '#639922' || color === '#378ADD' || color === '#BA7517';
+
+const isLeave = (color: string) => color === '#534AB7';
+const isRequest = (color: string) => color === '#993556';
+
 const DAY_NAMES = ['일','월','화','수','목','금','토'];
 const DAY_KEYS = ['sun','mon','tue','wed','thu','fri','sat'];
 const KOREAN_DAYS = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
@@ -261,7 +280,7 @@ export default function Calendar() {
           title: (ev.userName || '직원') + ' ' + typeLabel + (ev.confirmed ? ' 🔒' : ''),
           startDate: ev.date,
           endDate: ev.date,
-          color: isHalf ? '#C17B6B' : '#7A2828',
+          color: '#534AB7',
           authorName: ev.createdBy,
           source: 'leave' as const,
           rawLeave: ev,
@@ -330,7 +349,7 @@ export default function Calendar() {
     setSelectedStartDate(startStr);
     setSelectedEndDate(endStr);
     setWeeklyDay(DAY_KEYS[d.getDay()]);
-    setForm({ title: '', startDate: startStr, endDate: endStr, color: COLORS[0] });
+    setForm({ title: '', startDate: startStr, endDate: endStr, color: getEventColor() });
     setAddMode('calendar');
     setLeaveTargetUserId(currentAppUser?.id || '');
     setLeaveType('full');
@@ -639,7 +658,44 @@ export default function Calendar() {
                   }}
                     onMouseEnter={e => { e.currentTarget.style.opacity = '0.82'; }}
                     onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-                    style={{ fontSize: 10, color: '#fff', background: ev.color || '#C17B6B', cursor: 'pointer', padding: '1px 4px', marginBottom: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0, marginLeft: isStart || isSingle ? 0 : -3, marginRight: isEnd || isSingle ? 0 : -3 }}>
+                    style={(() => {
+                      const col = ev.color || '#3B6D11';
+                      const personal = isPersonal(col);
+                      const leave = isLeave(col);
+                      const request = isRequest(col);
+                      const bgColor = personal
+                        ? col === '#639922' ? 'rgba(99,153,34,0.15)'
+                          : col === '#378ADD' ? 'rgba(55,138,221,0.15)'
+                          : 'rgba(186,117,23,0.15)'
+                        : leave ? 'rgba(83,74,183,0.15)'
+                        : col;
+                      const textColor = personal
+                        ? col === '#639922' ? '#3B6D11'
+                          : col === '#378ADD' ? '#185FA5'
+                          : '#854F0B'
+                        : leave ? '#3C3489'
+                        : '#fff';
+                      const borderLeft = personal
+                        ? `2px solid ${col}`
+                        : leave ? '2px solid #534AB7'
+                        : request ? '3px solid #72243E'
+                        : 'none';
+                      return {
+                        fontSize: 10,
+                        color: textColor,
+                        background: bgColor,
+                        cursor: 'pointer',
+                        padding: '1px 4px',
+                        marginBottom: 1,
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap' as const,
+                        textOverflow: 'ellipsis',
+                        borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0,
+                        marginLeft: isStart || isSingle ? 0 : -3,
+                        marginRight: isEnd || isSingle ? 0 : -3,
+                        borderLeft,
+                      };
+                    })()}>
                     {ev.source === 'leave' ? (ev.displayTitle || '\u00A0') : (isStart || isSingle ? ev.title : '\u00A0')}
                   </div>
                 );
@@ -1056,6 +1112,31 @@ export default function Calendar() {
           </div>
         </div>
       )}
+
+      {/* 색상 범례 */}
+      <div style={{ padding: '10px 16px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', flexWrap: 'wrap', gap: '6px 12px' }}>
+        {[
+          { bg: '#3B6D11', border: 'none', text: '#fff', label: '업무·전체' },
+          { bg: '#185FA5', border: 'none', text: '#fff', label: '업무·나만' },
+          { bg: '#854F0B', border: 'none', text: '#fff', label: '업무·지정' },
+          { bg: '#993556', border: 'none', text: '#fff', label: '업무요청', borderLeft: '3px solid #72243E' },
+          { bg: 'rgba(99,153,34,0.15)', border: '2px solid #639922', text: '#3B6D11', label: '개인·전체' },
+          { bg: 'rgba(55,138,221,0.15)', border: '2px solid #378ADD', text: '#185FA5', label: '개인·나만' },
+          { bg: 'rgba(186,117,23,0.15)', border: '2px solid #BA7517', text: '#854F0B', label: '개인·지정' },
+          { bg: 'rgba(83,74,183,0.15)', border: '2px solid #534AB7', text: '#3C3489', label: '연차' },
+        ].map(item => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{
+              width: 24, height: 10, borderRadius: 2,
+              background: item.bg,
+              border: item.border === 'none' ? 'none' : item.border,
+              borderLeft: (item as any).borderLeft || (item.border === 'none' ? 'none' : item.border),
+              flexShrink: 0,
+            }} />
+            <span style={{ fontSize: 9, color: '#9E8880', letterSpacing: '0.04em' }}>{item.label}</span>
+          </div>
+        ))}
+      </div>
 
       {deleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>

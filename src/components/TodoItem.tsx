@@ -187,7 +187,13 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       <div style={{
         position: 'absolute', left: 0, top: 0, bottom: 0,
         width: 2,
-        background: post.starred ? '#C17B6B' : 'transparent',
+        background: (() => {
+          if (post.requestFrom) return '#993556';
+          if (post.starred) return '#C17B6B';
+          if (!post.visibleTo || post.visibleTo.length === 0) return '#639922';
+          if (post.visibleTo.length > 1) return '#BA7517';
+          return '#378ADD';
+        })(),
         transition: 'background 0.15s ease',
         pointerEvents: 'none',
       }} />
@@ -215,6 +221,20 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
           <span style={{ fontSize: 9, padding: '1px 6px', background: tagBg, color: tagColor, letterSpacing: '0.06em' }}>{tagLabel}</span>
+          {!post.requestFrom && (() => {
+            const v = post.visibleTo;
+            const isAll = !v || v.length === 0;
+            const isSpec = v && v.length > 1;
+            const label = isAll ? '전체' : isSpec ? '지정' : '나만';
+            const color = isAll ? '#3B6D11' : isSpec ? '#854F0B' : '#185FA5';
+            const bg = isAll ? 'rgba(99,153,34,0.15)' : isSpec ? 'rgba(186,117,23,0.15)' : 'rgba(55,138,221,0.15)';
+            const border = isAll ? '0.5px solid #639922' : isSpec ? '0.5px solid #BA7517' : '0.5px solid #378ADD';
+            return (
+              <span style={{ fontSize: 9, padding: '1px 6px', background: bg, color, border, letterSpacing: '0.06em' }}>
+                {label}
+              </span>
+            );
+          })()}
           <span style={{ fontSize: 10, color: '#C4B8B0' }}>{formatDate(post.createdAt)}</span>
           {post.requestFrom && (
             <>
