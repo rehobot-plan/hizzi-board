@@ -37,6 +37,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEscClose(() => setIsEditOpen(false), isEditOpen);
 
@@ -180,6 +181,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={() => { if (post.requestId) setIsExpanded(v => !v); }}
       style={{
         display: 'flex',
         alignItems: 'flex-start',
@@ -192,6 +194,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         transition: 'opacity 0.5s ease, transform 0.5s ease, background 0.15s ease',
         transform: justChecked ? 'translateX(8px)' : 'translateX(0)',
         background: isHovered && !justChecked ? '#FDF8F4' : '#fff',
+        cursor: post.requestId ? 'pointer' : 'default',
       }}
     >
       {/* 별표 선 레이어 */}
@@ -270,6 +273,62 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           {justChecked && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>완료</span>}
         </div>
       </div>
+
+      {post.requestId && isExpanded && (
+        <div style={{
+          margin: '0 -20px',
+          padding: '10px 20px 12px 28px',
+          background: '#FFF9F7',
+          borderBottom: '1px solid #EDE5DC',
+          borderLeft: '2px solid #993556',
+        }}>
+          {/* 요청자 */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 10, color: '#9E8880', width: 44, flexShrink: 0, paddingTop: 1 }}>요청자</span>
+            <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>
+              {post.requestFrom?.split('@')[0]}
+            </span>
+          </div>
+          {/* 상세 내용 */}
+          {post.requestContent && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 10, color: '#9E8880', width: 44, flexShrink: 0, paddingTop: 1 }}>내용</span>
+              <span style={{ fontSize: 11, color: '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                {post.requestContent}
+              </span>
+            </div>
+          )}
+          {/* 기한 */}
+          {post.requestDueDate && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+              <span style={{ fontSize: 10, color: '#9E8880', width: 44, flexShrink: 0 }}>기한</span>
+              <span style={{ fontSize: 11, color: '#993556', fontWeight: 600 }}>
+                {new Date(post.requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}까지
+              </span>
+            </div>
+          )}
+          {/* 공개범위 */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 10, color: '#9E8880', width: 44, flexShrink: 0 }}>공개</span>
+            <span style={{ fontSize: 10, padding: '1px 6px',
+              background: !post.visibleTo || post.visibleTo.length === 0 ? 'rgba(99,153,34,0.15)'
+                : post.visibleTo.length > 1 ? 'rgba(186,117,23,0.15)'
+                : 'rgba(55,138,221,0.15)',
+              color: !post.visibleTo || post.visibleTo.length === 0 ? '#3B6D11'
+                : post.visibleTo.length > 1 ? '#854F0B'
+                : '#185FA5',
+              border: !post.visibleTo || post.visibleTo.length === 0 ? '0.5px solid #639922'
+                : post.visibleTo.length > 1 ? '0.5px solid #BA7517'
+                : '0.5px solid #378ADD',
+              letterSpacing: '0.06em',
+            }}>
+              {!post.visibleTo || post.visibleTo.length === 0 ? '전체'
+                : post.visibleTo.length > 1 ? '지정'
+                : '나만'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* 더보기 메뉴 */}
       {canEdit && !justChecked && !post.requestId && (
