@@ -21,8 +21,15 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   const { addPost } = usePostStore();
   const { users } = useUserStore();
 
+  const allCategories = categories || BASE_CATEGORIES;
+
+  const getInitialCategory = () => {
+    if (!defaultCategory || defaultCategory === '전체') return allCategories[0] || '메모';
+    return defaultCategory;
+  };
+
   const [type, setType] = useState<'text' | 'image' | 'link' | 'file'>('text');
-  const [category, setCategory] = useState(defaultCategory && defaultCategory !== '전체' ? defaultCategory : '');
+  const [category, setCategory] = useState(getInitialCategory());
   const [taskType, setTaskType] = useState<'work' | 'personal'>('work');
   const [visibility, setVisibility] = useState<'all' | 'me' | 'specific'>(defaultCategory === '할일' ? 'me' : 'all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -39,7 +46,6 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const allCategories = categories || BASE_CATEGORIES;
   const nonAdminUsers = users.filter(u => u.email !== user?.email && u.role !== 'admin');
 
   const toggleUser = (email: string) => {
@@ -86,7 +92,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
       type,
       content: finalContent,
       author: user.email!,
-      category: category || '메모',
+      category: category || allCategories[0] || '메모',
       visibleTo: visibility === 'all' ? [] : visibleTo,
       taskType: category === '할일' ? taskType : undefined,
     });
