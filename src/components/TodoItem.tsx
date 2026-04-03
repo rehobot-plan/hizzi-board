@@ -29,6 +29,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [checking, setChecking] = useState(false);
   const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const isWork = post.taskType === 'work';
   const tagColor = isWork ? '#C17B6B' : '#9E8880';
@@ -65,18 +66,22 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: 8,
-      padding: '10px 0',
-      paddingLeft: 8,
-      borderBottom: '1px solid #EDE5DC',
-      position: 'relative',
-      opacity: justChecked ? 0.4 : 1,
-      transition: 'opacity 0.5s ease, transform 0.5s ease',
-      transform: justChecked ? 'translateX(8px)' : 'translateX(0)',
-    }}>
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 8,
+        padding: '10px 0',
+        paddingLeft: 8,
+        borderBottom: '1px solid #EDE5DC',
+        position: 'relative',
+        opacity: justChecked ? 0.4 : 1,
+        transition: 'opacity 0.5s ease, transform 0.5s ease',
+        background: 'transparent',
+      }}
+    >
 
       {/* 레이어 1: 별표 선 효과 (레이아웃 변경 없이) */}
       <div style={{
@@ -86,6 +91,18 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         transition: 'background 0.15s ease',
         pointerEvents: 'none',
       }} />
+
+      {/* 레이어 2: hover 배경 */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: isHovered && !justChecked ? '#FDF8F4' : 'transparent',
+        transition: 'background 0.15s ease',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
+
+      {/* 내용 레이어 */}
+      <div style={{ display: 'contents', position: 'relative', zIndex: 1 }}>
 
       {/* 별표 버튼 */}
       {canEdit && (
@@ -182,6 +199,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

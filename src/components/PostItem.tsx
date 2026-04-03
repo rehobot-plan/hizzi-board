@@ -164,7 +164,6 @@ export default function PostItem({ post }: PostItemProps) {
         onMouseLeave={() => setIsHovered(false)}
         style={{
           padding: '12px 0',
-          paddingLeft: 8,
           borderBottom: '1px solid #EDE5DC',
           position: 'relative',
           cursor: 'default',
@@ -174,6 +173,7 @@ export default function PostItem({ post }: PostItemProps) {
         <div style={{
           position: 'absolute', inset: 0,
           background: isHovered ? '#FDF8F4' : 'transparent',
+          margin: '0 -20px',
           transition: 'background 0.15s ease',
           pointerEvents: 'none',
           zIndex: 0,

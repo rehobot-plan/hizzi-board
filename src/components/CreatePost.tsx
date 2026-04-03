@@ -86,7 +86,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
       type,
       content: finalContent,
       author: user.email!,
-      category: category || '전체',
+      category: category || '메모',
       visibleTo: visibility === 'all' ? [] : visibleTo,
       taskType: category === '할일' ? taskType : undefined,
     });
