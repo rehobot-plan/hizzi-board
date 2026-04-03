@@ -97,6 +97,7 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
       accepted:  { text: '진행중', color: '#5C7A5C', bg: '#F0F5F0' },
       rejected:  { text: '반려됨', color: '#9E8880', bg: '#F5F0EE' },
       cancelled: { text: '취소됨', color: '#C4B8B0', bg: '#F8F6F4' },
+      completed: { text: '완료됨', color: '#3B6D11', bg: '#EAF3DE' },
     };
     const s = map[status] || map.pending;
     return (
@@ -127,6 +128,18 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
         textDecoration: mode === 'done' ? 'line-through' : 'none' }}>
         {r.title}
       </p>
+      {mode === 'done' && r.status === 'completed' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+          <span style={{ fontSize: 9, padding: '1px 6px', background: '#EAF3DE', color: '#3B6D11', border: '0.5px solid #C0DD97', letterSpacing: '0.06em' }}>
+            ✓ 완료됨
+          </span>
+          {r.resolvedAt && (
+            <span style={{ fontSize: 10, color: '#C4B8B0' }}>
+              {new Date(r.resolvedAt instanceof Date ? r.resolvedAt : (r.resolvedAt as any).toDate?.() ?? r.resolvedAt).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* 팀 표시 */}
       {r.teamLabel && (
@@ -166,11 +179,11 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
           {rejectId !== r.id ? (
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={() => handleAccept(r)} disabled={accepting === r.id}
-                style={{ padding: '6px 16px', fontSize: 10, background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: accepting === r.id ? 'not-allowed' : 'pointer', opacity: accepting === r.id ? 0.6 : 1 }}>
+                style={{ padding: '6px 16px', fontSize: 10, background: '#EAF3DE', color: '#3B6D11', border: '1px solid #C0DD97', cursor: accepting === r.id ? 'not-allowed' : 'pointer', opacity: accepting === r.id ? 0.6 : 1 }}>
                 {accepting === r.id ? '수락 중...' : '수락'}
               </button>
               <button onClick={() => { setRejectId(r.id); setRejectReason(''); }}
-                style={{ padding: '6px 16px', fontSize: 10, background: 'none', color: '#C17B6B', border: '1px solid #C17B6B', cursor: 'pointer' }}>
+                style={{ padding: '6px 16px', fontSize: 10, background: '#FBEAF0', color: '#993556', border: '1px solid #F4C0D1', cursor: 'pointer' }}>
                 반려
               </button>
             </div>
@@ -181,7 +194,7 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
                 style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 8 }} />
               <div style={{ display: 'flex', gap: 6 }}>
                 <button onClick={handleReject}
-                  style={{ padding: '5px 14px', fontSize: 10, background: '#C17B6B', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                  style={{ padding: '5px 14px', fontSize: 10, background: '#FBEAF0', color: '#993556', border: '1px solid #F4C0D1', cursor: 'pointer' }}>
                   반려 확정
                 </button>
                 <button onClick={() => setRejectId(null)}
