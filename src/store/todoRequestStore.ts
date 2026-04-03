@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import {
   collection, onSnapshot, addDoc, updateDoc,
-  doc, serverTimestamp, query, where
+  doc, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -13,8 +13,9 @@ export interface TodoRequest {
   fromPanelId: string;
   toEmail: string;
   toPanelId: string;
+  title: string;
   content: string;
-  memo?: string;
+  dueDate?: string;
   visibleTo: string[];
   status: 'pending' | 'accepted' | 'rejected';
   rejectReason?: string;
@@ -26,13 +27,18 @@ interface TodoRequestState {
   requests: TodoRequest[];
   loading: boolean;
   addRequest: (data: Omit<TodoRequest, 'id' | 'createdAt' | 'status'>) => Promise<void>;
-  acceptRequest: (requestId: string, addPostFn: (postData: any) => Promise<void>) => Promise<void>;
+  acceptRequest: (
+    requestId: string,
+    addPostFn: (postData: any) => Promise<void>,
+    authorName: string,
+  ) => Promise<void>;
   rejectRequest: (requestId: string, reason: string) => Promise<void>;
 }
 
 export const useTodoRequestStore = create<TodoRequestState>((set) => ({
   requests: [],
   loading: true,
+
   addRequest: async (data) => {
     try {
       await addDoc(collection(db, 'todoRequests'), {
@@ -44,20 +50,41 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
       console.error('Error adding request:', e);
     }
   },
-  acceptRequest: async (requestId, addPostFn) => {
+
+  acceptRequest: async (requestId, addPostFn, authorName) => {
     try {
       const req = useTodoRequestStore.getState().requests.find(r => r.id === requestId);
       if (!req) return;
+
+      // 할일 추가
       await addPostFn({
         panelId: req.toPanelId,
-        content: req.content,
+        content: req.title,
         author: req.toEmail,
         category: '할일',
         visibleTo: req.visibleTo,
-        taskType: 'work',
+        taskType: 'work' as const,
         requestId,
         requestFrom: req.fromEmail,
+        requestTitle: req.title,
+        requestContent: req.content,
+        requestDueDate: req.dueDate || null,
       });
+
+      // 기한 있으면 달력에 자동 등록
+      if (req.dueDate) {
+        await addDoc(collection(db, 'calendarEvents'), {
+          title: `[요청] ${req.title}`,
+          startDate: req.dueDate,
+          endDate: req.dueDate,
+          authorId: req.toEmail,
+          authorName,
+          color: '#C17B6B',
+          createdAt: new Date(),
+          repeat: { type: 'none' },
+        });
+      }
+
       await updateDoc(doc(db, 'todoRequests', requestId), {
         status: 'accepted',
         resolvedAt: serverTimestamp(),
@@ -66,6 +93,7 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
       console.error('Error accepting request:', e);
     }
   },
+
   rejectRequest: async (requestId, reason) => {
     try {
       await updateDoc(doc(db, 'todoRequests', requestId), {
@@ -87,8 +115,7 @@ export const initRequestListener = (userEmail: string) => {
     requestUnsubscribe = null;
   }
 
-  const q = collection(db, 'todoRequests');
-  requestUnsubscribe = onSnapshot(q, (snapshot) => {
+  requestUnsubscribe = onSnapshot(collection(db, 'todoRequests'), (snapshot) => {
     const requests = snapshot.docs
       .map(d => {
         const data = d.data();
@@ -102,7 +129,8 @@ export const initRequestListener = (userEmail: string) => {
       .filter(r =>
         r.fromEmail === userEmail ||
         r.toEmail === userEmail ||
-        !r.visibleTo || r.visibleTo.length === 0 ||
+        !r.visibleTo ||
+        r.visibleTo.length === 0 ||
         r.visibleTo.includes(userEmail)
       );
     useTodoRequestStore.setState({ requests, loading: false });

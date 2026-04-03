@@ -29,6 +29,9 @@ export interface Post {
   pinned?: boolean;
   requestId?: string;
   requestFrom?: string;
+  requestTitle?: string;
+  requestContent?: string;
+  requestDueDate?: string | null;
 }
 
 interface PostState {
