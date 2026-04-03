@@ -24,8 +24,11 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   const allCategories = categories || BASE_CATEGORIES;
 
   const getInitialCategory = () => {
-    if (!defaultCategory || defaultCategory === '전체') return allCategories[0] || '메모';
-    return defaultCategory;
+    if (!defaultCategory || defaultCategory === '전체') {
+      return allCategories.includes('메모') ? '메모' : allCategories[0] || '메모';
+    }
+    if (allCategories.includes(defaultCategory)) return defaultCategory;
+    return allCategories[0] || '메모';
   };
 
   const [type, setType] = useState<'text' | 'image' | 'link' | 'file'>('text');
@@ -92,7 +95,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
       type,
       content: finalContent,
       author: user.email!,
-      category: category || allCategories[0] || '메모',
+      category: category,
       visibleTo: visibility === 'all' ? [] : visibleTo,
       taskType: category === '할일' ? taskType : undefined,
     });
