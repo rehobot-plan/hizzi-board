@@ -48,15 +48,17 @@ src/
 │   ├── login/page.tsx
 │   └── signup/page.tsx
 ├── components/
-│   ├── Panel.tsx              # 게시판 패널 (탭: 할일/메모)
-│   ├── PostItem.tsx           # 게시물 아이템 (레이어 패턴)
-│   ├── TodoItem.tsx           # 할일 아이템 (Portal 메뉴)
-│   ├── CreatePost.tsx         # 게시물 작성 (할일/메모/요청 탭)
-│   ├── Calendar.tsx           # 공유 달력
-│   ├── NoticeArea.tsx         # 공지사항 (핀고정/최신순)
-│   ├── LeaveManager.tsx       # 연차 관리
-│   ├── TodoRequestBadge.tsx   # 할일 요청 뱃지 (패널 탭 영역)
-│   └── TodoRequestModal.tsx   # 할일 요청함 모달 (4탭)
+│   ├── Panel.tsx
+│   ├── PostItem.tsx
+│   ├── TodoItem.tsx
+│   ├── CreatePost.tsx
+│   ├── Calendar.tsx
+│   ├── NoticeArea.tsx
+│   ├── LeaveManager.tsx
+│   ├── TodoRequestBadge.tsx
+│   └── TodoRequestModal.tsx
+├── hooks/
+│   └── useEscClose.ts         # 공통훅 — 모든 모달 ESC 닫기
 ├── store/
 │   ├── authStore.ts
 │   ├── postStore.ts
@@ -64,14 +66,46 @@ src/
 │   ├── userStore.ts
 │   ├── leaveStore.ts
 │   ├── toastStore.ts
-│   └── todoRequestStore.ts    # 할일 요청 store (신규)
+│   └── todoRequestStore.ts
 └── lib/
-    └── firebase.ts            # db, auth, storage 모두 export 필수!
+    └── firebase.ts
 ```
 
 ---
 
-## 4. Firestore 데이터 구조
+## 4. 파일 연관관계 (수정 시 반드시 함께 확인)
+
+```
+TodoItem.tsx 수정 시
+  → todoRequestStore.ts (completeRequest, reactivateRequest)
+  → Panel.tsx (완료 복구 버튼의 reactivateRequest 연동)
+
+TodoRequestModal.tsx 수정 시
+  → todoRequestStore.ts (status 필터링)
+  → TodoRequestBadge.tsx (panelOwnerEmail 기준)
+
+Calendar.tsx 수정 시
+  → todoRequestStore.ts (acceptRequest의 calendarEvents 등록)
+  → leaveStore.ts (연차 이벤트)
+
+CreatePost.tsx 수정 시 (요청 탭)
+  → todoRequestStore.ts (addRequest)
+  → Calendar.tsx (기한 → 달력 자동 등록)
+
+Panel.tsx 수정 시
+  → TodoItem.tsx (canEdit props)
+  → todoRequestStore.ts (reactivateRequest)
+  → postStore.ts
+
+새 모달/팝업 추가 시
+  → useEscClose 훅 반드시 적용
+  → import { useEscClose } from '@/hooks/useEscClose';
+  → useEscClose(onClose, isOpen);
+```
+
+---
+
+## 5. Firestore 데이터 구조
 
 ### posts
 ```typescript
@@ -79,55 +113,44 @@ src/
   id: string,
   panelId: string,
   content: string,
-  attachment?: {
-    type: 'image' | 'file' | 'link',
-    url: string,
-    name?: string,
-  },
+  attachment?: { type: 'image' | 'file' | 'link', url: string, name?: string },
   author: string,
   category: string,          // '할일' | '메모' | '공지'
-  visibleTo: string[],       // [] = 전체공개
+  visibleTo: string[],
   taskType?: 'work' | 'personal',
   starred?: boolean,
   starredAt?: Date | null,
   completed?: boolean,
   completedAt?: Date | null,
   pinned?: boolean,
-  requestId?: string,        // 요청으로 생성된 할일
-  requestFrom?: string,      // 요청자 이메일
-  requestTitle?: string,     // 원본 요청 제목
-  requestContent?: string,   // 원본 요청 내용
+  requestId?: string,
+  requestFrom?: string,
+  requestTitle?: string,
+  requestContent?: string,
   requestDueDate?: string | null,
   createdAt: Date,
   updatedAt: Date,
 }
 ```
 
-### todoRequests (신규 2026.04.03)
+### todoRequests
 ```typescript
 {
   id: string,
-  fromEmail: string,         // 발신자 (패널 오너 기준, 관리자 아님)
+  fromEmail: string,
   fromPanelId: string,
-  toEmail: string,           // 수신자
+  toEmail: string,
   toPanelId: string,
-  title: string,             // 무엇을 (한 줄)
-  content: string,           // 왜/어떻게
-  dueDate?: string,          // 언제까지 (YYYY-MM-DD)
-  visibleTo: string[],       // [] = 전체 / [emails] = 지정
-  status: 'pending' | 'accepted' | 'rejected' | 'cancelled',
+  title: string,
+  content: string,
+  dueDate?: string,
+  visibleTo: string[],
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'completed',
   rejectReason?: string,
-  teamLabel?: string,        // 팀 요청 시 수신자 목록 문자열
+  teamLabel?: string,
+  teamRequestId?: string,    // 팀 요청 시 공유 ID (달력 중복 방지)
   createdAt: Date,
   resolvedAt?: Date | null,
-}
-```
-
-### panels
-```typescript
-{
-  id, name, ownerEmail?, position?,
-  categories: ['할일', '메모']
 }
 ```
 
@@ -137,13 +160,20 @@ src/
   id, title, startDate, endDate,
   authorId, authorName, color, createdAt,
   repeat?: { type, weeklyDay, excludeHolidays, endType, endDate, endCount },
-  repeatGroupId?: string
+  repeatGroupId?: string,
+  requestId?: string,        // 요청으로 생성된 이벤트
+  requestFrom?: string,
+  requestTitle?: string,
+  teamRequestId?: string,    // 팀 요청 달력 중복 방지용
 }
 ```
 
+### panels / leaveSettings / leaveEvents
+기존과 동일
+
 ---
 
-## 5. 패널 구성
+## 6. 패널 구성
 
 ```
 panel-1: 유미정 패널 (alwjd7175@gmail.com)
@@ -156,7 +186,7 @@ panel-6: 홍아현 패널 (we4458@naver.com)
 
 ---
 
-## 6. 관리자 계정
+## 7. 관리자 계정
 
 ```
 이메일: admin@company.com
@@ -165,13 +195,12 @@ panel-6: 홍아현 패널 (we4458@naver.com)
 
 ---
 
-## 7. Firestore Rules (현재 적용)
+## 8. Firestore Rules
 
 ```javascript
 posts:          read/create/update/delete — request.auth != null
 panels:         read/write — request.auth != null
-users:          read — request.auth != null
-                write — 본인 또는 admin
+users:          read — request.auth != null / write — 본인 또는 admin
 calendarEvents: read/write — request.auth != null
 leaveSettings:  read/write — request.auth != null
 leaveEvents:    read/write — request.auth != null
@@ -180,57 +209,69 @@ todoRequests:   read/create/update/delete — request.auth != null
 
 ---
 
-## 8. 핵심 개발 규칙
+## 9. 핵심 개발 규칙
 
 ```
 1. 패치 3회 실패 → 파일 완전 새로 작성
 2. Firestore 저장 안 될 때 → 브라우저 Console(F12) 먼저 확인
-3. undefined 값은 Firestore에 저장 불가 ⭐ 자주 발생!
-   → 선택적 필드는 조건부로 추가:
-   if (category === '할일') postData.taskType = taskType;
+3. undefined 값은 Firestore에 저장 불가 ⭐
    → addDoc 전에 undefined 필드 일괄 제거:
    Object.keys(docData).forEach(key => {
      if (docData[key] === undefined) delete docData[key];
    });
 4. firebase.ts 수정 시 export 목록 반드시 확인
-   export const storage = getStorage(app); 누락 주의
 5. 타임존: toISOString() 금지, T00:00:00 로컬시간 사용
 6. 빌드 메모리 부족 시:
    $env:NODE_OPTIONS="--max-old-space-size=4096"; npm run build
-7. 파일 인코딩 깨졌을 때:
-   git checkout src/components/[파일명].tsx
-8. 협업 방식: Claude.ai 설계 → Claude Code 실행
-9. overflow 체인 버그 → position: fixed + Portal(createPortal) 사용
-10. 새 컬렉션 추가 시 → firestore.rules 반드시 업데이트 후 배포
-    firebase deploy --only firestore:rules
-11. 관리자가 패널에서 요청 보낼 때 → fromEmail = 패널 오너 이메일
-    (관리자 이메일 아님)
-12. TodoRequestBadge/Modal → panelOwnerEmail props 기준으로 필터링
+7. overflow 체인 버그 → position: fixed + Portal(createPortal) 사용
+8. 새 컬렉션 추가 시 → firestore.rules 반드시 업데이트 후 배포
+9. 관리자가 패널에서 요청 보낼 때 → fromEmail = 패널 오너 이메일
+10. 새 모달/팝업 추가 시 → useEscClose 훅 반드시 적용 ⭐
+11. 파일 확인 시 → 텍스트 복붙 대신 📎 첨부 버튼으로 파일 직접 올리기
+    (2~3개씩 나눠서 올리면 용량 문제 없음)
 ```
 
 ---
 
-## 9. 발생했던 주요 버그 & 해결책
+## 10. 공통 훅 (Custom Hook)
+
+```
+위치: src/hooks/
+
+현재 적용된 훅:
+- useEscClose(onClose, isOpen) — 모든 모달 ESC 닫기
+  적용: Calendar, LeaveManager, TodoItem, CreatePost, TodoRequestModal
+
+새 모달 만들 때 필수 패턴:
+  import { useEscClose } from '@/hooks/useEscClose';
+  useEscClose(() => setIsOpen(false), isOpen);
+
+우선순위 높은 미적용 훅 (나중에):
+- useFileUpload(panelId) — Firebase Storage 업로드 (TodoItem/CreatePost 중복)
+- useIsMobile(breakpoint) — 모바일 감지 (Calendar/Panel 중복)
+- useOutsideClick(ref, onClose) — 영역 밖 클릭 닫기
+- useCanEdit(ownerEmail) — 편집 권한 체크
+- useMultiSelect(items) — 다중 선택 (완료 할일 선택 삭제)
+- useDateInput() — yyyymmdd ↔ yyyy-mm-dd 변환 (CreatePost)
+```
+
+---
+
+## 11. 발생했던 주요 버그 & 해결책
 
 | 버그 | 원인 | 해결책 |
 |------|------|--------|
 | 게시물 새로고침 시 사라짐 | taskType: undefined → Firestore 저장 실패 | 선택적 필드 조건부 추가 |
-| 게시물 저장 안 됨 | firebase.ts storage export 누락 | export const storage = getStorage(app) |
-| 삭제 버튼 클릭 안 됨 | 투명 오버레이 div가 클릭 가로챔 | onMouseLeave로 메뉴 닫기 |
-| hover 시 레이아웃 밀림 | padding/border 변경으로 레이아웃 변경 | 레이어 패턴 + border-color만 변경 |
-| Firestore Rules 거부 | update 규칙 누락 + 관리자 panelId 불일치 | Rules 수정 + 조건 완화 |
-| 카테고리 기본값 오류 | allCategories[0]='할일'이 기본값으로 저장 | getInitialCategory 로직 수정 |
-| 빌드 메모리 부족 | JS heap out of memory | NODE_OPTIONS 메모리 증가 |
-| 파일 인코딩 깨짐 | PowerShell Ctrl+V 붙여넣기 오류 | git checkout으로 복구 |
-| 날짜 하루 밀림 | toISOString() UTC 변환 | T00:00:00 로컬시간 사용 |
-| TodoItem 메뉴 패널 밖 잘림 | overflow 체인 문제 | createPortal로 document.body 마운트 |
-| 요청 전체 패널 노출 | 관리자 isAdmin → 전체 요청 표시 | panelOwnerEmail props 기준 필터링 |
+| 할일 완료 체크 후 요청탭 미반영 | todoRequests status 미업데이트 | completeRequest 함수 추가 |
+| 미완료 복구 시 요청탭 미반영 | reactivateRequest 없음 | reactivateRequest 함수 추가 |
+| 달력 이벤트 클릭 시 추가창 같이 뜸 | onMouseUp이 stopPropagation 무시 | data-event="true" + onMouseUp에서 체크 |
+| 팀 요청 달력 중복 등록 | 수신자마다 acceptRequest 호출 | teamRequestId로 중복 체크 |
 | todoRequests 저장 실패 | dueDate: undefined Firestore 저장 불가 | Object.keys로 undefined 필드 제거 |
 | 새로고침 시 구버전 | Vercel 캐시 | next.config.js Cache-Control 추가 |
 
 ---
 
-## 10. 유용한 명령어
+## 12. 유용한 명령어
 
 ```powershell
 # 캐시 삭제 후 재빌드
@@ -242,16 +283,13 @@ $env:NODE_OPTIONS="--max-old-space-size=4096"; npm run build
 # 배포
 git add . && git commit -m "메시지" && npx vercel --prod
 
-# git 파일 복구
-git checkout src/components/[파일명].tsx
-
 # Firestore Rules만 배포
 npx firebase-tools deploy --only firestore:rules --project hizzi-board
 
-# Firestore 데이터 확인 (node scripts 활용)
-node scripts/[스크립트명].js
+# 테스트 데이터 정리
+node scripts/cleanup-test-data.js
 ```
 
 ---
 
-*업데이트: 2026.04.03*
+*업데이트: 2026.04.03 저녁*

@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Post, usePostStore } from '@/store/postStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
+import { useUserStore } from '@/store/userStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 import { useEscClose } from '@/hooks/useEscClose';
@@ -29,6 +30,8 @@ const CheckIcon = () => (
 export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const { updatePost, deletePost } = usePostStore();
   const { completeRequest } = useTodoRequestStore();
+  const { users } = useUserStore();
+  const nonAdminUsers = users.filter(u => u.role !== 'admin' && u.email !== post.author);
   const [checking, setChecking] = useState(false);
   const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -39,7 +42,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   const [editContent, setEditContent] = useState(post.content);
   const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(
-    !post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me'
+    !post.visibleTo || post.visibleTo.length === 0 ? 'all'
+      : post.visibleTo.length > 1 ? 'specific'
+      : 'me'
+  );
+  const [editSpecificUsers, setEditSpecificUsers] = useState<string[]>(
+    post.visibleTo && post.visibleTo.length > 1 ? post.visibleTo : []
   );
   const [editTaskType, setEditTaskType] = useState<'work' | 'personal'>(post.taskType || 'work');
   const [newFile, setNewFile] = useState<File | null>(null);
@@ -87,7 +95,8 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   const handleEditOpen = () => {
     setEditContent(post.content);
-    setEditVisibility(!post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me');
+    setEditVisibility(!post.visibleTo || post.visibleTo.length === 0 ? 'all' : post.visibleTo.length > 1 ? 'specific' : 'me');
+    setEditSpecificUsers(post.visibleTo && post.visibleTo.length > 1 ? post.visibleTo : []);
     setEditTaskType(post.taskType || 'work');
     setNewFile(null);
     setShowMenu(false);
@@ -112,7 +121,9 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       const updates: any = {
         content: editContent.trim(),
         taskType: editTaskType,
-        visibleTo: editVisibility === 'all' ? [] : [post.author],
+        visibleTo: editVisibility === 'all' ? []
+          : editVisibility === 'specific' ? editSpecificUsers
+          : [post.author],
       };
 
       if (attachment) {
@@ -349,9 +360,9 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>보이는 범위</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {(['me', 'all'] as const).map(v => {
-                  const labels = { me: '나만', all: '전체' };
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {(['me', 'all', 'specific'] as const).map(v => {
+                  const labels = { me: '나만', all: '전체', specific: '특정인' };
                   return (
                     <button key={v} onClick={() => setEditVisibility(v)}
                       style={{ padding: '5px 12px', border: `1px solid ${editVisibility === v ? '#2C1810' : '#EDE5DC'}`, background: editVisibility === v ? '#FDF8F4' : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editVisibility === v ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
@@ -360,6 +371,19 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                   );
                 })}
               </div>
+              {editVisibility === 'specific' && nonAdminUsers.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                  {nonAdminUsers.map(u => (
+                    <button key={u.email}
+                      onClick={() => setEditSpecificUsers(prev =>
+                        prev.includes(u.email) ? prev.filter(e => e !== u.email) : [...prev, u.email]
+                      )}
+                      style={{ padding: '4px 10px', border: `1px solid ${editSpecificUsers.includes(u.email) ? '#C17B6B' : '#EDE5DC'}`, background: editSpecificUsers.includes(u.email) ? '#FFF5F2' : '#fff', fontSize: 10, color: editSpecificUsers.includes(u.email) ? '#C17B6B' : '#9E8880', cursor: 'pointer' }}>
+                      {u.name || u.email}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>

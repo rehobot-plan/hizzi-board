@@ -1,6 +1,6 @@
 # Hizzi Board — 세션 관리
 
-> **새 세션 시작 시:** 이 파일 + hizzi-master.md + hizzi-uxui-design.md 함께 첨부하세요.
+> **새 세션 시작 시:** 이 파일 + hizzi-master.md + hizzi-uxui-design.md + 협업패턴_가이드.md 함께 첨부하세요.
 
 ---
 
@@ -36,12 +36,19 @@
 - 나는 방향만 이야기한다
 - Claude.ai가 파일 먼저 분석 → 완성본 코드 직접 작성 → Claude Code에 전달
 - 추측으로 명령 금지 — 반드시 파일 내용 확인 후 정확한 코드 지정
-- 에러 체크 필요한 작업은 하나씩, 결과 확인 후 다음
-- 간단하고 연관된 작업은 묶어서 처리 가능
+- 에러 체크 필요한 작업(빌드/배포/Firestore 배포)은 하나씩, 결과 확인 후 다음
+- 파일 읽기/분석/코드 작성은 한꺼번에 처리 가능
+- Claude Code 명령어는 항상 한 번에 실행할 수 있게 묶어서 제공
 - 패치 3회 실패 → 파일 완전 새로 작성으로 전환
-- Claude Code 메모리 부족 시 → VS Code 터미널 직접 사용
 - 세션 마무리는 오너가 제안한다 (Claude가 먼저 마무리 제안 금지)
 - Claude는 항상 일을 계속 진행시키는 태도를 유지한다
+
+### 파일 확인 방법 ⭐
+```
+텍스트 복붙 대신 📎 첨부 버튼으로 파일 직접 올리기
+2~3개씩 나눠서 올리면 용량 문제 없음
+tsx/ts 파일 모두 첨부 가능
+```
 
 ### 중간 요청 처리 원칙
 ```
@@ -62,11 +69,6 @@
 
 ## Claude Code 명령어 패턴
 
-### 파일 내용 확인 (수정 전 필수)
-```
-[파일명] 전체 내용을 채팅창에 텍스트로 붙여넣어줘. 코드블록으로.
-```
-
 ### 표준 배포 명령어
 ```
 Remove-Item -Recurse -Force .next
@@ -80,11 +82,6 @@ git add . && git commit -m "메시지" && npx vercel --prod
 $env:NODE_OPTIONS="--max-old-space-size=4096"; npm run build
 ```
 
-### git 파일 복구
-```
-git checkout src/components/[파일명].tsx
-```
-
 ---
 
 ## ✅ 완료된 작업 전체 이력
@@ -95,76 +92,57 @@ git checkout src/components/[파일명].tsx
 ### 2026.03.30
 - 디자인 시스템 확립 (딥 로즈브라운 팔레트)
 - Panel / PostItem / CreatePost 전체 리라이트
-- 공유 달력 UI 구현
-- 공지사항 영역 추가
+- 공유 달력 UI 구현 / 공지사항 영역 추가
 
 ### 2026.03.31
 - Calendar 전체 리라이트 (반복일정 / 타임존 버그)
-- 로그인/회원가입 리뉴얼
-- 모바일 반응형
-- 공지사항 완성
+- 로그인/회원가입 리뉴얼 / 모바일 반응형
 
 ### 2026.04.01
-- 사용자/패널 관리 (자동배정 / 복구 / 권한)
-- 연차 관리 신규 개발 (leaveStore / LeaveManager)
-- 연차 열람 권한 드롭다운
-- /leave 별도 페이지
+- 사용자/패널 관리 / 연차 관리 신규 개발
 
 ### 2026.04.02
 - leave/page.tsx 예정 컬럼 버그 수정
 
 ### 2026.04.03 (오전)
-- 할일 탭 신규 개발 (업무/개인 태그, 별표, 완료체크, 선택삭제 등)
-- UX 개선 (게시물 ··· 호버 버튼, 삭제 모달, 탭 카테고리 자동지정 등)
-- 구조 개선 (레이어 패턴 리팩토링, SVG 아이콘 교체, Z-index 체계 등)
-- 공지사항 최신순 정렬 + 핀 고정
-- 핵심 버그 수정 (taskType undefined, storage export, Firestore Rules 등)
-- 할일 기능 추가 (이미지/파일/링크 렌더링, 수정 기능)
-- 게시물 구조 전면 개편 (텍스트 + 첨부파일 분리) 확인 완료
-- hizzi-uxui-design.md 생성
-- TodoItem ··· 메뉴 Portal 방식으로 위치 버그 완전 해결
-- PostItem ··· 메뉴 right 기준 고정
-- 메모 첨부파일 텍스트 없이 게시 가능
-- 협업패턴_가이드.md + hizzi-session.md 대폭 업데이트
+- 할일 탭 신규 개발 (업무/개인 태그, 별표, 완료체크 등)
+- UX 개선 (레이어 패턴, SVG 아이콘, Z-index 등)
+- 핵심 버그 수정 (taskType undefined, storage export 등)
 
 ### 2026.04.03 (오후)
-- **할일 요청 기능 전체 개발 완료**
-  - todoRequestStore.ts 신규 (Firestore todoRequests 컬렉션)
-  - CreatePost.tsx 요청 탭 추가 (무엇을/왜어떻게/언제까지/공개범위)
-  - 언제까지 UI: 숫자입력(yyyymmdd) + 달력 아이콘 토글
-  - 기한 수락 시 calendarEvents 자동 등록
-  - TodoRequestBadge.tsx: 탭 영역 아이콘 뱃지 (panelOwnerEmail 기준)
-  - TodoRequestModal.tsx: 4탭 구조 (받은/보낸/진행중/완료)
-  - 다중 수신자 팀 요청 (TEAM 태그 + teamLabel)
-  - 보낸 요청 취소 기능
-  - 관리자도 요청 보내기 가능 (패널 오너 기준 fromEmail)
-  - 패널 오너 기준 필터링으로 관리자 전체 노출 버그 완전 해결
-- Firestore Rules todoRequests 컬렉션 추가 배포
-- next.config.js Cache-Control 추가 (캐시 문제 개선)
-- 할일 탭 기본 공개범위 '나만 보기'로 변경
-- 모든 모달 ESC 키 닫기 추가
+- 할일 요청 기능 전체 개발 (todoRequests 컬렉션)
+- Firestore Rules todoRequests 추가 배포
+- next.config.js Cache-Control 추가
+
+### 2026.04.03 (저녁)
+- **요청 완료 연동:** 할일 완료 체크 → todoRequest status 'completed' 업데이트
+- **미완료 복구 연동:** 완료 복구 시 todoRequest status 'accepted'로 복귀
+- **FROM 태그 디자인:** 요청받은 할일에 왼쪽 테라코타 라인 + FROM 이름 태그 (A안)
+- **요청받은 할일 보호:** 수정/삭제 비활성화, 완료 체크만 가능
+- **달력 이벤트 클릭 버그 수정:** 이벤트 클릭 시 일정추가 팝업 차단
+- **달력 3개 표시 + 더보기 팝업:** +n 클릭 시 해당 날짜 일정 목록 팝업
+- **달력 일정 상세 요청 정보:** 요청자/담당자/업무/완료여부 표시
+- **팀 요청 달력 중복 방지:** teamRequestId로 중복 체크 + 담당자 전체 표시
+- **useEscClose 공통훅 생성:** src/hooks/useEscClose.ts
+- **전체 모달 ESC 적용:** Calendar(5개), LeaveManager, TodoItem, CreatePost, TodoRequestModal
+- **테스트 데이터 정리:** scripts/cleanup-test-data.js
 
 ---
 
 ## 🔴 남은 작업 (우선순위 순)
 
 ### 즉시
-- [ ] 달력 개인/업무 구분 ← 다음
+- [ ] 달력 개인/업무 구분
 - [ ] 달력 "편집" → "수정" 단어 변경
 - [ ] 연차 수정 시 시작/끝 날짜 지정 기능
 - [ ] 색상 시스템 정리 + 카테고리별 자동 색상 적용
 
 ### 요청 기능 고도화
-- [ ] 요청 아카이브 (30일 보관 → 별도 창, 최신순 정렬, 검색/필터)
-  - 검색: 제목 텍스트
-  - 필터: 보낸 사람 / 받은 사람
-  - 날짜 정렬 (최신순/오래된순)
-  - 데이터 삭제 없이 영구 보존
-- [ ] 팀 리더 확정 플로우 (2단계 - 나중에)
+- [ ] 요청 아카이브 (30일 보관 → 별도 창, 최신순, 검색/필터)
 
 ### 연차
-- [ ] ④ 연차 직접 신청 + 결재 플로우
-- [ ] ⑤ 연차 신청서 A4 출력 양식
+- [ ] 연차 직접 신청 + 결재 플로우
+- [ ] 연차 신청서 A4 출력 양식
 
 ### 별도 세션
 - [ ] 📱 모바일 전체 일관화
@@ -176,6 +154,7 @@ git checkout src/components/[파일명].tsx
 - [ ] 공지사항 작성 (패널에서 카테고리 공지 선택)
 - [ ] AI 채팅 패널 히찌보드 사이드바 통합
 - [ ] 다른 회사 세팅
+- [ ] 공통 훅 추가 적용 (useFileUpload, useIsMobile, useCanEdit 등)
 
 ---
 
@@ -195,10 +174,10 @@ git checkout src/components/[파일명].tsx
 ```
 1. 완료된 작업 → ✅ 완료 이력에 추가
 2. 새로 생긴 작업 → 남은 작업에 추가
-3. 세 MD 파일 다운로드 (master + session + uxui-design + 협업패턴)
+3. MD 파일 다운로드 (master + session + uxui-design + 협업패턴)
 4. 다음 세션에 파일 함께 첨부
 ```
 
 ---
 
-*업데이트: 2026.04.03 오후*
+*업데이트: 2026.04.03 저녁*
