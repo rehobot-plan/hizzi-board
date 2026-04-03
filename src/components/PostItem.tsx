@@ -14,7 +14,7 @@ interface PostItemProps {
 export default function PostItem({ post }: PostItemProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
@@ -54,7 +54,7 @@ export default function PostItem({ post }: PostItemProps) {
     e.stopPropagation();
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
-    setMenuPos({ top: rect.bottom + 4, left: rect.right - 160 });
+    setMenuPos({ top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) });
     setShowMenu(true);
   };
 
@@ -183,7 +183,7 @@ export default function PostItem({ post }: PostItemProps) {
 
       {/* ··· 메뉴 */}
       {showMenu && canEdit && (
-        <div style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 100, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
+        <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 100, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
           onMouseLeave={() => setShowMenu(false)}>
           <button
             onClick={() => { setShowMenu(false); setEditContent(post.content); setEditVisibility(!post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me'); setNewFile(null); setIsEditOpen(true); }}

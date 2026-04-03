@@ -219,7 +219,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             onClick={() => {
               if (!menuBtnRef.current) return;
               const rect = menuBtnRef.current.getBoundingClientRect();
-              setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+              setMenuPos({ top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) });
               setShowMenu(v => !v);
             }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 16, padding: '8px 12px', lineHeight: 1, transition: 'color 0.15s ease' }}>
