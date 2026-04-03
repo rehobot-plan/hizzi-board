@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import { LeaveType, useLeaveStore } from '@/store/leaveStore';
 import { useUserStore } from '@/store/userStore';
+import { useTodoRequestStore } from '@/store/todoRequestStore';
 
 const HOLIDAYS_2026: Record<string, string> = {
   '2026-01-01':'신정','2026-01-28':'설날연휴','2026-01-29':'설날연휴','2026-01-30':'설날연휴',
@@ -30,6 +31,9 @@ export interface CalendarEvent {
   createdAt: any;
   authorName?: string;
   repeatGroupId?: string;
+  requestId?: string;
+  requestFrom?: string;
+  requestTitle?: string;
 }
 
 interface CalendarDisplayEvent {
@@ -106,6 +110,7 @@ export default function Calendar() {
   const { addToast } = useToastStore();
   const { settings: leaveSettings, events: leaveEvents, addLeaveEvent, updateLeaveEvent, deleteLeaveEvent } = useLeaveStore();
   const { users } = useUserStore();
+  const { requests } = useTodoRequestStore();
   const currentAppUser = users.find((u) => u.email === user?.email);
   const leaveViewPermission = currentAppUser?.leaveViewPermission;
   const canSelectLeaveTarget = user?.role === 'admin' || leaveViewPermission === 'all';
@@ -558,9 +563,11 @@ export default function Calendar() {
                   ignoreNextClickRef.current = false;
                   return;
                 }
-                setSelectedStartDate(ds);
-                setSelectedEndDate(ds);
-                openAddModal(ds, ds);
+                 const dayEvs = getEventsForDay(date);
+                 if (dayEvs.length > 0) return;
+                 setSelectedStartDate(ds);
+                 setSelectedEndDate(ds);
+                 openAddModal(ds, ds);
               }}
               onMouseDown={() => onMouseDown(date)}
               onMouseUp={onMouseUp}
@@ -857,6 +864,43 @@ export default function Calendar() {
               )}
             </div>
             <div style={{ padding: '16px 20px' }}>
+              {showDetail.requestId && (() => {
+                const req = requests.find(r => r.id === showDetail.requestId);
+                const fromUser = users.find(u => u.email === showDetail.requestFrom);
+                const toUser = users.find(u => u.email === showDetail.authorId);
+                const isCompleted = req?.status === 'completed';
+                return (
+                  <div style={{ marginBottom: 16, padding: '12px', background: '#FFF9F7', border: '1px solid #EDE5DC' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C17B6B', marginBottom: 10 }}>업무 요청 정보</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>요청자</span>
+                        <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>{fromUser?.name || showDetail.requestFrom}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>담당자</span>
+                        <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>{toUser?.name || showDetail.authorId}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>업무</span>
+                        <span style={{ fontSize: 11, color: '#2C1810' }}>{showDetail.requestTitle || showDetail.title.replace('[요청] ', '')}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>완료</span>
+                        <span style={{
+                          fontSize: 9, padding: '2px 8px',
+                          background: isCompleted ? '#F0F5F0' : '#FFF5F2',
+                          color: isCompleted ? '#5C7A5C' : '#C17B6B',
+                          border: `0.5px solid ${isCompleted ? '#5C7A5C' : '#C17B6B'}`,
+                          letterSpacing: '0.06em',
+                        }}>
+                          {isCompleted ? '완료' : '진행중'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
               {canEditCalendar(showDetail) ? (
                 <>
                   <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}

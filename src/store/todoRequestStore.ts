@@ -82,7 +82,7 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
       // 기한 있으면 달력에 자동 등록
       if (req.dueDate) {
         await addDoc(collection(db, 'calendarEvents'), {
-          title: req.teamLabel ? `[Team] ${req.title} — ${req.teamLabel}` : `[요청] ${req.title}`,
+          title: req.teamLabel ? `[Team] ${req.title}` : `[요청] ${req.title}`,
           startDate: req.dueDate,
           endDate: req.dueDate,
           authorId: req.toEmail,
@@ -90,6 +90,9 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
           color: '#C17B6B',
           createdAt: new Date(),
           repeat: { type: 'none' },
+          requestId,
+          requestFrom: req.fromEmail,
+          requestTitle: req.title,
         });
       }
 
