@@ -117,7 +117,8 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
       style={{ transition: "background 0.2s, border 0.2s" }}
     >
       {/* 탭 영역 */}
-      <div className="flex gap-4 mb-0 border-b border-[#EDE5DC] bg-[#FDF8F4] px-5 pt-4 pb-0">
+      <div className="flex gap-4 mb-0 border-b border-[#EDE5DC] bg-[#FDF8F4] px-5 pt-4 pb-0 items-center justify-between">
+        <div className="flex gap-4">
         {categoryList.map((cat) => {
           const isBase = BASE_CATEGORIES.includes(cat);
           return (
@@ -174,6 +175,8 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             </div>
           );
         })}
+        </div>
+        {(isOwner || user?.role === 'admin') && <div className="pb-1"><TodoRequestBadge /></div>}
       </div>
       {/* 패널 제목 영역 */}
       <div className="flex justify-between items-center px-5 py-4 border-b border-[#EDE5DC] bg-white">
@@ -217,7 +220,6 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           />
         )}
         <div className="flex items-center gap-2">
-          {isOwner && <TodoRequestBadge />}
           {canCreate && (
             <button
               onClick={() => setShowCreate(true)}

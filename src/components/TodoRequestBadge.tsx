@@ -16,9 +16,12 @@ export default function TodoRequestBadge() {
     return cleanup;
   }, [user?.email]);
 
-  const pendingCount = requests.filter(
-    r => r.status === 'pending' && r.toEmail === user?.email
-  ).length;
+  const isAdmin = user?.role === 'admin';
+  const pendingCount = requests.filter(r => {
+    if (r.status !== 'pending') return false;
+    if (isAdmin) return true; // 관리자는 모든 pending 요청 보기
+    return r.toEmail === user?.email; // 일반 사용자는 받은 요청만
+  }).length;
 
   const hasAny = requests.some(
     r => r.fromEmail === user?.email || r.toEmail === user?.email

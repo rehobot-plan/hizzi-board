@@ -26,7 +26,8 @@ export default function TodoRequestModal({ onClose }: Props) {
   const myEmail = user?.email ?? '';
   const myName = users.find(u => u.email === myEmail)?.name || myEmail;
 
-  const received = requests.filter(r => r.toEmail === myEmail);
+  const isAdmin = user?.role === 'admin';
+  const received = isAdmin ? requests : requests.filter(r => r.toEmail === myEmail);
   const sent = requests.filter(r => r.fromEmail === myEmail);
   const pendingCount = received.filter(r => r.status === 'pending').length;
 
