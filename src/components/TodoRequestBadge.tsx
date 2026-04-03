@@ -5,7 +5,11 @@ import { useAuthStore } from '@/store/authStore';
 import { useTodoRequestStore, initRequestListener } from '@/store/todoRequestStore';
 import TodoRequestModal from './TodoRequestModal';
 
-export default function TodoRequestBadge() {
+interface Props {
+  panelOwnerEmail: string; // 이 패널의 오너 이메일
+}
+
+export default function TodoRequestBadge({ panelOwnerEmail }: Props) {
   const { user } = useAuthStore();
   const { requests } = useTodoRequestStore();
   const [showModal, setShowModal] = useState(false);
@@ -16,16 +20,11 @@ export default function TodoRequestBadge() {
     return cleanup;
   }, [user?.email]);
 
-  const isAdmin = user?.role === 'admin';
-  const pendingCount = requests.filter(r => {
-    if (r.status !== 'pending') return false;
-    if (isAdmin) return true; // 관리자는 모든 pending 요청 보기
-    return r.toEmail === user?.email; // 일반 사용자는 받은 요청만
-  }).length;
-
-  const hasAny = requests.some(
-    r => r.fromEmail === user?.email || r.toEmail === user?.email
-  );
+  // 이 패널 오너 기준으로 pending 카운트
+  // 받은 요청 (toEmail === 패널 오너)
+  const pendingCount = requests.filter(r =>
+    r.status === 'pending' && r.toEmail === panelOwnerEmail
+  ).length;
 
   return (
     <>
@@ -74,7 +73,12 @@ export default function TodoRequestBadge() {
           </span>
         )}
       </button>
-      {showModal && <TodoRequestModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <TodoRequestModal
+          panelOwnerEmail={panelOwnerEmail}
+          onClose={() => setShowModal(false)}
+        />
+      )}
     </>
   );
 }

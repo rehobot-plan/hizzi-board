@@ -9,11 +9,12 @@ import { usePanelStore } from '@/store/panelStore';
 
 interface Props {
   onClose: () => void;
+  panelOwnerEmail: string;
 }
 
 type TabType = 'received' | 'sent' | 'inprogress' | 'done';
 
-export default function TodoRequestModal({ onClose }: Props) {
+export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
   const { user } = useAuthStore();
   const { users } = useUserStore();
   const { panels } = usePanelStore();
@@ -35,18 +36,19 @@ export default function TodoRequestModal({ onClose }: Props) {
 
   const myEmail = user?.email ?? '';
   const myName = users.find(u => u.email === myEmail)?.name || myEmail;
-  const isAdmin = user?.role === 'admin';
 
-  // 탭별 필터링
-  const allMine = isAdmin
-    ? requests
-    : requests.filter(r => r.fromEmail === myEmail || r.toEmail === myEmail);
+  // 패널 오너 기준으로 필터링 (관리자가 김진우 패널 열면 김진우 기준)
+  const viewAs = panelOwnerEmail;
+
+  const allMine = requests.filter(r =>
+    r.fromEmail === viewAs || r.toEmail === viewAs
+  );
 
   const receivedList = allMine.filter(r =>
-    r.status === 'pending' && (isAdmin ? true : r.toEmail === myEmail)
+    r.status === 'pending' && r.toEmail === viewAs
   );
   const sentList = allMine.filter(r =>
-    r.status === 'pending' && r.fromEmail === myEmail && (isAdmin ? false : r.toEmail !== myEmail)
+    r.status === 'pending' && r.fromEmail === viewAs
   );
   const inprogressList = allMine.filter(r => r.status === 'accepted');
   const doneList = allMine.filter(r =>

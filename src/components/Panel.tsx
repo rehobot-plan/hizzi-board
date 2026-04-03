@@ -176,7 +176,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           );
         })}
         </div>
-        {(isOwner || user?.role === 'admin') && <div className="pb-1"><TodoRequestBadge /></div>}
+        {(isOwner || user?.role === 'admin') && ownerEmail && <div className="pb-1"><TodoRequestBadge panelOwnerEmail={ownerEmail} /></div>}
       </div>
       {/* 패널 제목 영역 */}
       <div className="flex justify-between items-center px-5 py-4 border-b border-[#EDE5DC] bg-white">
