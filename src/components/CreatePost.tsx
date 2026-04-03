@@ -92,15 +92,18 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
     console.log('저장 시도:', { panelId, category, content: finalContent.slice(0,20), visibleTo: visibility === 'all' ? [] : visibleTo });
 
-    await addPost({
+    const postData: any = {
       panelId,
       type,
       content: finalContent,
       author: user.email!,
-      category: category,
+      category,
       visibleTo: visibility === 'all' ? [] : visibleTo,
-      taskType: category === '할일' ? taskType : undefined,
-    });
+    };
+    if (category === '할일') {
+      postData.taskType = taskType;
+    }
+    await addPost(postData);
 
     onClose();
   };
