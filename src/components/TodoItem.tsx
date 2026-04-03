@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Post, usePostStore } from '@/store/postStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
@@ -219,8 +220,16 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 16, padding: '8px 12px', lineHeight: 1, transition: 'color 0.15s ease' }}>
             ···
           </button>
-          {showMenu && (
-            <div style={{ position: 'absolute', top: '100%', right: 0, background: '#fff', border: '1px solid #EDE5DC', zIndex: 9999, minWidth: 80, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
+          {showMenu && typeof window !== 'undefined' && createPortal(
+            <div
+              style={{
+                position: 'fixed',
+                top: menuBtnRef.current ? menuBtnRef.current.getBoundingClientRect().bottom + 4 : 0,
+                left: menuBtnRef.current ? menuBtnRef.current.getBoundingClientRect().left : 0,
+                background: '#fff', border: '1px solid #EDE5DC',
+                zIndex: 9999, minWidth: 80,
+                boxShadow: '0 4px 12px rgba(44,20,16,0.08)'
+              }}
               onMouseLeave={() => setShowMenu(false)}>
               <button onClick={handleEditOpen}
                 style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -234,7 +243,8 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
                 삭제
               </button>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       )}
