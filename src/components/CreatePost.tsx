@@ -48,7 +48,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 요청 전용 state
-  const [requestTo, setRequestTo] = useState('');
+  const [requestTo, setRequestTo] = useState<string[]>([]);
   const [requestTitle, setRequestTitle] = useState('');
   const [requestContent, setRequestContent] = useState('');
   const [requestDueDate, setRequestDueDate] = useState('');
@@ -144,26 +144,35 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   };
 
   const handleRequestSubmit = async () => {
-    if (!requestTitle.trim() || !requestTo) return;
-    const toPanel = panels.find(p => p.ownerEmail === requestTo);
-    if (!toPanel || !myPanel) return;
-
+    if (!requestTitle.trim() || requestTo.length === 0) return;
+    if (!myPanel) return;
     setRequestSubmitting(true);
     try {
-      let visibleTo: string[] = [];
-      if (requestVisibility === 'requestOnly') visibleTo = [myEmail, requestTo];
-      else if (requestVisibility === 'specific') visibleTo = [myEmail, requestTo, ...requestSelectedUsers];
+      const isTeam = requestTo.length > 1;
+      const teamLabel = isTeam
+        ? requestTo.map(email => users.find(u => u.email === email)?.name || email.split('@')[0]).join(', ')
+        : null;
 
-      await addRequest({
-        fromEmail: myEmail,
-        fromPanelId: myPanel.id,
-        toEmail: requestTo,
-        toPanelId: toPanel.id,
-        title: requestTitle.trim(),
-        content: requestContent.trim(),
-        dueDate: requestDueDate || undefined,
-        visibleTo,
-      });
+      for (const toEmail of requestTo) {
+        const toPanel = panels.find(p => p.ownerEmail === toEmail);
+        if (!toPanel) continue;
+
+        let visibleTo: string[] = [];
+        if (requestVisibility === 'requestOnly') visibleTo = [myEmail, ...requestTo];
+        else if (requestVisibility === 'specific') visibleTo = [myEmail, ...requestTo, ...requestSelectedUsers];
+
+        await addRequest({
+          fromEmail: myEmail,
+          fromPanelId: myPanel.id,
+          toEmail,
+          toPanelId: toPanel.id,
+          title: requestTitle.trim(),
+          content: requestContent.trim(),
+          dueDate: requestDueDate || undefined,
+          visibleTo,
+          teamLabel: teamLabel || undefined,
+        });
+      }
       onClose();
     } catch (err) {
       console.error('요청 오류:', err);
@@ -222,14 +231,41 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
             <div>
               {/* 받는 사람 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>받는 사람</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880' }}>
+                    받는 사람
+                  </div>
+                  {requestTo.length >= 2 && (
+                    <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.06em' }}>
+                      팀 요청 ({requestTo.length}명)
+                    </span>
+                  )}
+                </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {otherUsers.map(u => (
-                    <button key={u.email} onClick={() => setRequestTo(u.email)}
-                      style={{ padding: '5px 12px', fontSize: 10, border: `1px solid ${requestTo === u.email ? '#2C1810' : '#EDE5DC'}`, background: requestTo === u.email ? '#FDF8F4' : '#fff', color: requestTo === u.email ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
-                      {u.name || u.email}
-                    </button>
-                  ))}
+                  {otherUsers.map(u => {
+                    const isSelected = requestTo.includes(u.email);
+                    return (
+                      <button key={u.email}
+                        onClick={() => setRequestTo(prev =>
+                          prev.includes(u.email)
+                            ? prev.filter(e => e !== u.email)
+                            : [...prev, u.email]
+                        )}
+                        style={{
+                          padding: '5px 12px', fontSize: 10,
+                          border: `1px solid ${isSelected ? '#2C1810' : '#EDE5DC'}`,
+                          background: isSelected ? '#FDF8F4' : '#fff',
+                          color: isSelected ? '#2C1810' : '#9E8880',
+                          cursor: 'pointer',
+                          position: 'relative',
+                        }}>
+                        {u.name || u.email}
+                        {isSelected && (
+                          <span style={{ marginLeft: 4, color: '#C17B6B', fontSize: 9 }}>✓</span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -330,7 +366,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
                 </div>
                 {requestVisibility === 'specific' && (
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                    {otherUsers.filter(u => u.email !== requestTo).map(u => (
+                    {otherUsers.filter(u => !requestTo.includes(u.email)).map(u => (
                       <button key={u.email}
                         onClick={() => setRequestSelectedUsers(prev => prev.includes(u.email) ? prev.filter(e => e !== u.email) : [...prev, u.email])}
                         style={{ padding: '4px 10px', fontSize: 10, border: `1px solid ${requestSelectedUsers.includes(u.email) ? '#C17B6B' : '#EDE5DC'}`, background: requestSelectedUsers.includes(u.email) ? '#FFF5F2' : '#fff', color: requestSelectedUsers.includes(u.email) ? '#C17B6B' : '#9E8880', cursor: 'pointer' }}>
@@ -443,8 +479,8 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
           </button>
           {isRequest ? (
             <button onClick={handleRequestSubmit}
-              disabled={requestSubmitting || !requestTitle.trim() || !requestTo}
-              style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: (!requestTitle.trim() || !requestTo) ? '#C4B8B0' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: (!requestTitle.trim() || !requestTo) ? 'not-allowed' : 'pointer' }}>
+              disabled={requestSubmitting || !requestTitle.trim() || requestTo.length === 0}
+              style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: (!requestTitle.trim() || requestTo.length === 0) ? '#C4B8B0' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: (!requestTitle.trim() || requestTo.length === 0) ? 'not-allowed' : 'pointer' }}>
               {requestSubmitting ? '전송 중...' : '요청 보내기'}
             </button>
           ) : (

@@ -20,6 +20,7 @@ export interface TodoRequest {
   status: 'pending' | 'accepted' | 'rejected';
   rejectReason?: string;
   createdAt: Date;
+  teamLabel?: string;
   resolvedAt?: Date | null;
 }
 
@@ -74,7 +75,7 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
       // 기한 있으면 달력에 자동 등록
       if (req.dueDate) {
         await addDoc(collection(db, 'calendarEvents'), {
-          title: `[요청] ${req.title}`,
+          title: req.teamLabel ? `[Team] ${req.title} — ${req.teamLabel}` : `[요청] ${req.title}`,
           startDate: req.dueDate,
           endDate: req.dueDate,
           authorId: req.toEmail,
