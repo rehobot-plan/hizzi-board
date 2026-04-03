@@ -203,7 +203,7 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-2 md:px-8 py-8">
+        <div className="flex-1 px-2 md:px-8 py-8" style={{ overflowY: 'auto', overflowX: 'visible' }}>
           {adminMode && (
             <div className="border border-[#EDE5DC] bg-white rounded p-4 mb-4">
               <div className="flex gap-2 mb-3">
