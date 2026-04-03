@@ -28,7 +28,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [checking, setChecking] = useState(false);
   const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [isHovered, setIsHovered] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
@@ -216,17 +215,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <button
             ref={menuBtnRef}
-            onClick={() => {
-              if (!menuBtnRef.current) return;
-              const rect = menuBtnRef.current.getBoundingClientRect();
-              setMenuPos({ top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) });
-              setShowMenu(v => !v);
-            }}
+            onClick={() => setShowMenu(v => !v)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 16, padding: '8px 12px', lineHeight: 1, transition: 'color 0.15s ease' }}>
             ···
           </button>
           {showMenu && (
-            <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 80, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
+            <div style={{ position: 'absolute', top: '100%', right: 0, background: '#fff', border: '1px solid #EDE5DC', zIndex: 9999, minWidth: 80, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
               onMouseLeave={() => setShowMenu(false)}>
               <button onClick={handleEditOpen}
                 style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
