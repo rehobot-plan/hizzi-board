@@ -48,7 +48,10 @@ src/
 │   ├── login/page.tsx
 │   └── signup/page.tsx
 ├── components/
-│   ├── Panel.tsx              # 패널 뼈대 — 분리 예정 (기술부채)
+│   ├── Panel.tsx              # 패널 뼈대 (탭/이름/레이아웃) ✅ 분리 완료
+│   ├── TodoList.tsx           # 활성 할일 목록 + 정렬 ✅ 신규
+│   ├── CompletedTodo.tsx      # 완료 할일 + 선택삭제 + 날짜그룹핑 ✅ 신규
+│   ├── PostList.tsx           # 메모/게시물 목록 + 더보기 ✅ 신규
 │   ├── PostItem.tsx
 │   ├── TodoItem.tsx           # 할일 아이템 + 업무 지시서 모달
 │   ├── CreatePost.tsx
@@ -61,7 +64,7 @@ src/
 │   └── useEscClose.ts         # 공통훅 — 모든 모달 ESC 닫기
 ├── store/
 │   ├── authStore.ts
-│   ├── postStore.ts
+│   ├── postStore.ts           # deletePost 낙관적 업데이트 적용
 │   ├── panelStore.ts
 │   ├── userStore.ts
 │   ├── leaveStore.ts
@@ -76,9 +79,25 @@ src/
 ## 4. 파일 연관관계 (수정 시 반드시 함께 확인)
 
 ```
+Panel.tsx 수정 시
+  → TodoList.tsx (canEdit props)
+  → PostList.tsx (filteredPosts, activeCategory props)
+  → todoRequestStore.ts (reactivateRequest — CompletedTodo로 이동됨)
+
+TodoList.tsx 수정 시
+  → TodoItem.tsx (post, canEdit props)
+  → CompletedTodo.tsx (completedTodos, canEdit props)
+  → postStore.ts (posts 필터링)
+
+CompletedTodo.tsx 수정 시
+  → todoRequestStore.ts (reactivateRequest)
+  → postStore.ts (updatePost, deletePost)
+
+PostList.tsx 수정 시
+  → PostItem.tsx
+
 TodoItem.tsx 수정 시
   → todoRequestStore.ts (completeRequest, reactivateRequest)
-  → Panel.tsx (완료 복구 버튼의 reactivateRequest 연동)
 
 TodoRequestModal.tsx 수정 시
   → todoRequestStore.ts (status 필터링)
@@ -92,15 +111,8 @@ CreatePost.tsx 수정 시 (요청 탭)
   → todoRequestStore.ts (addRequest)
   → Calendar.tsx (기한 → 달력 자동 등록)
 
-Panel.tsx 수정 시
-  → TodoItem.tsx (canEdit props)
-  → todoRequestStore.ts (reactivateRequest)
-  → postStore.ts
-
 새 모달/팝업 추가 시
   → useEscClose 훅 반드시 적용
-  → import { useEscClose } from '@/hooks/useEscClose';
-  → useEscClose(onClose, isOpen);
 ```
 
 ---
@@ -256,9 +268,6 @@ users:
 1.  패치 3회 실패 → 파일 완전 새로 작성
 2.  Firestore 저장 안 될 때 → Console(F12) 먼저 확인
 3.  undefined 값 Firestore 저장 불가 ⭐
-    → Object.keys(docData).forEach(key => {
-        if (docData[key] === undefined) delete docData[key];
-      });
 4.  firebase.ts 수정 시 export 목록 확인
 5.  타임존: toISOString() 금지, T00:00:00 로컬시간 사용
 6.  빌드 메모리 부족: $env:NODE_OPTIONS="--max-old-space-size=4096"; npm run build
@@ -269,6 +278,9 @@ users:
 11. 파일 확인 → 📎 첨부 (알파벳 순, 2~3개씩)
 12. any 타입 사용 금지 ⭐ — 불가피 시 오너 승인 필수
 13. 상태 변경 시 연계 데이터 함께 업데이트 (섹션 5 흐름도 참고)
+14. deletePost는 낙관적 업데이트 방식 유지 ⭐
+    → set(state => ({ posts: state.posts.filter(p => p.id !== postId) })) 먼저
+    → 그 다음 Firestore deleteDoc 호출
 ```
 
 ---
@@ -286,46 +298,71 @@ users:
 - useIsMobile(breakpoint)  — 모바일 감지 (Calendar/Panel 중복)
 - useCanEdit(ownerEmail)   — 편집 권한 체크
 - useMultiSelect(items)    — 다중 선택 체크박스
-- useDateInput()           — yyyymmdd ↔ yyyy-mm-dd 변환
 ```
 
 ---
 
 ## 12. 기술 부채 현황 ⭐
 
-### 🔴 안정성 — 우선 처리
+### ✅ 완료
 ```
-1. Panel.tsx 분리 (현재 615줄+)
-   → TodoList.tsx / CompletedTodo.tsx / PostList.tsx 분리
-   → 지금은 버그 찾기 어렵고 수정 시 사이드이펙트 위험 큼
-
-2. 에러 처리 통일
-   → catch(e) { console.error(e) } → 사용자 피드백 없음
-   → toastStore 활용 에러 토스트로 통일
-
-3. any 타입 제거
-   → updates: any, docData: any 다수 → 런타임 오류 위험
+✅ Panel.tsx 분리 (2026.04.05)
+   → TodoList.tsx / CompletedTodo.tsx / PostList.tsx
+✅ deletePost 낙관적 업데이트 (2026.04.05)
 ```
 
-### 🟡 성장 대비 — 나중에
+### 🔴 진행 중
 ```
-4. Firestore 저장 공통 함수화 (undefined 제거 포함)
-5. 실시간 리스너 정리 검증
-6. 공통 훅 추가 적용
+1. 에러 처리 통일
+   → catch(e) { console.error(e) } → toastStore addToast로 통일
+   → 해당: TodoItem, CreatePost, Calendar, LeaveManager, todoRequestStore
+
+2. any 타입 제거
+   → TodoItem.tsx: updates: any
+   → CreatePost.tsx: postData: any
+   → Calendar.tsx: deleteConfirm target: any, ev: any
+   → todoRequestStore.ts: docData: any
+```
+
+### 🟡 성장 대비
+```
+3. Firestore 저장 공통 함수화 (undefined 제거 포함)
+4. 실시간 리스너 정리 검증
+5. 공통 훅 추가 적용
+```
+
+### 🟢 장기
+```
+6. CSS 변수로 색상 전환 (Rehobot 개발 전)
+7. TypeScript strict 모드 활성화
 ```
 
 ---
 
-## 13. 유용한 명령어
+## 13. 발생했던 주요 버그 & 해결책
+
+| 버그 | 원인 | 해결책 |
+|------|------|--------|
+| 할일 완료 체크 후 요청탭 미반영 | todoRequests status 미업데이트 | completeRequest 추가 |
+| 미완료 복구 시 요청탭 미반영 | reactivateRequest 없음 | reactivateRequest 추가 |
+| 달력 이벤트 클릭 시 추가창 같이 뜸 | onMouseUp stopPropagation 무시 | data-event="true" + closest 체크 |
+| 팀 요청 달력 중복 등록 | 수신자마다 acceptRequest 호출 | teamRequestId 중복 체크 |
+| undefined Firestore 저장 실패 | 선택적 필드 undefined 저장 | Object.keys로 undefined 제거 |
+| overflow 체인으로 메뉴 잘림 | overflow: auto 부모 중첩 | createPortal + fixed |
+| 삭제 게시물 재표시 | onSnapshot 타이밍 이슈 | deletePost 낙관적 업데이트 |
+| 메모탭 스타일 무너짐 | PostItem hover margin: 0 -20px | margin 제거 |
+
+---
+
+## 14. 유용한 명령어
 
 ```powershell
 Remove-Item -Recurse -Force .next; npm run build
 $env:NODE_OPTIONS="--max-old-space-size=4096"; npm run build
 git add . && git commit -m "메시지" && npx vercel --prod
 npx firebase-tools deploy --only firestore:rules --project hizzi-board
-node scripts/cleanup-test-data.js
 ```
 
 ---
 
-*업데이트: 2026.04.03 저녁*
+*업데이트: 2026.04.05*

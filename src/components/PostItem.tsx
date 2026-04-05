@@ -18,8 +18,14 @@ export default function PostItem({ post }: PostItemProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
-  const [editVisibility, setEditVisibility] = useState<'all' | 'me'>(
-    !post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me'
+  const getInitialEditVisibility = (): 'all' | 'me' | 'specific' => {
+    if (!post.visibleTo || post.visibleTo.length === 0) return 'all';
+    if (post.visibleTo.length === 1 && post.visibleTo[0] === post.author) return 'me';
+    return 'specific';
+  };
+  const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(getInitialEditVisibility());
+  const [editSelectedUsers, setEditSelectedUsers] = useState<string[]>(
+    post.visibleTo?.filter(e => e !== post.author) ?? []
   );
   const [newFile, setNewFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -84,7 +90,11 @@ export default function PostItem({ post }: PostItemProps) {
       }
       await updatePost(post.id, {
         content: editContent,
-        visibleTo: editVisibility === 'all' ? [] : [post.author],
+        visibleTo: editVisibility === 'all'
+          ? []
+          : editVisibility === 'me'
+          ? [post.author]
+          : [post.author, ...editSelectedUsers.filter(e => e !== post.author)],
         ...(attachment ? { attachment } : {}),
       });
       setIsEditOpen(false);
@@ -186,7 +196,7 @@ export default function PostItem({ post }: PostItemProps) {
         <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 100, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
           onMouseLeave={() => setShowMenu(false)}>
           <button
-            onClick={() => { setShowMenu(false); setEditContent(post.content); setEditVisibility(!post.visibleTo || post.visibleTo.length === 0 ? 'all' : 'me'); setNewFile(null); setIsEditOpen(true); }}
+            onClick={() => { setShowMenu(false); setEditContent(post.content); setEditVisibility(getInitialEditVisibility()); setEditSelectedUsers(post.visibleTo?.filter(e => e !== post.author) ?? []); setNewFile(null); setIsEditOpen(true); }}
             style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
             onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
@@ -285,8 +295,8 @@ export default function PostItem({ post }: PostItemProps) {
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>보이는 범위</div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {(['all', 'me'] as const).map(v => {
-                    const labels = { all: '전체', me: '나만' };
+                  {(['all', 'me', 'specific'] as const).map(v => {
+                    const labels = { all: '전체', me: '나만', specific: '특정인' };
                     return (
                       <button key={v} onClick={() => setEditVisibility(v)}
                         style={{ padding: '5px 12px', border: `1px solid ${editVisibility === v ? '#2C1810' : '#EDE5DC'}`, background: editVisibility === v ? '#FDF8F4' : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editVisibility === v ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
@@ -295,6 +305,19 @@ export default function PostItem({ post }: PostItemProps) {
                     );
                   })}
                 </div>
+                {editVisibility === 'specific' && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                    {users.filter(u => u.email !== post.author && u.role !== 'admin').map(u => (
+                      <button key={u.email}
+                        onClick={() => setEditSelectedUsers(prev =>
+                          prev.includes(u.email) ? prev.filter(e => e !== u.email) : [...prev, u.email]
+                        )}
+                        style={{ padding: '4px 10px', fontSize: 10, border: `1px solid ${editSelectedUsers.includes(u.email) ? '#C17B6B' : '#EDE5DC'}`, background: editSelectedUsers.includes(u.email) ? '#FFF5F2' : '#fff', color: editSelectedUsers.includes(u.email) ? '#C17B6B' : '#9E8880', cursor: 'pointer' }}>
+                        {u.name || u.email}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>

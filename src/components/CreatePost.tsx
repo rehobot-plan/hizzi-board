@@ -116,7 +116,10 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
       const visibleTo: string[] = [];
       if (visibility === 'me') visibleTo.push(user.email!);
-      else if (visibility === 'specific') visibleTo.push(...selectedUsers);
+      else if (visibility === 'specific') {
+        visibleTo.push(user.email!);
+        visibleTo.push(...selectedUsers.filter(e => e !== user.email));
+      }
 
       const postData: any = {
         panelId,
