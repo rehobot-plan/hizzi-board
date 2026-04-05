@@ -21,7 +21,7 @@ export default function PostList({ posts, activeCategory }: PostListProps) {
   return (
     <>
       {visiblePosts.map((post) => (
-        <div key={post.id} style={{ overflow: 'visible', position: 'relative' }}>
+        <div key={post.id} style={{ position: 'relative' }}>
           {activeCategory === '전체' && post.category && post.category !== '전체' && (
             <span style={{
               fontSize: 9,

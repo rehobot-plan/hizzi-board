@@ -67,6 +67,7 @@ export const usePostStore = create<PostState>((set) => ({
     }
   },
   deletePost: async (postId) => {
+    set(state => ({ posts: state.posts.filter(p => p.id !== postId) }));
     try {
       await deleteDoc(doc(db, 'posts', postId));
     } catch (error) {
