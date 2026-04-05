@@ -4,11 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { usePostStore } from "@/store/postStore";
 import { usePanelStore } from "@/store/panelStore";
 import { useAuthStore } from "@/store/authStore";
-import { useTodoRequestStore } from "@/store/todoRequestStore";
-import PostItem from "./PostItem";
 import CreatePost from "./CreatePost";
-import TodoItem from "./TodoItem";
 import TodoRequestBadge from "./TodoRequestBadge";
+import TodoList from "./TodoList";
+import PostList from "./PostList";
 
 interface PanelProps {
   id: string;
@@ -38,14 +37,8 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [categoryList, setCategoryList] = useState<string[]>(categories || DEFAULT_CATEGORIES);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [showCompleted, setShowCompleted] = useState(false);
-  const [showPastCompleted, setShowPastCompleted] = useState(false);
-  const [selectedCompleted, setSelectedCompleted] = useState<string[]>([]);
-  const [selectMode, setSelectMode] = useState(false);
-  const [showAllPosts, setShowAllPosts] = useState(false);
 
   const { posts, deletePost } = usePostStore();
-  const { reactivateRequest } = useTodoRequestStore();
   const { user } = useAuthStore();
   const { updatePanel } = usePanelStore();
 
@@ -107,9 +100,6 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     setShowCategoryModal(false);
     await updatePanel(id, { categories: updated });
   };
-
-  // 드래그 앤 드롭 핸들러 (상위에서 전달 필요)
-  // ...기존과 동일하게 유지 (props로 핸들러 받을 경우 추가)
 
   return (
     <div
@@ -236,298 +226,14 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
       {/* 게시물 목록 */}
       <div className="flex-1 overflow-y-auto px-5">
         {activeCategory === "할일" ? (
-          (() => {
-            const isOwner = user && ownerEmail === user?.email;
-            const canEdit = !!(user && (user.role === "admin" || isOwner));
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-
-            const todoAll = posts.filter(p =>
-              p.panelId === id && p.category === "할일" &&
-              (() => {
-                if (!user) return false;
-                const v = p.visibleTo;
-                if (!v || v.length === 0) return true;
-                if (user.role === "admin") return true;
-                if (p.author === user.email) return true;
-                return v.includes(user.email ?? "");
-              })()
-            );
-
-            // 활성 할일: 별표 누른 시각 최신순 → 일반은 작성순
-            const activeTodos = todoAll
-              .filter(p => !p.completed)
-              .sort((a, b) => {
-                if (a.starred && !b.starred) return -1;
-                if (!a.starred && b.starred) return 1;
-                if (a.starred && b.starred) {
-                  const aT = a.starredAt ? new Date(a.starredAt).getTime() : 0;
-                  const bT = b.starredAt ? new Date(b.starredAt).getTime() : 0;
-                  return bT - aT;
-                }
-                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-              });
-
-            // 완료 할일 전체 (완료 시각 최신순)
-            const completedTodos = todoAll
-              .filter(p => p.completed)
-              .sort((a, b) => {
-                const aT = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-                const bT = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-                return bT - aT;
-              });
-
-            // 오늘 완료 / 이전 완료 분리
-            const todayCompleted = completedTodos.filter(p => {
-              if (!p.completedAt) return true; // completedAt 없으면 오늘로 처리
-              const ct = new Date(p.completedAt);
-              return ct >= today && ct < tomorrow;
-            });
-
-            const pastCompleted = completedTodos.filter(p => {
-              if (!p.completedAt) return false;
-              const ct = new Date(p.completedAt);
-              return ct < today;
-            });
-
-            // 이전 완료 날짜별 그룹핑
-            const pastGrouped: Record<string, typeof pastCompleted> = {};
-            pastCompleted.forEach(p => {
-              const dt = p.completedAt ? new Date(p.completedAt) : new Date();
-              const key = dt.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
-              if (!pastGrouped[key]) pastGrouped[key] = [];
-              pastGrouped[key].push(p);
-            });
-
-            const formatTime = (d: Date) => {
-              const dt = d instanceof Date ? d : new Date(d);
-              return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-            };
-            const formatDate = (d: Date) => {
-              const dt = d instanceof Date ? d : new Date(d);
-              return dt.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
-            };
-            const formatDateTime = (d: Date) => {
-              const dt = d instanceof Date ? d : new Date(d);
-              return dt.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-            };
-
-            const CompletedRow = ({ p }: { p: typeof completedTodos[0] }) => {
-              const [showTooltip, setShowTooltip] = useState(false);
-              const isWork = p.taskType === 'work';
-              const isSelected = selectedCompleted.includes(p.id);
-              return (
-                <div
-                  style={{
-                    display: 'flex', gap: 8, padding: '6px 0',
-                    borderBottom: '1px solid #EDE5DC', alignItems: 'center',
-                    position: 'relative',
-                    background: isSelected ? '#FFF5F2' : 'transparent',
-                  }}
-                  onMouseEnter={() => setShowTooltip(true)}
-                  onMouseLeave={() => setShowTooltip(false)}
-                >
-                  {/* 선택 모드 체크박스 */}
-                  {selectMode && canEdit && (
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => {
-                        setSelectedCompleted(prev =>
-                          prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]
-                        );
-                      }}
-                      style={{ flexShrink: 0, cursor: 'pointer', accentColor: '#C17B6B' }}
-                    />
-                  )}
-
-                  {/* 복구 버튼 (선택 모드 아닐 때만) */}
-                  {!selectMode && canEdit && (
-                    <button
-                      onClick={async () => {
-                        await usePostStore.getState().updatePost(p.id, {
-                          completed: false,
-                          completedAt: null,
-                        });
-                        if (p.requestId) {
-                          await reactivateRequest(p.requestId);
-                        }
-                      }}
-                      style={{ fontSize: 10, color: '#C17B6B', flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                      title="할일로 복구"
-                    >
-                      ✓
-                    </button>
-                  )}
-                  <span style={{ fontSize: 11, color: '#9E8880', textDecoration: 'line-through', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.content}
-                  </span>
-                  <span style={{ fontSize: 9, padding: '1px 5px', background: isWork ? '#FFF5F2' : '#F5F0EE', color: isWork ? '#C17B6B' : '#9E8880', flexShrink: 0 }}>
-                    {isWork ? '업무' : '개인'}
-                  </span>
-                  <span style={{ fontSize: 10, color: '#C4B8B0', flexShrink: 0 }}>
-                    {p.completedAt ? formatTime(new Date(p.completedAt)) : '-'}
-                  </span>
-                  {/* 호버 툴팁 */}
-                  {showTooltip && !selectMode && (
-                    <div style={{
-                      position: 'absolute', bottom: '100%', right: 0,
-                      background: '#2C1810', color: '#FDF8F4',
-                      fontSize: 10, padding: '4px 8px', whiteSpace: 'nowrap',
-                      zIndex: 20, pointerEvents: 'none',
-                    }}>
-                      작성 {formatDateTime(new Date(p.createdAt))} → 완료 {p.completedAt ? formatDateTime(new Date(p.completedAt)) : '-'}
-                    </div>
-                  )}
-                </div>
-              );
-            };
-
-            return (
-              <>
-                {activeTodos.length === 0 && !showCompleted && (
-                  <p className="text-[#C1B6A6] text-center text-xs py-4">할일이 없습니다</p>
-                )}
-                {activeTodos.map(post => (
-                  <TodoItem key={post.id} post={post} canEdit={canEdit} />
-                ))}
-
-                {/* 완료된 할일 토글 버튼 */}
-                <button
-                  onClick={() => setShowCompleted(v => !v)}
-                  style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', letterSpacing: '0.06em', display: 'block', width: '100%', textAlign: 'left' }}
-                >
-                  {showCompleted ? '▲ 완료된 할일 숨기기' : `▼ 완료된 할일 보기 (${completedTodos.length})`}
-                </button>
-
-                {showCompleted && (
-                  <>
-                    {canEdit && completedTodos.length > 0 && (
-                      <div style={{ display: 'flex', gap: 8, padding: '6px 0', alignItems: 'center', borderBottom: '1px solid #EDE5DC' }}>
-                        {/* 선택 모드 토글 */}
-                        <button
-                          onClick={() => {
-                            setSelectMode(v => !v);
-                            setSelectedCompleted([]);
-                          }}
-                          style={{ fontSize: 10, color: selectMode ? '#C17B6B' : '#9E8880', background: 'none', border: `1px solid ${selectMode ? '#C17B6B' : '#EDE5DC'}`, cursor: 'pointer', padding: '2px 8px', letterSpacing: '0.04em' }}
-                        >
-                          {selectMode ? '선택 취소' : '선택'}
-                        </button>
-
-                        {/* 선택 삭제 */}
-                        {selectMode && selectedCompleted.length > 0 && (
-                          <button
-                            onClick={async () => {
-                              for (const id of selectedCompleted) {
-                                await usePostStore.getState().deletePost(id);
-                              }
-                              setSelectedCompleted([]);
-                              setSelectMode(false);
-                            }}
-                            style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}
-                          >
-                            선택 삭제 ({selectedCompleted.length})
-                          </button>
-                        )}
-
-                        {/* 전체 삭제 */}
-                        {!selectMode && (
-                          <button
-                            onClick={async () => {
-                              if (!window.confirm(`완료된 할일 ${completedTodos.length}개를 모두 삭제할까요?`)) return;
-                              for (const p of completedTodos) {
-                                await usePostStore.getState().deletePost(p.id);
-                              }
-                              setSelectedCompleted([]);
-                              setSelectMode(false);
-                            }}
-                            style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}
-                          >
-                            전체 삭제 ({completedTodos.length})
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                  <div style={{ borderTop: '1px solid #EDE5DC', paddingTop: 4 }}>
-                    {/* 오늘 완료 */}
-                    {todayCompleted.length === 0 && pastCompleted.length === 0 && (
-                      <p style={{ fontSize: 11, color: '#C4B8B0', padding: '8px 0' }}>완료된 할일이 없습니다</p>
-                    )}
-                    {todayCompleted.length > 0 && (
-                      <>
-                        <div style={{ fontSize: 10, color: '#C4B8B0', padding: '6px 0 2px', letterSpacing: '0.06em' }}>오늘</div>
-                        {todayCompleted.map(p => <CompletedRow key={p.id} p={p} />)}
-                      </>
-                    )}
-
-                    {/* 이전 완료 - 별도 토글 */}
-                    {pastCompleted.length > 0 && (
-                      <>
-                        <button
-                          onClick={() => setShowPastCompleted(v => !v)}
-                          style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', letterSpacing: '0.06em', display: 'block', width: '100%', textAlign: 'left', borderTop: todayCompleted.length > 0 ? '1px solid #EDE5DC' : 'none', marginTop: todayCompleted.length > 0 ? 4 : 0 }}
-                        >
-                          {showPastCompleted ? '▲ 이전 완료 숨기기' : `▼ 이전 완료 보기 (${pastCompleted.length})`}
-                        </button>
-                        {showPastCompleted && Object.entries(pastGrouped).map(([date, items]) => (
-                          <div key={date}>
-                            <div style={{ fontSize: 10, color: '#C4B8B0', padding: '4px 0 2px', fontWeight: 600 }}>{date}</div>
-                            {items.map(p => <CompletedRow key={p.id} p={p} />)}
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                  </>
-                )}
-              </>
-            );
-          })()
+          <TodoList
+            panelId={id}
+            ownerEmail={ownerEmail}
+            posts={posts}
+            canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+          />
         ) : (
-          <>
-            {filteredPosts.length === 0 ? (
-              <p className="text-[#C1B6A6] text-center text-xs py-4 leading-relaxed">게시물이 없습니다</p>
-            ) : (
-              <>
-                {(showAllPosts ? filteredPosts : filteredPosts.slice(0, 5)).map((post) => (
-                  <div key={post.id} style={{ overflow: 'visible', position: 'relative' }}>
-                    {activeCategory === "전체" && post.category && post.category !== "전체" && (
-                      <span style={{
-                        fontSize: 9,
-                        padding: '1px 6px',
-                        marginBottom: 4,
-                        display: 'inline-block',
-                        letterSpacing: '0.06em',
-                        background: post.category === '할일' ? '#FFF5F2'
-                          : post.category === '공지' ? '#F5F0EE'
-                          : post.category === '메모' ? '#F0F5F5'
-                          : '#F5F5F0',
-                        color: post.category === '할일' ? '#C17B6B'
-                          : post.category === '공지' ? '#7A2828'
-                          : post.category === '메모' ? '#5C7A7A'
-                          : '#9E8880',
-                      }}>
-                        {post.category}
-                      </span>
-                    )}
-                    <PostItem post={post} />
-                  </div>
-                ))}
-                {filteredPosts.length > 5 && (
-                  <button
-                    onClick={() => setShowAllPosts(v => !v)}
-                    style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0', letterSpacing: '0.06em', display: 'block', width: '100%', textAlign: 'center' }}
-                  >
-                    {showAllPosts ? '▲ 접기' : `▼ 더보기 (${filteredPosts.length - 5}개 더)`}
-                  </button>
-                )}
-              </>
-            )}
-          </>
+          <PostList posts={filteredPosts} activeCategory={activeCategory} />
         )}
       </div>
       {/* CreatePost 모달 */}
