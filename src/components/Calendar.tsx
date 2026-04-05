@@ -5,7 +5,7 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
-import { LeaveType, useLeaveStore } from '@/store/leaveStore';
+import { LeaveEvent, LeaveType, useLeaveStore } from '@/store/leaveStore';
 import { useUserStore } from '@/store/userStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { useEscClose } from '@/hooks/useEscClose';
@@ -170,7 +170,7 @@ export default function Calendar() {
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: 'single' | 'repeat' | 'leave';
-    target: any;
+    target: CalendarEvent | LeaveEvent;
   } | null>(null);
   const [showMoreDate, setShowMoreDate] = useState<string | null>(null);
 
@@ -534,6 +534,21 @@ export default function Calendar() {
     setLoading(false);
   };
 
+  const openDisplayEvent = (ev: CalendarDisplayEvent) => {
+    setForm({ title: ev.title, startDate: ev.startDate, endDate: ev.endDate, color: ev.color });
+    if (ev.source === 'calendar' && ev.rawCalendar) {
+      setShowLeaveDetail(null);
+      setShowDetail(ev.rawCalendar);
+      return;
+    }
+    if (ev.source === 'leave' && ev.rawLeave) {
+      setShowDetail(null);
+      setShowLeaveDetail(ev.rawLeave);
+      setLeaveType(ev.rawLeave.type || 'full');
+      setLeaveMemo(ev.rawLeave.memo || '');
+    }
+  };
+
   // 드래그
   const onMouseDown = (date: Date) => {
     setDragStart(date);
@@ -644,17 +659,7 @@ export default function Calendar() {
                 return (
                   <div key={ev.id} data-event="true" onClick={e => {
                     e.stopPropagation();
-                    setForm({ title: ev.title, startDate: ev.startDate, endDate: ev.endDate, color: ev.color });
-                    if (ev.source === 'calendar' && ev.rawCalendar) {
-                      setShowLeaveDetail(null);
-                      setShowDetail(ev.rawCalendar);
-                    }
-                    if (ev.source === 'leave' && ev.rawLeave) {
-                      setShowDetail(null);
-                      setShowLeaveDetail(ev.rawLeave);
-                      setLeaveType(ev.rawLeave.type || 'full');
-                      setLeaveMemo(ev.rawLeave.memo || '');
-                    }
+                    openDisplayEvent(ev);
                   }}
                     onMouseEnter={e => { e.currentTarget.style.opacity = '0.82'; }}
                     onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
@@ -1254,9 +1259,9 @@ export default function Calendar() {
               </button>
               <button
                 onClick={async () => {
-                  if (deleteConfirm.type === 'single') await executeDeleteSingle(deleteConfirm.target);
-                  if (deleteConfirm.type === 'repeat') await executeDeleteRepeat(deleteConfirm.target);
-                  if (deleteConfirm.type === 'leave') await executeLeaveDelete(deleteConfirm.target);
+                  if (deleteConfirm.type === 'single') await executeDeleteSingle(deleteConfirm.target as CalendarEvent);
+                  if (deleteConfirm.type === 'repeat') await executeDeleteRepeat(deleteConfirm.target as CalendarEvent);
+                  if (deleteConfirm.type === 'leave') await executeLeaveDelete(deleteConfirm.target as LeaveEvent);
                   setDeleteConfirm(null);
                 }}
                 disabled={loading}
@@ -1287,17 +1292,7 @@ export default function Calendar() {
                 {moreEvs.map(ev => (
                   <div key={ev.id} onClick={() => {
                     setShowMoreDate(null);
-                    setForm({ title: ev.title, startDate: ev.startDate, endDate: ev.endDate, color: ev.color });
-                    if (ev.source === 'calendar' && ev.rawCalendar) {
-                      setShowLeaveDetail(null);
-                      setShowDetail(ev.rawCalendar);
-                    }
-                    if (ev.source === 'leave' && ev.rawLeave) {
-                      setShowDetail(null);
-                      setShowLeaveDetail(ev.rawLeave);
-                      setLeaveType(ev.rawLeave.type || 'full');
-                      setLeaveMemo(ev.rawLeave.memo || '');
-                    }
+                    openDisplayEvent(ev);
                   }}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px', cursor: 'pointer', borderBottom: '0.5px solid #EDE5DC' }}
                     onMouseEnter={e => { e.currentTarget.style.background = '#FDF8F4'; }}

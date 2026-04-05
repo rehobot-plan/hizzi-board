@@ -9,12 +9,36 @@ import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 import { useEscClose } from '@/hooks/useEscClose';
+import { useToastStore } from '@/store/toastStore';
 
 interface CreatePostProps {
   panelId: string;
   onClose: (savedCategory?: string) => void;
   categories?: string[];
   defaultCategory?: string;
+}
+
+interface PostData {
+  panelId: string;
+  content: string;
+  author: string;
+  category: string;
+  visibleTo: string[];
+  taskType?: 'work' | 'personal';
+  attachment?: { type: 'image' | 'file' | 'link'; url: string; name?: string };
+}
+
+interface RequestData {
+  fromEmail: string;
+  fromPanelId: string;
+  toEmail: string;
+  toPanelId: string;
+  title: string;
+  content: string;
+  visibleTo: string[];
+  teamLabel?: string;
+  teamRequestId?: string;
+  dueDate?: string;
 }
 
 const BASE_CATEGORIES = ['할일', '메모'];
@@ -25,6 +49,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   const { users } = useUserStore();
   const { panels } = usePanelStore();
   const { addRequest } = useTodoRequestStore();
+  const { addToast } = useToastStore();
 
   const allCategories = categories || BASE_CATEGORIES;
 
@@ -121,7 +146,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
         visibleTo.push(...selectedUsers.filter(e => e !== user.email));
       }
 
-      const postData: any = {
+      const postData: PostData = {
         panelId,
         content: content.trim(),
         author: user.email!,
@@ -136,6 +161,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
       onClose(category);
     } catch (err) {
       console.error('저장 오류:', err);
+      addToast({ message: '게시물 저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setUploading(false);
     }
@@ -166,7 +192,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
         if (requestVisibility === 'requestOnly') visibleTo = [panelOwnerEmail, ...requestTo];
         else if (requestVisibility === 'specific') visibleTo = [panelOwnerEmail, ...requestTo, ...requestSelectedUsers];
 
-        const requestData: any = {
+        const requestData: RequestData = {
           fromEmail: panelOwnerEmail,
           fromPanelId: fromPanelId,
           toEmail,
@@ -184,6 +210,7 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
       onClose();
     } catch (err) {
       console.error('요청 오류:', err);
+      addToast({ message: '요청 전송에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setRequestSubmitting(false);
     }

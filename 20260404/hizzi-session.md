@@ -19,7 +19,43 @@
 - 상태 변경 시 cascade 효과 반드시 함께 처리
 - 에러 catch는 반드시 addToast 포함
 - 세션 마무리는 내가 제안
-- 새 기능 전 상태 흐름도 먼저 정의
+- 새 기능 전 반드시 아래 순서 준수
+
+Claude 소통 원칙:
+1. 결정 전 구조적 비교 제시
+   선택지가 있을 때 → "A vs B — X:Y 비율로 B 추천, 이유: ..."
+   형식으로 장단점 + 추천 근거 명시. 감정적 동조 금지.
+
+2. 불확실하면 명시
+   추측으로 답변 후 나중에 수정하는 패턴 금지.
+   → "확실하지 않습니다. 확인 후 답변드릴게요"
+
+3. 동의할 때도 근거 명시
+   "맞아요" 단독 사용 금지.
+   → "맞아요. 이유는 ..." 형식으로 근거 항상 포함.
+
+4. 기술 결정은 trade-off로 표현
+   "이게 더 좋아요" 단정 금지.
+   → "이 방향은 X를 얻고 Y를 잃어요"로 표현.
+
+5. 영향 범위 먼저 선언
+   코드 수정 제안 시 코드 보여주기 전에 먼저:
+   → "이 변경은 N개 파일에 영향을 줍니다: A, B, C"
+
+6. 완료 기준 명시
+   작업 시작 전 완료 기준을 먼저 정의.
+   → "빌드 성공 + 배포 확인 + 기능 동작 확인 = 완료"
+
+새 기능 요청 시 Claude 행동 순서:
+1. 기능 의도 파악 후 객관식으로 필요한 정보 수집
+   - 누가 / 어떤 조건에서 / 어떤 결과를 보는지
+   - 기존 기능과 충돌 또는 연동 가능성
+   - 상태 변경(status/completed 등)이 생기는지
+   - 질문은 한 번에 하나씩, 객관식으로
+2. flows.md 기준 cascade 영향 범위 선언
+   - 새 흐름이면 flows.md에 먼저 추가 후 코드 작성
+3. rules.md pre-flight checklist 확인
+4. 관련 파일 📎 첨부 후 코드 작성
 
 오늘 할 작업: [여기에 입력]
 ```
@@ -99,6 +135,26 @@ Owner confirms → session continues or wraps
 - hizzi-master.md: absorbed 협업패턴_가이드.md + 앞으로의방향_정리.md + 기술부채.md
 - Removed: 협업패턴_가이드.md, 앞으로의방향_정리.md, 기술_부채.md (all absorbed)
 - Agent architecture designed (Architect → parallel: Code / Review / Test)
+- Review Agent system prompt + template created (hizzi-review-agent.md)
+
+### 2026.04.05 — Quality Session
+- **Bug fix** ✅
+  - Specific visibility shown as "me only" in PostItem/TodoItem: editVisibility init logic fixed (author identity check added)
+  - CreatePost specific save: author included in visibleTo
+  - PostItem/TodoItem edit modal: 'specific' option added
+- **Error handling unification** ✅
+  - TodoItem.tsx: catch → addToast
+  - todoRequestStore.ts: all 6 catch blocks → addToast
+  - toastStore.ts: extended to accept object `{ message, type }` in addition to string
+- **any type removal** ✅
+  - TodoItem.tsx: `updates: any` → `PostUpdates` interface
+  - todoRequestStore.ts: `docData: any` → `NewTodoRequestDoc` interface
+  - todoRequestStore.ts: `addPostFn: (postData: any)` → `AddPostData` interface
+- **Review Agent** ✅
+  - First real-world review run: PASS 6 / FAIL 0 / SKIP 2
+  - Circular reference check: confirmed safe (toastStore does not import todoRequestStore)
+- **Session prompt updated** ✅
+  - New feature request flow: structured Q&A → cascade check → pre-flight → code
 
 ---
 
@@ -106,15 +162,17 @@ Owner confirms → session continues or wraps
 
 ### Immediate (next session)
 ```
-1. Error handling unification
-   - All catch(e){console.error(e)} → addToast
-   - Files: TodoItem, CreatePost, Calendar, LeaveManager, todoRequestStore
+1. Error handling unification — 미완료 파일
+   - CreatePost.tsx  → handleSubmit, handleRequestSubmit catch
+   - Calendar.tsx    → handleAdd, handleUpdate, handleDelete catch
+   - LeaveManager.tsx → 전체 catch
 
-2. Remove `any` types
-   - TodoItem.tsx    → updates: any
+2. Remove `any` types — 미완료 파일
    - CreatePost.tsx  → postData: any, requestData: any
    - Calendar.tsx    → deleteConfirm target: any, ev: any
-   - todoRequestStore.ts → docData: any
+
+3. Hover tooltip: 특정인 공개 메모에 마우스 오버 시 공유 대상 이름 표시
+   (PostItem, TodoItem 모두 적용)
 ```
 
 ### Next sessions
@@ -161,10 +219,31 @@ Owner confirms → session continues or wraps
 ```
 1. Add completed work → ✅ Completed Work Log
 2. Add new items → Remaining Work
-3. Download all 5 MDs
-4. Attach all 5 at next session start
+3. Download 5 MDs (master / rules / flows / uxui / session)
+```
+
+## Next Session — File Attachment Guide
+
+```
+Architect 탭 (이 탭, 매 세션):
+  📎 hizzi-master.md
+  📎 hizzi-rules.md
+  📎 hizzi-flows.md
+  📎 hizzi-uxui.md
+  📎 hizzi-session.md
+  → 세션 프롬프트 붙여넣기
+
+Reviewer 탭 (리뷰 전용, 세션당 한 번만 세팅):
+  📎 hizzi-rules.md
+  📎 hizzi-review-agent.md
+  → PART 1 프롬프트 붙여넣기
+  → "이해했으면 '리뷰 준비 완료'라고만 답해" 전송
+  → 이후 이 탭은 리뷰 요청만 받음 (다른 대화 금지)
+
+hizzi-review-agent.md는 Architect 탭에 올리지 않는다.
+Reviewer 탭이 이미 열려 있으면 세션 중 재세팅 불필요.
 ```
 
 ---
 
-*Updated: 2026.04.05*
+*Updated: 2026.04.05 (Quality Session)*

@@ -14,6 +14,7 @@ import {
   useLeaveStore,
 } from '@/store/leaveStore';
 import { useEscClose } from '@/hooks/useEscClose';
+import { useToastStore } from '@/store/toastStore';
 
 const LEAVE_TYPE_LABEL: Record<LeaveType, string> = {
   full: '전일',
@@ -54,6 +55,7 @@ export default function LeaveManager() {
   const { user } = useAuthStore();
   const { users } = useUserStore();
   const { settings, events, upsertSetting, addLeaveEvent, updateLeaveEvent, deleteLeaveEvent } = useLeaveStore();
+  const { addToast } = useToastStore();
   const currentUser = useMemo(() => users.find((u) => u.email === user?.email), [users, user?.email]);
   const leaveViewPermission = currentUser?.leaveViewPermission;
 
@@ -183,12 +185,17 @@ export default function LeaveManager() {
     }
     setJoinDateError('');
 
-    await upsertSetting({
-      userId: selectedUser.id,
-      userName: selectedUser.name,
-      joinDate: normalizedJoinDate,
-      manualUsedDays: Number(manualUsedDraft) || 0,
-    });
+    try {
+      await upsertSetting({
+        userId: selectedUser.id,
+        userName: selectedUser.name,
+        joinDate: normalizedJoinDate,
+        manualUsedDays: Number(manualUsedDraft) || 0,
+      });
+    } catch (e) {
+      console.error(e);
+      addToast({ message: '설정 저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+    }
   };
 
   const handleSaveLeave = async () => {
@@ -204,23 +211,33 @@ export default function LeaveManager() {
       createdBy: user?.email || '',
     };
 
-    if (editTargetId) {
-      const current = userEvents.find((e) => e.id === editTargetId);
-      if (!current) return;
-      const locked = current.confirmed || isPastOrToday(current.date);
-      if (locked && !isAdmin) return;
-      await updateLeaveEvent(editTargetId, payload);
-    } else {
-      await addLeaveEvent(payload);
-    }
+    try {
+      if (editTargetId) {
+        const current = userEvents.find((e) => e.id === editTargetId);
+        if (!current) return;
+        const locked = current.confirmed || isPastOrToday(current.date);
+        if (locked && !isAdmin) return;
+        await updateLeaveEvent(editTargetId, payload);
+      } else {
+        await addLeaveEvent(payload);
+      }
 
-    setShowAdd(false);
+      setShowAdd(false);
+    } catch (e) {
+      console.error(e);
+      addToast({ message: '연차 저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+    }
   };
 
   const handleDelete = async (event: LeaveEvent) => {
     const locked = event.confirmed || isPastOrToday(event.date);
     if (locked && !isAdmin) return;
-    await deleteLeaveEvent(event.id);
+    try {
+      await deleteLeaveEvent(event.id);
+    } catch (e) {
+      console.error(e);
+      addToast({ message: '연차 삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+    }
   };
 
   const onSelectEmployee = (nextUserId: string) => {
