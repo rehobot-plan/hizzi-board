@@ -146,12 +146,23 @@ date.toISOString().split('T')[0]
 `${year}-${month}-${day}T00:00:00`
 ```
 
-**R3.3 — New collections require Firestore rules update before deploy**
+**R3.3 — serverTimestamp() pending 문서 방어**
+```typescript
+// addDoc 직후 onSnapshot이 두 번 발화함:
+// 1차: createdAt = null (pending)  ← 이 문서를 store에 넣으면 UI 오염
+// 2차: createdAt = 실제 서버 시간
+// → onSnapshot에서 createdAt이 null인 문서는 반드시 필터링
+
+if (!data.createdAt) return null;  // pending 문서 제외
+```
+
+**R3.4 — New collections require Firestore rules update before deploy**
 
 ### Pre-flight questions
 ```
 □ Are all optional fields stripped of undefined before Firestore save?
 □ Are date strings using local time format (not toISOString)?
+□ onSnapshot에서 createdAt null 문서 필터링 적용됐는가?
 □ If adding a new collection: is firestore.rules updated?
 ```
 
@@ -289,26 +300,80 @@ set(state => ({ posts: state.posts.filter(p => p.id !== postId) }))
 await deleteDoc(doc(db, 'posts', postId))
 ```
 
+**R6.3 — Loop 안 비동기 작업은 try/catch/finally로 감싸기**
+```typescript
+// ❌ WRONG — 루프 중 실패 시 상태 초기화 안 됨
+for (const id of ids) { await deletePost(id) }
+setSelectMode(false)
+
+// ✅ CORRECT
+try {
+  for (const id of ids) { await deletePost(id) }
+} catch (e) {
+  console.error(e)
+} finally {
+  setSelectedIds([])
+  setSelectMode(false)
+}
+// deletePost 내부에 addToast가 있으면 여기선 중복 toast 불필요
+```
+
 ### Pre-flight questions
 ```
 □ Does every try-catch block call addToast on error?
 □ For delete actions: is optimistic update applied before Firestore call?
+□ For loop async: is try/catch/finally applied?
 ```
 
 ---
 
-## SECTION 7 — Common Hooks
+## SECTION 7 — 설계 정확성
+
+### Root cause of recurring bugs
+실제 파일을 확인하지 않고 설계하면 존재하지 않는 상태/탭/값을 가정한
+방어 코드가 생기고, 이후 코드를 읽는 사람이 혼란을 겪는다.
+
+### Rules
+
+**R7.1 — 존재하지 않는 값을 조건에 추가하지 않는다**
+```typescript
+// ❌ WRONG — '전체' 탭이 실제로 없는데 방어 조건 추가
+activeCategory !== '할일' && activeCategory !== '전체'
+
+// ✅ CORRECT — 실제 파일에서 categoryList 확인 후 조건 작성
+activeCategory !== '할일'
+```
+
+**R7.2 — 리뷰 에이전트 체크포인트가 나오면 실제 파일에서 반드시 확인**
+리뷰 에이전트는 명령 블록 텍스트만 분석하므로
+실제로 존재하지 않는 값을 지적할 수 있다.
+→ Claude가 실제 파일을 열어 확인 후 판단. 추측으로 넘어가지 않는다.
+
+**R7.3 — 미래 확장을 위한 방어 코드는 오너 승인 후 추가**
+"나중에 생길 수 있으니" 라는 이유로 임의 추가 금지.
+→ 오너에게 "X 기능이 추가될 가능성이 있는데 지금 대비할까요?" 로 먼저 확인.
+
+### Pre-flight questions
+```
+□ 조건에 사용된 값이 실제 파일에 존재하는가?
+□ 리뷰 체크포인트를 실제 파일에서 확인했는가?
+□ 미래 확장 방어 코드는 오너 승인을 받았는가?
+```
+
+---
+
+## SECTION 8 — Common Hooks
 
 ```
 useEscClose(onClose, isOpen)   — REQUIRED for every modal
-useFileUpload(panelId)         — planned: Storage upload (TodoItem / CreatePost)
-useIsMobile(breakpoint)        — planned: mobile detection (Calendar / Panel)
+useVisibilityTooltip(visibleTo, users) — PostItem / TodoItem 특정인 tooltip
+useFileUpload(panelId)         — planned: Storage upload
+useIsMobile(breakpoint)        — planned: mobile detection
 useCanEdit(ownerEmail)         — planned: edit permission check
 useMultiSelect(items)          — planned: checkbox multi-select
 ```
 
 > Before writing upload or mobile-detection logic inline, check if the planned hook exists.
-> If it doesn't exist yet, consider creating it rather than duplicating the logic.
 
 ---
 
@@ -328,6 +393,7 @@ STATE TRANSITIONS
 FIRESTORE
 □ undefined stripped before save?
 □ Date strings in local time format?
+□ onSnapshot createdAt null 문서 필터링 적용?
 
 TYPES
 □ No `any` types introduced?
@@ -340,8 +406,13 @@ MODALS
 ERROR HANDLING
 □ Every catch calls addToast?
 □ Destructive actions use optimistic update?
+□ Loop async wrapped in try/catch/finally?
+
+설계 정확성
+□ 조건에 사용된 값이 실제 파일에 존재하는가?
+□ 리뷰 체크포인트를 실제 파일에서 확인했는가?
 ```
 
 ---
 
-*Updated: 2026.04.05*
+*Updated: 2026.04.05 (Memo UX Session)*

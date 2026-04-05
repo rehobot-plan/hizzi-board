@@ -55,10 +55,10 @@ src/
 │   └── signup/page.tsx
 ├── components/
 │   ├── Panel.tsx              # Panel skeleton (tabs / layout) ✅ refactored
-│   ├── TodoList.tsx           # Active todos + sort ✅ new
-│   ├── CompletedTodo.tsx      # Completed todos + bulk delete + date grouping ✅ new
-│   ├── PostList.tsx           # Memo/post list + load more ✅ new
-│   ├── PostItem.tsx           # Memo item (now supports 'specific' visibility)
+│   ├── TodoList.tsx           # Active todos + sort ✅
+│   ├── CompletedTodo.tsx      # Completed todos + bulk delete + date grouping ✅
+│   ├── PostList.tsx           # Memo/post list + load more + 삭제된 메모 섹션 ✅
+│   ├── PostItem.tsx           # Memo item (태그/날짜 표시, specific visibility)
 │   ├── TodoItem.tsx           # Todo item + work-order modal
 │   ├── CreatePost.tsx         # Post/todo/request creation modal
 │   ├── Calendar.tsx           # Calendar + color-meaning system
@@ -67,10 +67,11 @@ src/
 │   ├── TodoRequestBadge.tsx
 │   └── TodoRequestModal.tsx
 ├── hooks/
-│   └── useEscClose.ts         # Global hook — ESC to close any modal
+│   ├── useEscClose.ts         # Global hook — ESC to close any modal
+│   └── useVisibilityTooltip.ts # 특정인 tooltip
 ├── store/
 │   ├── authStore.ts
-│   ├── postStore.ts           # deletePost uses optimistic update
+│   ├── postStore.ts           # soft delete (deleted/deletedAt) + hardDeletePost
 │   ├── panelStore.ts
 │   ├── userStore.ts
 │   ├── leaveStore.ts
@@ -88,7 +89,7 @@ src/
 ```
 Panel.tsx
   → TodoList.tsx (canEdit prop)
-  → PostList.tsx (filteredPosts, activeCategory props)
+  → PostList.tsx (filteredPosts, activeCategory, panelId, canEdit, selectMode, selectedIds, onSelectChange props)
 
 TodoList.tsx
   → TodoItem.tsx (post, canEdit props)
@@ -99,7 +100,9 @@ CompletedTodo.tsx
   → todoRequestStore.ts (reactivateRequest)
   → postStore.ts (updatePost, deletePost)
 
-PostList.tsx → PostItem.tsx
+PostList.tsx
+  → PostItem.tsx
+  → postStore.ts (hardDeletePost — 삭제된 메모 최종 삭제)
 
 TodoItem.tsx → todoRequestStore.ts (completeRequest, reactivateRequest)
 
@@ -143,6 +146,8 @@ Any new modal → useEscClose hook required
   requestTitle?: string
   requestContent?: string
   requestDueDate?: string | null
+  deleted?: boolean            // soft delete
+  deletedAt?: Date | null      // soft delete 시각
   createdAt: Date
   updatedAt: Date
 }
@@ -229,22 +234,25 @@ users:
 | 2026.04.05 | deletePost optimistic update (fixes ghost re-render) |
 | 2026.04.05 | PostItem / TodoItem editVisibility: author identity check + specific option |
 | 2026.04.05 | CreatePost: specific visibleTo includes author |
-| 2026.04.05 | Error handling: TodoItem / todoRequestStore / CreatePost / LeaveManager catch → addToast |
+| 2026.04.05 | Error handling: TodoItem / todoRequestStore / CreatePost / LeaveManager / Calendar catch → addToast |
 | 2026.04.05 | any removal: PostUpdates / NewTodoRequestDoc / AddPostData / PostData / RequestData / CalendarEvent\|LeaveEvent |
 | 2026.04.05 | toastStore: extended to accept { message, type } object |
-| 2026.04.05 | useVisibilityTooltip hook: PostItem / TodoItem (tooltip 미작동 — 다음 세션 수정) |
+| 2026.04.05 | useVisibilityTooltip hook: PostItem / TodoItem |
+| 2026.04.05 | postStore addPost 낙관적 업데이트 + serverTimestamp pending 방어 |
+| 2026.04.05 | 메모 soft delete (deleted/deletedAt) + 삭제된 메모 섹션 |
+| 2026.04.05 | PostItem 태그 표시 (업무/개인, 전체/나만/특정인) |
 
 ### 🔴 Active (next session)
 ```
-1. 버그: 메모 게시물 올린 후 빈 화면
-   증상: 작성 후 빈 화면 → 새로고침 시 정상
-   추정: onClose(category) 후 Panel/PostList 카테고리 상태 처리 문제
-   파일: Panel.tsx, PostList.tsx, CreatePost.tsx
+1. 메모 선택 삭제 마무리
+   - 선행: git checkout src/components/CompletedTodo.tsx (잘못된 수정 롤백)
+   - Panel.tsx: memoSelectedIds state + 선택 버튼 추가
+   - PostList.tsx: selectMode/selectedIds/onSelectChange props 수신 + 체크박스
 
 2. 버그: 특정인 hover tooltip 미작동
-   원인: title 속성이 2px 선 div에만 적용돼 hover 영역 너무 좁음
-   개선: 아이템 전체 영역에 tooltip 적용
-   파일: PostItem.tsx, TodoItem.tsx
+   - 원인: title 속성이 2px 선 div에만 적용돼 hover 영역 너무 좁음
+   - 개선: 아이템 전체 영역에 tooltip 적용
+   - 파일: PostItem.tsx, TodoItem.tsx
 ```
 
 ### 🟡 Growth prep
@@ -262,7 +270,21 @@ users:
 
 ---
 
-## 10. CLI Commands
+## 10. 파일 분리 기준
+
+```
+컴포넌트 파일이 아래 중 하나에 해당하면 분리 검토:
+  □ 300줄 초과
+  □ 역할이 2개 이상 (렌더링 + 상태관리 + 데이터필터 혼재)
+  □ 같은 로직이 2개 컴포넌트에 중복 등장
+
+분리 전 오너에게 경우의 수 제시 후 승인 받아 진행
+(Panel.tsx → TodoList / CompletedTodo / PostList 분리 사례 참고)
+```
+
+---
+
+## 11. CLI Commands
 
 ```powershell
 # Clean build
@@ -280,7 +302,7 @@ npx firebase-tools deploy --only firestore:rules --project hizzi-board
 
 ---
 
-## 11. Known Bug History
+## 12. Known Bug History
 
 | Bug | Root cause | Fix |
 |-----|-----------|-----|
@@ -293,12 +315,12 @@ npx firebase-tools deploy --only firestore:rules --project hizzi-board
 | Deleted post reappeared | onSnapshot timing race | Optimistic update in deletePost |
 | Memo tab layout broken | PostItem hover margin:0 -20px | Removed margin, use inset:0 only |
 | Specific visibility shown as "me only" | PostItem editVisibility used length===1 for all non-empty arrays | Fixed: length===1 && [0]===author → me; else → specific |
-| Memo blank screen after post | onClose(category) Panel/PostList state handling issue | 다음 세션 수정 예정 |
-| Hover tooltip not working | title attr on 2px div — hover area too narrow | 다음 세션 수정 예정 |
+| 메모 작성 후 빈 화면 / 쓰레기 데이터 | addPost 낙관적 업데이트 없음 + serverTimestamp pending 문서 store 오염 | addPost 낙관적 업데이트 + onSnapshot null 필터 |
+| CompletedTodo.tsx 잘못 수정 | Claude Code가 대상 코드 못 찾자 유사한 다른 파일에 임의 적용 | 명령 블록에 "못 찾으면 중단" 규칙 추가 |
 
 ---
 
-## 12. Collaboration Workflow
+## 13. Collaboration Workflow
 
 ```
 Owner (direction)  →  Claude.ai (Architect Agent)  →  Claude Code (Executor)
@@ -321,7 +343,7 @@ Owner (direction)  →  Claude.ai (Architect Agent)  →  Claude Code (Executor)
 
 ---
 
-## 13. Roadmap
+## 14. Roadmap
 
 ```
 Phase 1 (now)   : Hizzi Board stabilization
@@ -337,4 +359,4 @@ Rehobot pricing:
 
 ---
 
-*Updated: 2026.04.05*
+*Updated: 2026.04.05 (Memo UX Session)*

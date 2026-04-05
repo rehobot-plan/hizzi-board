@@ -90,6 +90,30 @@ Owner confirms → session continues or wraps
 
 ---
 
+## 명령 블록 작성 원칙
+
+```
+1. 모든 명령 블록 맨 앞에 안전 규칙 명시:
+   "규칙: 대상 코드를 찾지 못하면 즉시 중단하고 보고할 것.
+    유사한 다른 위치에 임의 적용 금지."
+
+2. 모든 명령 블록 끝에 진행 여부 명시:
+   → "바로 붙여도 됩니다" (빌드 통과 + 리뷰 PASS 완료된 경우)
+   → "리뷰 후 진행하세요 — 이유: ..." (다중 파일 수정 / 상태 변경 / 리뷰 미완료)
+
+3. 빌드와 배포는 항상 한 블록으로:
+   git add . && git commit -m "..." && npx vercel --prod
+
+4. 배포 커밋 메시지 아래에 "배포 후 확인 항목" 블록 항상 포함:
+   예)
+   배포 후 확인:
+   1. 기능 A 동작 여부
+   2. 기능 B 동작 여부
+   3. 기존 기능 C 영향 없는지
+```
+
+---
+
 ## ✅ Completed Work Log
 
 ### 2026.03.25 – 04.02
@@ -147,72 +171,65 @@ Owner confirms → session continues or wraps
 
 ### 2026.04.05 — Quality Session
 - **Bug fix** ✅
-  - Specific visibility shown as "me only" in PostItem/TodoItem: editVisibility init logic fixed (author identity check added)
+  - Specific visibility shown as "me only" in PostItem/TodoItem: editVisibility init logic fixed
   - CreatePost specific save: author included in visibleTo
   - PostItem/TodoItem edit modal: 'specific' option added
 - **Error handling unification** ✅
-  - TodoItem.tsx: catch → addToast
-  - todoRequestStore.ts: all 6 catch blocks → addToast
-  - toastStore.ts: extended to accept object `{ message, type }` in addition to string
+  - TodoItem.tsx / todoRequestStore.ts / CreatePost.tsx / LeaveManager.tsx / Calendar.tsx
+  - toastStore.ts: extended to accept `{ message, type }` object
 - **any type removal** ✅
-  - TodoItem.tsx: `updates: any` → `PostUpdates` interface
-  - todoRequestStore.ts: `docData: any` → `NewTodoRequestDoc` interface
-  - todoRequestStore.ts: `addPostFn: (postData: any)` → `AddPostData` interface
-- **Review Agent** ✅
-  - First real-world review run: PASS 6 / FAIL 0 / SKIP 2
-  - Circular reference check: confirmed safe (toastStore does not import todoRequestStore)
-- **Session prompt updated** ✅
-  - New feature request flow: structured Q&A → cascade check → pre-flight → code
+  - PostUpdates / NewTodoRequestDoc / AddPostData / PostData / RequestData / CalendarEvent|LeaveEvent
+- **useVisibilityTooltip hook** ✅
+  - src/hooks/useVisibilityTooltip.ts 생성, PostItem/TodoItem 적용
+
+### 2026.04.05 — Memo UX Session
+- **Bug fix** ✅
+  - postStore addPost 낙관적 업데이트 추가
+  - onSnapshot serverTimestamp pending 문서 필터 (createdAt null 방어)
+  - 메모 작성 후 빈 화면 현상 해결
+- **메모 soft delete** ✅
+  - postStore: deletePost → soft delete (deleted/deletedAt), hardDeletePost 추가
+  - Panel.tsx: filteredPosts에 deleted 필터 추가
+- **삭제된 메모 섹션** ✅
+  - PostList.tsx: 오늘/이전 날짜 그룹, 선택삭제/전체삭제
+  - CompletedTodo와 동일한 UX 흐름
+- **메모 아이템 태그 표시** ✅
+  - PostItem.tsx: 업무/개인, 전체/나만/특정인 태그 추가
+  - 날짜 표시 형식 할일과 통일
+- **메모 선택 삭제** 🔴 미완료
+  - Panel.tsx memoSelectedIds 코드 미적용
+  - CompletedTodo.tsx 잘못 수정됨 → 롤백 필요
 
 ---
 
 ## 🔴 Remaining Work — Priority Order
 
-### 2026.04.05 — Error / Type Session
-- **Error handling unification** ✅
-  - Calendar.tsx: 모든 catch → addToast (이미 적용돼 있었음)
-  - CreatePost.tsx: handleSubmit / handleRequestSubmit catch → addToast
-  - LeaveManager.tsx: handleSaveSetting / handleSaveLeave / handleDelete → try-catch + addToast
-  - toastStore.ts: string 외 `{ message, type }` 객체 형태도 수용하도록 확장
-- **any type removal** ✅
-  - CreatePost.tsx: PostData / RequestData 인터페이스 추가
-  - Calendar.tsx: deleteConfirm target `any` → `CalendarEvent | LeaveEvent` 유니온 + as 캐스팅
-  - LeaveManager.tsx: 타입 변경 없음 (기존 유지)
-- **useVisibilityTooltip 훅 신규** ✅
-  - src/hooks/useVisibilityTooltip.ts 생성
-  - PostItem.tsx / TodoItem.tsx 적용
-
----
-
-## 🔴 Remaining Work — Priority Order
-
-### Immediate (next session)
+### Immediate (next session 최우선)
 ```
-0. 버그: 메모 게시물 올린 후 빈 화면 표시
-   - 증상: 메모 작성 후 빈 화면 → 새로고침 시 정상
-   - 원인 추정: onClose(category) 후 Panel/PostList 카테고리 상태 처리 문제
-   - 확인 필요 파일: Panel.tsx, PostList.tsx, CreatePost.tsx
+0. 메모 선택 삭제 마무리
+   - 선행: git checkout src/components/CompletedTodo.tsx (잘못된 수정 롤백)
+   - Panel.tsx: memoSelectedIds state + 선택 버튼 추가
+   - PostList.tsx: selectMode/selectedIds/onSelectChange props 수신 + 체크박스
 
 1. 버그: 특정인 공개범위 hover tooltip 미작동
    - useVisibilityTooltip 훅은 생성됐으나 실제 동작 안 됨
    - 원인: title 속성이 2px 선 div에 적용돼 hover 영역이 너무 좁음
-   - 개선 방향: 아이템 전체 영역에 tooltip 적용 검토 필요
    - 확인 필요 파일: PostItem.tsx, TodoItem.tsx
 ```
 
 ### Next sessions
 ```
-3. Calendar "편집" → "수정" label change
+2. Calendar "편집" → "수정" label change
 
-4. Multi-day event edit/delete-all
+3. Multi-day event edit/delete-all
    - Date range editable in detail modal
    - "전체 삭제" button
 
-5. Leave edit: start/end date selector
+4. Leave edit: start/end date selector
 
-6. Request archive (completed/rejected/cancelled → searchable)
+5. Request archive (completed/rejected/cancelled → searchable)
 
-7. Team leader confirmation flow (2-step)
+6. Team leader confirmation flow (2-step)
 ```
 
 ### Leave
@@ -271,4 +288,4 @@ Reviewer 탭이 이미 열려 있으면 세션 중 재세팅 불필요.
 
 ---
 
-*Updated: 2026.04.05 (Quality Session)*
+*Updated: 2026.04.05 (Memo UX Session)*

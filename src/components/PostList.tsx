@@ -1,6 +1,7 @@
 'use client';
 
 import { Post, usePostStore } from '@/store/postStore';
+import { useToastStore } from '@/store/toastStore';
 import PostItem from './PostItem';
 import { useState } from 'react';
 
@@ -18,6 +19,7 @@ function formatTime(d: Date): string {
 
 export default function PostList({ posts, activeCategory, panelId, canEdit }: PostListProps) {
   const { hardDeletePost } = usePostStore();
+  const { addToast } = useToastStore();
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [showPastDeleted, setShowPastDeleted] = useState(false);
@@ -153,9 +155,15 @@ export default function PostList({ posts, activeCategory, panelId, canEdit }: Po
                   {selectMode && selectedIds.length > 0 && (
                     <button
                       onClick={async () => {
-                        for (const id of selectedIds) await hardDeletePost(id);
-                        setSelectedIds([]);
-                        setSelectMode(false);
+                        try {
+                          for (const id of selectedIds) await hardDeletePost(id);
+                        } catch (e) {
+                          console.error(e);
+                          addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+                        } finally {
+                          setSelectedIds([]);
+                          setSelectMode(false);
+                        }
                       }}
                       style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}>
                       선택 삭제 ({selectedIds.length})
@@ -165,7 +173,12 @@ export default function PostList({ posts, activeCategory, panelId, canEdit }: Po
                     <button
                       onClick={async () => {
                         if (!window.confirm(`삭제된 메모 ${deletedPosts.length}개를 모두 완전히 삭제할까요?`)) return;
-                        for (const p of deletedPosts) await hardDeletePost(p.id);
+                        try {
+                          for (const p of deletedPosts) await hardDeletePost(p.id);
+                        } catch (e) {
+                          console.error(e);
+                          addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+                        }
                       }}
                       style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}>
                       전체 삭제 ({deletedPosts.length})
