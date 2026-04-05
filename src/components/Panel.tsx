@@ -47,6 +47,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   // 게시물 필터링 (첨부파일 탭은 attachments 필드가 있는 게시물만)
   const filteredPosts = posts.filter((post) => {
     if (post.panelId !== id) return false;
+    if (post.deleted) return false;
     // 완료된 할일은 전체/할일 탭에서 숨김
     if (post.completed && post.category === '할일') return false;
     if (activeCategory === "첨부파일") {
@@ -233,7 +234,12 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
           />
         ) : (
-          <PostList posts={filteredPosts} activeCategory={activeCategory} />
+          <PostList
+            posts={filteredPosts}
+            activeCategory={activeCategory}
+            panelId={id}
+            canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+          />
         )}
       </div>
       {/* CreatePost 모달 */}

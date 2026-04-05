@@ -227,20 +227,24 @@ users:
 | 2026.04.03 | useEscClose — global ESC handler for all modals |
 | 2026.04.05 | Panel.tsx split → TodoList / CompletedTodo / PostList |
 | 2026.04.05 | deletePost optimistic update (fixes ghost re-render) |
-| 2026.04.05 | PostItem visibility: added 'specific' option to edit modal |
-| 2026.04.05 | CreatePost: specific visibleTo now includes author |
+| 2026.04.05 | PostItem / TodoItem editVisibility: author identity check + specific option |
+| 2026.04.05 | CreatePost: specific visibleTo includes author |
+| 2026.04.05 | Error handling: TodoItem / todoRequestStore / CreatePost / LeaveManager catch → addToast |
+| 2026.04.05 | any removal: PostUpdates / NewTodoRequestDoc / AddPostData / PostData / RequestData / CalendarEvent\|LeaveEvent |
+| 2026.04.05 | toastStore: extended to accept { message, type } object |
+| 2026.04.05 | useVisibilityTooltip hook: PostItem / TodoItem (tooltip 미작동 — 다음 세션 수정) |
 
-### 🔴 Active (this session or next)
+### 🔴 Active (next session)
 ```
-1. Error handling unification
-   catch(e){ console.error(e) } → addToast(error message)
-   Files: TodoItem, CreatePost, Calendar, LeaveManager, todoRequestStore
+1. 버그: 메모 게시물 올린 후 빈 화면
+   증상: 작성 후 빈 화면 → 새로고침 시 정상
+   추정: onClose(category) 후 Panel/PostList 카테고리 상태 처리 문제
+   파일: Panel.tsx, PostList.tsx, CreatePost.tsx
 
-2. Remove `any` types
-   TodoItem.tsx       → updates: any
-   CreatePost.tsx     → postData: any, requestData: any
-   Calendar.tsx       → deleteConfirm target: any, ev: any
-   todoRequestStore.ts → docData: any
+2. 버그: 특정인 hover tooltip 미작동
+   원인: title 속성이 2px 선 div에만 적용돼 hover 영역 너무 좁음
+   개선: 아이템 전체 영역에 tooltip 적용
+   파일: PostItem.tsx, TodoItem.tsx
 ```
 
 ### 🟡 Growth prep
@@ -289,6 +293,8 @@ npx firebase-tools deploy --only firestore:rules --project hizzi-board
 | Deleted post reappeared | onSnapshot timing race | Optimistic update in deletePost |
 | Memo tab layout broken | PostItem hover margin:0 -20px | Removed margin, use inset:0 only |
 | Specific visibility shown as "me only" | PostItem editVisibility used length===1 for all non-empty arrays | Fixed: length===1 && [0]===author → me; else → specific |
+| Memo blank screen after post | onClose(category) Panel/PostList state handling issue | 다음 세션 수정 예정 |
+| Hover tooltip not working | title attr on 2px div — hover area too narrow | 다음 세션 수정 예정 |
 
 ---
 

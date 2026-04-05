@@ -186,9 +186,25 @@ export default function PostItem({ post }: PostItemProps) {
             {post.content}
           </p>
           {renderAttachment()}
-          <div style={{ fontSize: 11, color: isHovered ? '#C17B6B' : '#9E8880', marginTop: 4, display: 'flex', gap: 8, transition: 'color 0.15s ease' }}>
+          <div style={{ fontSize: 11, color: isHovered ? '#C17B6B' : '#9E8880', marginTop: 4, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', transition: 'color 0.15s ease' }}>
             <span>{getAuthorName(post.author)}</span>
             <span>{formatDate(post.createdAt)}</span>
+            {post.taskType && (
+              <span style={{ fontSize: 9, padding: '1px 5px', background: post.taskType === 'work' ? '#FFF5F2' : '#F5F0EE', color: post.taskType === 'work' ? '#C17B6B' : '#9E8880' }}>
+                {post.taskType === 'work' ? '업무' : '개인'}
+              </span>
+            )}
+            {(() => {
+              const label =
+                !post.visibleTo || post.visibleTo.length === 0 ? '전체' :
+                post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? '나만' : '특정인';
+              const color = label === '전체' ? '#639922' : label === '나만' ? '#378ADD' : '#BA7517';
+              return (
+                <span style={{ fontSize: 9, padding: '1px 5px', color, border: `1px solid ${color}`, opacity: 0.8 }}>
+                  {label}
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>

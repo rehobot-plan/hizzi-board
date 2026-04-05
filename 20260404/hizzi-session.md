@@ -168,19 +168,36 @@ Owner confirms → session continues or wraps
 
 ## 🔴 Remaining Work — Priority Order
 
+### 2026.04.05 — Error / Type Session
+- **Error handling unification** ✅
+  - Calendar.tsx: 모든 catch → addToast (이미 적용돼 있었음)
+  - CreatePost.tsx: handleSubmit / handleRequestSubmit catch → addToast
+  - LeaveManager.tsx: handleSaveSetting / handleSaveLeave / handleDelete → try-catch + addToast
+  - toastStore.ts: string 외 `{ message, type }` 객체 형태도 수용하도록 확장
+- **any type removal** ✅
+  - CreatePost.tsx: PostData / RequestData 인터페이스 추가
+  - Calendar.tsx: deleteConfirm target `any` → `CalendarEvent | LeaveEvent` 유니온 + as 캐스팅
+  - LeaveManager.tsx: 타입 변경 없음 (기존 유지)
+- **useVisibilityTooltip 훅 신규** ✅
+  - src/hooks/useVisibilityTooltip.ts 생성
+  - PostItem.tsx / TodoItem.tsx 적용
+
+---
+
+## 🔴 Remaining Work — Priority Order
+
 ### Immediate (next session)
 ```
-1. Error handling unification — 미완료 파일
-   - CreatePost.tsx  → handleSubmit, handleRequestSubmit catch
-   - Calendar.tsx    → handleAdd, handleUpdate, handleDelete catch
-   - LeaveManager.tsx → 전체 catch
+0. 버그: 메모 게시물 올린 후 빈 화면 표시
+   - 증상: 메모 작성 후 빈 화면 → 새로고침 시 정상
+   - 원인 추정: onClose(category) 후 Panel/PostList 카테고리 상태 처리 문제
+   - 확인 필요 파일: Panel.tsx, PostList.tsx, CreatePost.tsx
 
-2. Remove `any` types — 미완료 파일
-   - CreatePost.tsx  → postData: any, requestData: any
-   - Calendar.tsx    → deleteConfirm target: any, ev: any
-
-3. Hover tooltip: 특정인 공개 메모에 마우스 오버 시 공유 대상 이름 표시
-   (PostItem, TodoItem 모두 적용)
+1. 버그: 특정인 공개범위 hover tooltip 미작동
+   - useVisibilityTooltip 훅은 생성됐으나 실제 동작 안 됨
+   - 원인: title 속성이 2px 선 div에 적용돼 hover 영역이 너무 좁음
+   - 개선 방향: 아이템 전체 영역에 tooltip 적용 검토 필요
+   - 확인 필요 파일: PostItem.tsx, TodoItem.tsx
 ```
 
 ### Next sessions

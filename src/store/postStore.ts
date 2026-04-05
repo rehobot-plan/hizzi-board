@@ -32,6 +32,8 @@ export interface Post {
   requestTitle?: string;
   requestContent?: string;
   requestDueDate?: string | null;
+  deleted?: boolean;
+  deletedAt?: Date | null;
 }
 
 interface PostState {
@@ -40,12 +42,22 @@ interface PostState {
   addPost: (post: Omit<Post, 'id' | 'createdAt'>) => Promise<void>;
   updatePost: (postId: string, updates: Partial<Omit<Post, 'id' | 'createdAt'>>) => Promise<void>;
   deletePost: (postId: string) => Promise<void>;
+  hardDeletePost: (postId: string) => Promise<void>;
 }
 
 export const usePostStore = create<PostState>((set) => ({
   posts: [],
   loading: true,
   addPost: async (postData) => {
+    const tempId = `temp_${Date.now()}`;
+    const tempPost: Post = {
+      ...postData,
+      id: tempId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    set(state => ({ posts: [tempPost, ...state.posts] }));
+
     try {
       await addDoc(collection(db, 'posts'), {
         ...postData,
@@ -53,7 +65,9 @@ export const usePostStore = create<PostState>((set) => ({
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
+      set(state => ({ posts: state.posts.filter(p => p.id !== tempId) }));
       console.error('Error adding post:', error);
+      useToastStore.getState().addToast({ message: '게시물 저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     }
   },
   updatePost: async (postId, updates) => {
@@ -67,11 +81,37 @@ export const usePostStore = create<PostState>((set) => ({
     }
   },
   deletePost: async (postId) => {
+    // soft delete — 낙관적 업데이트
+    set(state => ({
+      posts: state.posts.map(p =>
+        p.id === postId ? { ...p, deleted: true, deletedAt: new Date() } : p
+      ),
+    }));
+    try {
+      await updateDoc(doc(db, 'posts', postId), {
+        deleted: true,
+        deletedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      // 롤백
+      set(state => ({
+        posts: state.posts.map(p =>
+          p.id === postId ? { ...p, deleted: false, deletedAt: null } : p
+        ),
+      }));
+      console.error('Error deleting post:', error);
+      useToastStore.getState().addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+    }
+  },
+
+  // 실제 Firestore 삭제 (삭제된 메모 섹션에서 최종 삭제 시 사용)
+  hardDeletePost: async (postId) => {
     set(state => ({ posts: state.posts.filter(p => p.id !== postId) }));
     try {
       await deleteDoc(doc(db, 'posts', postId));
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('Error hard deleting post:', error);
+      useToastStore.getState().addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     }
   },
 }));
@@ -122,17 +162,23 @@ export const initPostListener = () => {
       }
     });
 
-    const posts = snapshot.docs.map(d => {
-      const data = d.data();
-      return {
-        id: d.id,
-        ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt || new Date()),
-        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.updatedAt || data.createdAt || new Date()),
-        completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : (data.completedAt || null),
-        starredAt: data.starredAt?.toDate ? data.starredAt.toDate() : (data.starredAt || null),
-      };
-    }) as Post[];
+    const posts = snapshot.docs
+      .map((d): Post | null => {
+        const data = d.data();
+        if (!data.createdAt) return null;
+        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt;
+        return {
+          id: d.id,
+          ...data,
+          createdAt,
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.updatedAt || createdAt),
+          completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : (data.completedAt || null),
+          starredAt: data.starredAt?.toDate ? data.starredAt.toDate() : (data.starredAt || null),
+          deleted: data.deleted ?? false,
+          deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : (data.deletedAt || null),
+        } as Post;
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
 
     usePostStore.setState({ posts, loading: false });
   }, (error) => {
