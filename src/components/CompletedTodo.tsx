@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { usePostStore, Post } from '@/store/postStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
+import { useToastStore } from '@/store/toastStore';
 
 interface CompletedTodoProps {
   completedTodos: Post[];
@@ -21,6 +22,7 @@ function formatDateTime(d: Date): string {
 
 export default function CompletedTodo({ completedTodos, canEdit }: CompletedTodoProps) {
   const { reactivateRequest } = useTodoRequestStore();
+  const { addToast } = useToastStore();
   const [showCompleted, setShowCompleted] = useState(false);
   const [showPastCompleted, setShowPastCompleted] = useState(false);
   const [selectedCompleted, setSelectedCompleted] = useState<string[]>([]);
@@ -140,11 +142,17 @@ export default function CompletedTodo({ completedTodos, canEdit }: CompletedTodo
               {selectMode && selectedCompleted.length > 0 && (
                 <button
                   onClick={async () => {
-                    for (const id of selectedCompleted) {
-                      await usePostStore.getState().deletePost(id);
+                    try {
+                      for (const id of selectedCompleted) {
+                        await usePostStore.getState().hardDeletePost(id);
+                      }
+                    } catch (e) {
+                      console.error(e);
+                      addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+                    } finally {
+                      setSelectedCompleted([]);
+                      setSelectMode(false);
                     }
-                    setSelectedCompleted([]);
-                    setSelectMode(false);
                   }}
                   style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}
                 >
@@ -155,11 +163,17 @@ export default function CompletedTodo({ completedTodos, canEdit }: CompletedTodo
                 <button
                   onClick={async () => {
                     if (!window.confirm(`완료된 할일 ${completedTodos.length}개를 모두 삭제할까요?`)) return;
-                    for (const p of completedTodos) {
-                      await usePostStore.getState().deletePost(p.id);
+                    try {
+                      for (const p of completedTodos) {
+                        await usePostStore.getState().hardDeletePost(p.id);
+                      }
+                    } catch (e) {
+                      console.error(e);
+                      addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+                    } finally {
+                      setSelectedCompleted([]);
+                      setSelectMode(false);
                     }
-                    setSelectedCompleted([]);
-                    setSelectMode(false);
                   }}
                   style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}
                 >

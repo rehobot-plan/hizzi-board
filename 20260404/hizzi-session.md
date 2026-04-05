@@ -100,6 +100,8 @@ Owner confirms → session continues or wraps
 2. 모든 명령 블록 끝에 진행 여부 명시:
    → "바로 붙여도 됩니다" (빌드 통과 + 리뷰 PASS 완료된 경우)
    → "리뷰 후 진행하세요 — 이유: ..." (다중 파일 수정 / 상태 변경 / 리뷰 미완료)
+   ※ 코드 설계 완료 후 블록 작성 직전, ①~④ 반드시 순서대로 체크할 것.
+      설계가 끝났다고 바로 블록을 작성하지 않는다.
 
 3. 빌드와 배포는 항상 한 블록으로:
    git add . && git commit -m "..." && npx vercel --prod
@@ -196,9 +198,22 @@ Owner confirms → session continues or wraps
 - **메모 아이템 태그 표시** ✅
   - PostItem.tsx: 업무/개인, 전체/나만/특정인 태그 추가
   - 날짜 표시 형식 할일과 통일
-- **메모 선택 삭제** 🔴 미완료
-  - Panel.tsx memoSelectedIds 코드 미적용
+- **메모 선택 삭제** 🔴 미완료 → 다음 세션으로 이월
   - CompletedTodo.tsx 잘못 수정됨 → 롤백 필요
+
+### 2026.04.05 — 현재 세션
+- **CompletedTodo.tsx 롤백** ✅
+  - git checkout -- src/components/CompletedTodo.tsx 완료
+  - 워킹트리 clean 확인
+- **메모 선택 삭제 구조 판단** ✅
+  - Panel.tsx memoSelectedIds 끌어올리기 불필요 판단
+  - PostList.tsx가 선택 상태를 자체 완결하는 구조로 충분
+- **PostList.tsx 선택삭제/전체삭제 try/catch/finally 적용** ✅
+  - rules.md R6.3 (loop async → try/catch/finally) 적용
+  - useToastStore import + addToast 에러 핸들링 추가
+- **워크플로우 개선** ✅
+  - 명령 블록 작성 원칙 2번에 체크 순서 강조 문구 추가
+  - 워크플로우 시각화 다이어그램 작성
 
 ---
 
@@ -206,12 +221,7 @@ Owner confirms → session continues or wraps
 
 ### Immediate (next session 최우선)
 ```
-0. 메모 선택 삭제 마무리
-   - 선행: git checkout src/components/CompletedTodo.tsx (잘못된 수정 롤백)
-   - Panel.tsx: memoSelectedIds state + 선택 버튼 추가
-   - PostList.tsx: selectMode/selectedIds/onSelectChange props 수신 + 체크박스
-
-1. 버그: 특정인 공개범위 hover tooltip 미작동
+1. 버그: 특정인 공개범위 hover tooltip 미작동 (처리된 것으로 추정 — 다음 세션 시작 시 확인)
    - useVisibilityTooltip 훅은 생성됐으나 실제 동작 안 됨
    - 원인: title 속성이 2px 선 div에 적용돼 hover 영역이 너무 좁음
    - 확인 필요 파일: PostItem.tsx, TodoItem.tsx
@@ -288,4 +298,4 @@ Reviewer 탭이 이미 열려 있으면 세션 중 재세팅 불필요.
 
 ---
 
-*Updated: 2026.04.05 (Memo UX Session)*
+*Updated: 2026.04.05 (워크플로우 개선 세션)*
