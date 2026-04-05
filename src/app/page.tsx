@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -86,7 +86,7 @@ export default function Home() {
 
       const occupiedByRealUser = !!(nextPanel.ownerEmail && users.some((u) => u.email === nextPanel.ownerEmail));
 
-      // 이미 다른 사용자가 배정된 패널은 선택 불가
+      // ?대? ?ㅻⅨ ?ъ슜?먭? 諛곗젙???⑤꼸? ?좏깮 遺덇?
       if (occupiedByRealUser && nextPanel.ownerEmail !== targetEmail) {
         return;
       }
@@ -99,7 +99,7 @@ export default function Home() {
       await updateUserPanel(targetUserId, nextPanel.id);
     } catch (err) {
       console.error(err);
-      setDeleteError('패널 배정 저장 중 오류가 발생했습니다.');
+      setDeleteError('?⑤꼸 諛곗젙 ???以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     }
   };
 
@@ -131,10 +131,10 @@ export default function Home() {
     setShowAddPanelModal(false);
   };
 
-  // 사이드바 메뉴
-  // 사이드바 메뉴 제거, 브랜드명/사용자 정보만 유지
+  // ?ъ씠?쒕컮 硫붾돱
+  // ?ъ씠?쒕컮 硫붾돱 ?쒓굅, 釉뚮옖?쒕챸/?ъ슜???뺣낫留??좎?
 
-  // 모바일 패널 오버레이 상태
+  // 紐⑤컮???⑤꼸 ?ㅻ쾭?덉씠 ?곹깭
   const [mobilePanelId, setMobilePanelId] = useState<string | null>(null);
 
   if (authLoading || panelLoading) {
@@ -146,7 +146,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex bg-[#FDF8F4]">
-      {/* 사이드바: 모바일에서 숨김 */}
+      {/* ?ъ씠?쒕컮: 紐⑤컮?쇱뿉???④? */}
       <aside
         className="flex-col justify-between min-h-screen w-[200px] bg-[#5C1F1F] py-8 px-6 hidden md:flex"
       >
@@ -155,7 +155,7 @@ export default function Home() {
             <span className="block text-white text-2xl font-extrabold tracking-[0.15em] uppercase text-center" style={{ letterSpacing: '0.15em' }}>HIZZI BOARD</span>
           </div>
         </div>
-        {/* 아바타+이름 */}
+        {/* ?꾨컮?+?대쫫 */}
         <div>
           <div className="flex items-center gap-3 px-2 mb-3">
             <div className="w-9 h-9 rounded-full bg-[#C17B6B] flex items-center justify-center text-white font-bold text-lg uppercase">
@@ -174,15 +174,15 @@ export default function Home() {
               onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.9)'}
               onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
             >
-              연차 사용 내역
+              ?곗감 ?ъ슜 ?댁뿭
             </button>
           )}
         </div>
       </aside>
 
-      {/* 메인 컨텐츠 */}
+      {/* 硫붿씤 而⑦뀗痢?*/}
       <main className="flex-1 flex flex-col min-h-screen">
-        {/* 헤더 */}
+        {/* ?ㅻ뜑 */}
         <header className="flex items-center px-8 border-b border-[#EDE5DC] bg-transparent py-6 min-h-[72px]">
           <div className="flex-1" />
           <div className="flex items-center gap-3">
@@ -191,14 +191,14 @@ export default function Home() {
                 onClick={() => setAdminMode((prev) => !prev)}
                 className="px-3 py-1 border border-[#C17B6B] text-[#C17B6B] bg-white rounded outline-none hover:bg-[#FDF8F4] text-xs uppercase tracking-widest transition"
               >
-                {adminMode ? '관리 모드 종료' : '관리 모드'}
+                {adminMode ? '愿由?紐⑤뱶 醫낅즺' : '愿由?紐⑤뱶'}
               </button>
             )}
             <button
               onClick={handleLogout}
               className="px-3 py-1 border border-[#C17B6B] text-[#C17B6B] bg-white rounded outline-none hover:bg-[#FDF8F4] text-xs uppercase tracking-widest transition"
             >
-              로그아웃
+              濡쒓렇?꾩썐
             </button>
           </div>
         </header>
@@ -217,8 +217,7 @@ export default function Home() {
                     background: adminTab === 'users' ? '#FDF8F4' : '#fff',
                   }}
                 >
-                  사용자 관리
-                </button>
+                  ?ъ슜??愿由?                </button>
                 <button
                   type="button"
                   onClick={() => setAdminTab('leave')}
@@ -229,8 +228,7 @@ export default function Home() {
                     background: adminTab === 'leave' ? '#FDF8F4' : '#fff',
                   }}
                 >
-                  연차 관리
-                </button>
+                  ?곗감 愿由?                </button>
                 <button
                   type="button"
                   onClick={() => setAdminTab('recovery')}
@@ -241,7 +239,7 @@ export default function Home() {
                     background: adminTab === 'recovery' ? '#FDF8F4' : '#fff',
                   }}
                 >
-                  계정 복구
+                  怨꾩젙 蹂듦뎄
                 </button>
               </div>
 
@@ -249,20 +247,20 @@ export default function Home() {
                 <>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-base font-semibold text-[#2C1810]">관리자 - 사용자 관리</h2>
-                      <span className="text-xs text-[#C17B6B]">미배정 {unassignedCount}명</span>
+                      <h2 className="text-base font-semibold text-[#2C1810]">愿由ъ옄 - ?ъ슜??愿由?</h2>
+                      <span className="text-xs text-[#C17B6B]">誘몃같??{unassignedCount}紐?</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowAddPanelModal(true)}
                       className="px-3 py-1 text-xs border border-[#2C1810] text-[#2C1810] bg-[#FDF8F4]"
                     >
-                      + 패널 추가
+                      + ?⑤꼸 異붽?
                     </button>
                   </div>
                   {deleteError && <p className="text-sm text-red-600 mb-2">{deleteError}</p>}
                   {userLoading ? (
-                    <p>로딩 중...</p>
+                    <p>濡쒕뵫 以?..</p>
                   ) : (
                     <div className="space-y-2">
                       {sortedUsers.map((u) => {
@@ -311,15 +309,14 @@ export default function Home() {
                                 <span className="text-[10px] text-gray-500">({u.email})</span>
                                 {isUnassigned && (
                                   <span className="text-[10px] px-2 py-0.5 border" style={{ color: '#C17B6B', borderColor: '#C17B6B', background: '#FFF5F2' }}>
-                                    패널 미배정
-                                  </span>
+                                    ?⑤꼸 誘몃같??                                  </span>
                                 )}
                               </p>
-                              <p className="text-xs text-gray-500">담당 패널: {userPanel?.name || '없음'}</p>
+                              <p className="text-xs text-gray-500">?대떦 ?⑤꼸: {userPanel?.name || '?놁쓬'}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               {u.role === 'admin' ? (
-                                <span className="text-xs text-[#9E8880] px-2">관리자 계정</span>
+                                <span className="text-xs text-[#9E8880] px-2">愿由ъ옄 怨꾩젙</span>
                               ) : (
                                 <>
                                   <select
@@ -327,16 +324,16 @@ export default function Home() {
                                     onChange={(e) => updateLeaveViewPermission(u.id, e.target.value as 'none' | 'self' | 'all')}
                                     className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[100px]"
                                   >
-                                    <option value="none">연차열람 없음</option>
-                                    <option value="self">본인만</option>
-                                    <option value="all">전체</option>
+                                    <option value="none">?곗감?대엺 ?놁쓬</option>
+                                    <option value="self">蹂몄씤留?</option>
+                                    <option value="all">?꾩껜</option>
                                   </select>
                                   <select
                                     value={userPanel?.id || ''}
                                     onChange={(e) => handleAssignPanel(u.id, u.email, e.target.value)}
                                     className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[140px]"
                                   >
-                                    <option value="">패널 없음</option>
+                                    <option value="">?⑤꼸 ?놁쓬</option>
                                   {panels
                                     .slice()
                                     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -345,7 +342,7 @@ export default function Home() {
                                       const occupiedByOther = hasRealOwner && p.ownerEmail !== u.email;
                                       return (
                                         <option key={p.id} value={p.id} disabled={occupiedByOther}>
-                                          {p.name}{occupiedByOther ? ' (배정됨)' : ''}
+                                          {p.name}{occupiedByOther ? ' (諛곗젙??' : ''}
                                         </option>
                                       );
                                     })}
@@ -356,7 +353,7 @@ export default function Home() {
                                     className="px-3 py-1 text-xs border text-white disabled:opacity-40"
                                     style={{ borderColor: '#C17B6B', background: '#C17B6B' }}
                                   >
-                                    삭제
+                                    ??젣
                                   </button>
                                 </>
                               )}
@@ -371,17 +368,17 @@ export default function Home() {
                 <LeaveManager />
               ) : (
                 <div>
-                  <h2 className="text-base font-semibold text-[#2C1810] mb-4">관리자 - 계정 복구</h2>
-                  <p className="text-xs text-[#9E8880] mb-4">Firebase Auth에는 있지만 Firestore users에 없는 고아 계정을 복구합니다.</p>
+                  <h2 className="text-base font-semibold text-[#2C1810] mb-4">愿由ъ옄 - 怨꾩젙 蹂듦뎄</h2>
+                  <p className="text-xs text-[#9E8880] mb-4">Firebase Auth?먮뒗 ?덉?留?Firestore users???녿뒗 怨좎븘 怨꾩젙??蹂듦뎄?⑸땲??</p>
                   
                   {recoveryMessage && (
-                    <div className={`text-sm p-3 rounded mb-4 ${recoveryMessage.includes('성공') || recoveryMessage.includes('Success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <div className={`text-sm p-3 rounded mb-4 ${recoveryMessage.includes('?깃났') || recoveryMessage.includes('Success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {recoveryMessage}
                     </div>
                   )}
                   
                   <div className="border border-[#EDE5DC] p-4 rounded bg-white">
-                    <label className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-2 block">이메일</label>
+                    <label className="text-[11px] text-[#9E8880] uppercase tracking-wider mb-2 block">?대찓??</label>
                     <div className="flex gap-2 mb-3">
                       <input
                         type="email"
@@ -396,28 +393,28 @@ export default function Home() {
                           try {
                             setRecoveryMessage('');
                             await recoveryOrphanAccount(recoveryEmail);
-                            setRecoveryMessage(`✓ ${recoveryEmail} 계정이 복구되었습니다.`);
+                            setRecoveryMessage(`??${recoveryEmail} 怨꾩젙??蹂듦뎄?섏뿀?듬땲??`);
                             setRecoveryEmail('');
                           } catch (err: any) {
-                            setRecoveryMessage(`✕ 오류: ${err?.message || '계정 복구 실패'}`);
+                            setRecoveryMessage(`???ㅻ쪟: ${err?.message || '怨꾩젙 蹂듦뎄 ?ㅽ뙣'}`);
                           }
                         }}
                         className="px-4 py-1 text-xs bg-[#2C1810] text-[#FDF8F4] border border-[#2C1810] rounded"
                       >
-                        복구
+                        蹂듦뎄
                       </button>
                     </div>
-                    <p className="text-[10px] text-[#9E8880]">• 해당 이메일이 이미 Firestore에 있으면 복구할 수 없습니다.</p>
-                    <p className="text-[10px] text-[#9E8880]">• 복구 후 자동으로 빈 패널이 배정됩니다. (관리자 계정 제외)</p>
+                    <p className="text-[10px] text-[#9E8880]">???대떦 ?대찓?쇱씠 ?대? Firestore???덉쑝硫?蹂듦뎄?????놁뒿?덈떎.</p>
+                    <p className="text-[10px] text-[#9E8880]">??蹂듦뎄 ???먮룞?쇰줈 鍮??⑤꼸??諛곗젙?⑸땲?? (愿由ъ옄 怨꾩젙 ?쒖쇅)</p>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* 데스크탑: 3x2 그리드, 모바일: 3열 미니카드 */}
+          {/* ?곗뒪?ы깙: 3x2 洹몃━?? 紐⑤컮?? 3??誘몃땲移대뱶 */}
           <div>
-            {/* 데스크탑 */}
+            {/* ?곗뒪?ы깙 */}
             <div className="hidden md:grid grid-cols-3 gap-6 auto-rows-fr">
               {panels
                 .slice()
@@ -435,7 +432,7 @@ export default function Home() {
                   </div>
                 ))}
             </div>
-            {/* 모바일: 3열 미니카드 */}
+            {/* 紐⑤컮?? 3??誘몃땲移대뱶 */}
             <div className="grid grid-cols-3 gap-2 md:hidden">
               {panels
                 .slice()
@@ -450,7 +447,7 @@ export default function Home() {
                   </button>
                 ))}
             </div>
-            {/* 모바일 오버레이 */}
+            {/* 紐⑤컮???ㅻ쾭?덉씠 */}
             {mobilePanelId && (() => {
               const activePanel = panels.find(p => p.id === mobilePanelId);
               if (!activePanel) return null;
@@ -479,11 +476,11 @@ export default function Home() {
               <span className="flex-1">{toast.message}</span>
               <button
                 className="ml-2 text-white text-lg hover:text-red-300 focus:outline-none"
-                aria-label="알림 닫기"
+                aria-label="?뚮┝ ?リ린"
                 onClick={() => useToastStore.getState().removeToast(toast.id)}
                 tabIndex={0}
               >
-                ×
+                횞
               </button>
             </div>
           ))}
@@ -493,17 +490,17 @@ export default function Home() {
       {showAddPanelModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowAddPanelModal(false)}>
           <div className="bg-white border border-[#EDE5DC] w-full max-w-sm p-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xs font-semibold text-[#2C1810] uppercase tracking-widest mb-3">패널 추가</h3>
+            <h3 className="text-xs font-semibold text-[#2C1810] uppercase tracking-widest mb-3">?⑤꼸 異붽?</h3>
             <input
               value={newPanelName}
               onChange={(e) => setNewPanelName(e.target.value)}
-              placeholder="패널 이름"
+              placeholder="?⑤꼸 ?대쫫"
               className="w-full border-b border-[#EDE5DC] bg-transparent outline-none text-sm text-[#2C1810] mb-4"
               autoFocus
             />
             <div className="flex justify-between">
-              <button type="button" onClick={() => setShowAddPanelModal(false)} className="text-xs text-[#9E8880]">취소</button>
-              <button type="button" onClick={handleAddPanel} className="px-3 py-1 text-xs bg-[#2C1810] text-[#FDF8F4]">추가</button>
+              <button type="button" onClick={() => setShowAddPanelModal(false)} className="text-xs text-[#9E8880]">痍⑥냼</button>
+              <button type="button" onClick={handleAddPanel} className="px-3 py-1 text-xs bg-[#2C1810] text-[#FDF8F4]">異붽?</button>
             </div>
           </div>
         </div>
@@ -515,10 +512,10 @@ export default function Home() {
         return (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setDeleteConfirmId(null)}>
             <div className="bg-white border border-[#EDE5DC] w-full max-w-sm p-4 rounded" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-sm font-semibold text-[#2C1810] mb-3">계정 삭제</h3>
+              <h3 className="text-sm font-semibold text-[#2C1810] mb-3">怨꾩젙 ??젣</h3>
               <p className="text-xs text-[#9E8880] mb-4">
-                정말 <strong>{targetUser.name}</strong>({targetUser.email}) 계정을 삭제하시겠습니까?<br/>
-                이 작업은 되돌릴 수 없습니다.
+                ?뺣쭚 <strong>{targetUser.name}</strong>({targetUser.email}) 怨꾩젙????젣?섏떆寃좎뒿?덇퉴?<br/>
+                ???묒뾽? ?섎룎由????놁뒿?덈떎.
               </p>
               <div className="flex justify-end gap-2">
                 <button
@@ -526,7 +523,7 @@ export default function Home() {
                   onClick={() => setDeleteConfirmId(null)}
                   className="px-3 py-1 text-xs border border-[#9E8880] text-[#9E8880]"
                 >
-                  취소
+                  痍⑥냼
                 </button>
                 <button
                   type="button"
@@ -539,13 +536,13 @@ export default function Home() {
                       setDeleteConfirmId(null);
                     } catch (err: any) {
                       console.error(err);
-                      setDeleteError('삭제 중 오류가 발생했습니다.');
+                      setDeleteError('??젣 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
                     }
                   }}
                   className="px-3 py-1 text-xs text-white"
                   style={{ borderColor: '#C17B6B', background: '#C17B6B', border: '1px solid #C17B6B' }}
                 >
-                  삭제
+                  ??젣
                 </button>
               </div>
             </div>
