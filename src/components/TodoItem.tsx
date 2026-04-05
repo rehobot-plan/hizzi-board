@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/userStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 import { useEscClose } from '@/hooks/useEscClose';
+import { useVisibilityTooltip } from '@/hooks/useVisibilityTooltip';
 
 interface TodoItemProps {
   post: Post;
@@ -39,6 +40,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const { completeRequest } = useTodoRequestStore();
   const { users } = useUserStore();
   const nonAdminUsers = users.filter(u => u.role !== 'admin' && u.email !== post.author);
+  const { isSpecific, tooltipText } = useVisibilityTooltip(post.visibleTo ?? [], users);
   const [checking, setChecking] = useState(false);
   const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -228,7 +230,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           cursor: 'default',
         }}
       >
-        <div style={{
+        <div title={isSpecific ? tooltipText : undefined} style={{
           position: 'absolute', left: 0, top: 0, bottom: 0,
           width: 2,
           background: (() => {
@@ -239,7 +241,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             return '#378ADD';
           })(),
           transition: 'background 0.15s ease',
-          pointerEvents: 'none',
+          pointerEvents: isSpecific ? 'auto' : 'none',
         }} />
 
         {canEdit && (

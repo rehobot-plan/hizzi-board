@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
+import { useVisibilityTooltip } from '@/hooks/useVisibilityTooltip';
 
 interface PostItemProps {
   post: Post;
@@ -42,6 +43,7 @@ export default function PostItem({ post }: PostItemProps) {
   const { user } = useAuthStore();
   const { updatePost, deletePost } = usePostStore();
   const { users } = useUserStore();
+  const { isSpecific, tooltipText } = useVisibilityTooltip(post.visibleTo ?? [], users);
 
   const canEdit = user && (user.email === post.author || user.role === 'admin');
 
@@ -171,7 +173,7 @@ export default function PostItem({ post }: PostItemProps) {
         style={{ padding: '12px 0', borderBottom: '1px solid #EDE5DC', position: 'relative', cursor: 'default' }}
       >
         {/* hover 배경 레이어 */}
-        <div style={{ position: 'absolute', inset: 0, background: isHovered ? '#FDF8F4' : 'transparent', transition: 'background 0.15s ease', pointerEvents: 'none', zIndex: 0 }} />
+        <div title={isSpecific ? tooltipText : undefined} style={{ position: 'absolute', inset: 0, background: isHovered ? '#FDF8F4' : 'transparent', transition: 'background 0.15s ease', pointerEvents: isSpecific ? 'auto' : 'none', zIndex: 0 }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
           {canEdit && (
