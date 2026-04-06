@@ -126,6 +126,28 @@ export default function PostList({ posts, activeCategory, panelId, canEdit, sele
           </span>
           <button
             onClick={async () => {
+              if (activePosts.length === 0) return;
+              try {
+                for (const p of activePosts) await deletePost(p.id);
+              } catch (e) {
+                console.error(e);
+                addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+              } finally {
+                setSelectedIds([]);
+                onSelectModeChange?.(false);
+              }
+            }}
+            style={{
+              fontSize: 10, padding: '2px 10px',
+              color: '#C17B6B', background: 'none',
+              border: '1px solid #C17B6B',
+              cursor: 'pointer', transition: 'all 0.15s ease',
+            }}
+          >
+            전체 삭제 ({activePosts.length})
+          </button>
+          <button
+            onClick={async () => {
               if (selectedIds.length === 0) return;
               try {
                 for (const id of selectedIds) await deletePost(id);
