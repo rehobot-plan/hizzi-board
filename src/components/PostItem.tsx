@@ -170,10 +170,11 @@ export default function PostItem({ post }: PostItemProps) {
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        title={isSpecific ? tooltipText : undefined}
         style={{ padding: '12px 0', borderBottom: '1px solid #EDE5DC', position: 'relative', cursor: 'default' }}
       >
         {/* hover 배경 레이어 */}
-        <div title={isSpecific ? tooltipText : undefined} style={{ position: 'absolute', inset: 0, background: isHovered ? '#FDF8F4' : 'transparent', transition: 'background 0.15s ease', pointerEvents: isSpecific ? 'auto' : 'none', zIndex: 0 }} />
+        <div style={{ position: 'absolute', inset: 0, background: isHovered ? '#FDF8F4' : 'transparent', transition: 'background 0.15s ease', pointerEvents: 'none', zIndex: 0 }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
           {canEdit && (

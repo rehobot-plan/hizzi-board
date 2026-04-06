@@ -141,11 +141,25 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
         </div>
       )}
 
-      {/* 팀 표시 */}
+      {/* 팀 표시 + 팀원 목록 */}
       {r.teamLabel && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6 }}>
-          <span style={{ fontSize: 9, padding: '1px 6px', background: '#F5F0EE', color: '#9E8880', letterSpacing: '0.06em' }}>TEAM</span>
-          <span style={{ fontSize: 11, color: '#9E8880' }}>{r.teamLabel}</span>
+        <div style={{ marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <span style={{ fontSize: 9, padding: '1px 6px', background: '#F5F0EE', color: '#9E8880', letterSpacing: '0.06em' }}>TEAM</span>
+            <span style={{ fontSize: 11, color: '#9E8880' }}>{r.teamLabel}</span>
+          </div>
+          {r.visibleTo && r.visibleTo.length > 0 && (
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {r.visibleTo.map(email => {
+                const u = getUser(email);
+                return (
+                  <span key={email} style={{ fontSize: 9, padding: '1px 6px', background: '#FCEEE9', color: '#A0503A', border: '0.5px solid #C17B6B', letterSpacing: '0.04em' }}>
+                    {u?.name || email.split('@')[0]}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

@@ -60,7 +60,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       : 'specific'
   );
   const [editSpecificUsers, setEditSpecificUsers] = useState<string[]>(
-    post.visibleTo && post.visibleTo.length > 1 ? post.visibleTo : []
+    post.visibleTo?.filter(e => e !== post.author) ?? []
   );
   const [editTaskType, setEditTaskType] = useState<'work' | 'personal'>(post.taskType || 'work');
   const [newFile, setNewFile] = useState<File | null>(null);
@@ -128,7 +128,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         : post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? 'me'
         : 'specific'
     );
-    setEditSpecificUsers(post.visibleTo && post.visibleTo.length > 1 ? post.visibleTo : []);
+    setEditSpecificUsers(post.visibleTo?.filter(e => e !== post.author) ?? []);
     setEditTaskType(post.taskType || 'work');
     setNewFile(null);
     setShowMenu(false);
@@ -215,6 +215,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={undefined}
+        title={isSpecific ? tooltipText : undefined}
         style={{
           display: 'flex',
           alignItems: 'flex-start',
@@ -230,7 +231,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           cursor: 'default',
         }}
       >
-        <div title={isSpecific ? tooltipText : undefined} style={{
+        <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0,
           width: 2,
           background: (() => {
@@ -268,7 +269,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
               const v = post.visibleTo;
               const isAll = !v || v.length === 0;
               const isSpec = v && v.length > 1;
-              const label = isAll ? '전체' : isSpec ? '지정' : '나만';
+              const label = isAll ? '전체' : isSpec ? '특정인' : '나만';
               const color = isAll ? '#3B6D11' : isSpec ? '#854F0B' : '#185FA5';
               const bg = isAll ? 'rgba(99,153,34,0.15)' : isSpec ? 'rgba(186,117,23,0.15)' : 'rgba(55,138,221,0.15)';
               const border = isAll ? '0.5px solid #639922' : isSpec ? '0.5px solid #BA7517' : '0.5px solid #378ADD';
