@@ -311,13 +311,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             })()}
             {post.requestFrom && (
               <>
-                <div style={{
-                  position: 'absolute', left: 0, top: 0, bottom: 0,
-                  width: 2,
-                  background: '#C17B6B',
-                  pointerEvents: 'none',
-                  zIndex: 1,
-                }} />
                 <span style={{
                   fontSize: 9, padding: '1px 6px',
                   background: '#FCEEE9', color: '#A0503A',
