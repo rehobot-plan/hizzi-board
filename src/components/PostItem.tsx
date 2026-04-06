@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef } from 'react';
 import { Post, usePostStore } from '@/store/postStore';
@@ -6,42 +6,65 @@ import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
-import { useVisibilityTooltip } from '@/hooks/useVisibilityTooltip';
+import { useEscClose } from '@/hooks/useEscClose';
+import { useToastStore } from '@/store/toastStore';
 
 interface PostItemProps {
   post: Post;
 }
 
+type VisibilityType = 'all' | 'me' | 'specific';
+
 export default function PostItem({ post }: PostItemProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [editContent, setEditContent] = useState(post.content);
-  const getInitialEditVisibility = (): 'all' | 'me' | 'specific' => {
+  const { user } = useAuthStore();
+  const { users } = useUserStore();
+  const { updatePost, deletePost } = usePostStore();
+  const { addToast } = useToastStore();
+
+  const canEdit = !!(user && (user.email === post.author || user.role === 'admin'));
+  const myEmail = user?.email ?? '';
+  const nonAdminUsers = users.filter(u => u.role !== 'admin' && u.email !== post.author);
+
+  const getInitialVisibility = (): VisibilityType => {
     if (!post.visibleTo || post.visibleTo.length === 0) return 'all';
     if (post.visibleTo.length === 1 && post.visibleTo[0] === post.author) return 'me';
     return 'specific';
   };
-  const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(getInitialEditVisibility());
+
+  const [isHovered, setIsHovered] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState(post.content);
+  const [editContent, setEditContent] = useState(post.content);
+  const [editTaskType, setEditTaskType] = useState<'work' | 'personal'>(post.taskType || 'work');
+  const [editVisibility, setEditVisibility] = useState<VisibilityType>(getInitialVisibility());
   const [editSelectedUsers, setEditSelectedUsers] = useState<string[]>(
     post.visibleTo?.filter(e => e !== post.author) ?? []
   );
   const [newFile, setNewFile] = useState<File | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
 
-  const btnRef = useRef<HTMLButtonElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user } = useAuthStore();
-  const { updatePost, deletePost } = usePostStore();
+
+  useEscClose(() => setIsEditOpen(false), isEditOpen);
+
+  const getLeftBorderColor = () => {
+    if (post.taskType === 'personal') return '#7B5EA7';
+    return '#C17B6B';
+  };
+
+  const formatDate = (date: Date) => {
+    if (!date) return '';
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' });
+  };
+
   const handleStar = async () => {
     if (!canEdit) return;
     try {
@@ -51,47 +74,22 @@ export default function PostItem({ post }: PostItemProps) {
       });
     } catch (e) {
       console.error(e);
-      const { useToastStore } = await import('@/store/toastStore');
-      useToastStore.getState().addToast({ message: '저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+      addToast({ message: '저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     }
-  };
-  const { users } = useUserStore();
-  const { isSpecific, tooltipText } = useVisibilityTooltip(post.visibleTo ?? [], users);
-
-  const canEdit = user && (user.email === post.author || user.role === 'admin');
-
-  const getAuthorName = (email: string) => {
-    const u = users.find(u => u.email === email);
-    return u?.name || email?.split('@')[0] || email;
-  };
-
-  const formatDate = (date: Date) => {
-    if (!date) return '';
-    const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' });
-  };
-
-  const handleMenuOpen = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!btnRef.current) return;
-    const rect = btnRef.current.getBoundingClientRect();
-    setMenuPos({ top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right) });
-    setShowMenu(true);
   };
 
   const handleDelete = async () => {
-    setIsDeleting(true);
+    if (!canEdit) return;
     try {
       await deletePost(post.id);
-      setIsDeleteOpen(false);
     } catch (e) {
       console.error(e);
-    } finally {
-      setIsDeleting(false);
+      addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     }
   };
 
-  const handleEdit = async () => {
+  const handleEditSave = async () => {
+    if (!editTitle.trim()) return;
     setIsUpdating(true);
     try {
       let attachment = post.attachment;
@@ -103,181 +101,303 @@ export default function PostItem({ post }: PostItemProps) {
         attachment = { type: post.attachment.type, url, name: newFile.name };
         setUploading(false);
       }
+      const visibleTo =
+        editVisibility === 'all' ? [] :
+        editVisibility === 'me' ? [post.author] :
+        [post.author, ...editSelectedUsers.filter(e => e !== post.author)];
+
       await updatePost(post.id, {
-        content: editContent,
-        visibleTo: editVisibility === 'all'
-          ? []
-          : editVisibility === 'me'
-          ? [post.author]
-          : [post.author, ...editSelectedUsers.filter(e => e !== post.author)],
+        content: editTitle.trim(),
+        taskType: editTaskType,
+        visibleTo,
         ...(attachment ? { attachment } : {}),
       });
       setIsEditOpen(false);
     } catch (e) {
       console.error(e);
+      addToast({ message: '저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setIsUpdating(false);
       setUploading(false);
     }
   };
 
+  const openEdit = () => {
+    setEditTitle(post.content);
+    setEditContent(post.content);
+    setEditTaskType(post.taskType || 'work');
+    setEditVisibility(getInitialVisibility());
+    setEditSelectedUsers(post.visibleTo?.filter(e => e !== post.author) ?? []);
+    setNewFile(null);
+    setIsEditingTitle(false);
+    setIsEditOpen(true);
+  };
+
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     setZoom(prev => Math.min(5, Math.max(0.5, prev - e.deltaY * 0.001)));
   };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - dragPos.x, y: e.clientY - dragPos.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setDragPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
-
+  const handleMouseDown = (e: React.MouseEvent) => { setIsDragging(true); setDragStart({ x: e.clientX - dragPos.x, y: e.clientY - dragPos.y }); };
+  const handleMouseMove = (e: React.MouseEvent) => { if (!isDragging) return; setDragPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }); };
   const handleMouseUp = () => setIsDragging(false);
+
+  const sectionLabel = { fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' as const, color: '#C4B8B0', textTransform: 'uppercase' as const, marginBottom: 7 };
+  const fieldSection = { padding: '12px 20px', borderBottom: '1px solid #EDE5DC' };
+
+  const taskBtnStyle = (t: 'work' | 'personal') => {
+    const isOn = editTaskType === t;
+    if (t === 'work') return { fontSize: 11, padding: '5px 13px', borderRadius: 3, cursor: 'pointer' as const, border: `1px solid ${isOn ? '#C17B6B' : 'rgba(193,123,107,0.35)'}`, color: isOn ? '#C17B6B' : 'rgba(193,123,107,0.45)', background: isOn ? '#FFF5F2' : 'transparent', transition: 'all 0.15s ease' };
+    return { fontSize: 11, padding: '5px 13px', borderRadius: 3, cursor: 'pointer' as const, border: `1px solid ${isOn ? '#7B5EA7' : 'rgba(123,94,167,0.35)'}`, color: isOn ? '#7B5EA7' : 'rgba(123,94,167,0.45)', background: isOn ? '#F0ECF5' : 'transparent', transition: 'all 0.15s ease' };
+  };
+
+  const visBtnStyle = (v: VisibilityType) => {
+    const isOn = editVisibility === v;
+    const map = {
+      all:      { on: '#3B6D11', border: '#639922', offC: 'rgba(59,109,17,0.45)',  offB: 'rgba(99,153,34,0.35)' },
+      me:       { on: '#185FA5', border: '#378ADD', offC: 'rgba(24,95,165,0.45)',  offB: 'rgba(55,138,221,0.35)' },
+      specific: { on: '#854F0B', border: '#BA7517', offC: 'rgba(133,79,11,0.45)', offB: 'rgba(186,117,23,0.35)' },
+    };
+    const c = map[v];
+    return { fontSize: 11, padding: '5px 13px', borderRadius: 3, cursor: 'pointer' as const, border: `1px solid ${isOn ? c.border : c.offB}`, color: isOn ? c.on : c.offC, background: 'none', transition: 'all 0.15s ease' };
+  };
+
+  const statusTagVis = () => {
+    const map = {
+      all:      { color: '#3B6D11', border: '1px solid #639922' },
+      me:       { color: '#185FA5', border: '1px solid #378ADD' },
+      specific: { color: '#854F0B', border: '1px solid #BA7517' },
+    };
+    return { fontSize: 10, padding: '2px 7px', borderRadius: 3, background: 'none', ...map[editVisibility] };
+  };
 
   const renderAttachment = () => {
     if (!post.attachment) return null;
     const { type, url, name } = post.attachment;
-
-    if (type === 'image') {
-      return (
-        <div style={{ marginTop: 8 }}>
-          <img src={url} alt="첨부 이미지"
-            style={{ maxWidth: '100%', height: 'auto', cursor: 'pointer', display: 'block' }}
-            onClick={() => setIsModalOpen(true)} />
-        </div>
-      );
-    }
-    if (type === 'file') {
-      return (
-        <div style={{ marginTop: 8 }}>
-          <a href={url} target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
-              <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
-            </svg>
-            {name || url.split('/').pop()?.split('?')[0] || '파일'}
-          </a>
-        </div>
-      );
-    }
-    if (type === 'link') {
-      return (
-        <div style={{ marginTop: 8 }}>
-          <a href={url} target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>
-            {url}
-          </a>
-        </div>
-      );
-    }
+    if (type === 'image') return (
+      <div style={{ marginTop: 8 }}>
+        <img src={url} alt="첨부 이미지" style={{ maxWidth: '100%', height: 'auto', cursor: 'pointer', display: 'block' }} onClick={() => setIsModalOpen(true)} />
+      </div>
+    );
+    if (type === 'file') return (
+      <div style={{ marginTop: 8 }}>
+        <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/><path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/></svg>
+          {name || url.split('/').pop()?.split('?')[0] || '파일'}
+        </a>
+      </div>
+    );
+    if (type === 'link') return (
+      <div style={{ marginTop: 8 }}>
+        <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>{url}</a>
+      </div>
+    );
     return null;
   };
 
+  const visLabel = !post.visibleTo || post.visibleTo.length === 0 ? '전체' : post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? '나만' : '특정';
+  const visColor = visLabel === '전체' ? '#639922' : visLabel === '나만' ? '#378ADD' : '#BA7517';
+  const visBorder = visLabel === '전체' ? '#639922' : visLabel === '나만' ? '#378ADD' : '#BA7517';
+
   return (
     <>
+      {/* 아이템 */}
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        title={isSpecific ? tooltipText : undefined}
-        style={{ padding: '12px 0', borderBottom: '1px solid #EDE5DC', position: 'relative', cursor: 'default' }}
+        style={{ position: 'relative', padding: '10px 20px 10px 28px', margin: '0 -20px', borderBottom: '1px solid #EDE5DC', display: 'flex', alignItems: 'flex-start', gap: 8, background: isHovered ? '#FDF8F4' : '#fff', transition: 'background 0.15s ease' }}
       >
-        {/* hover 배경 레이어 */}
-        <div style={{ position: 'absolute', inset: 0, background: isHovered ? '#FDF8F4' : 'transparent', transition: 'background 0.15s ease', pointerEvents: 'none', zIndex: 0 }} />
+        {/* 좌측 2px 컬러 띠 */}
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: getLeftBorderColor(), pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          {canEdit && (
-            <button
-              onClick={handleStar}
-              style={{
-                position: 'absolute', top: -2, left: 0,
-                background: 'none', border: 'none', cursor: 'pointer',
-                padding: '4px 4px', zIndex: 10,
-                opacity: post.starred ? 1 : 0.25,
-                transition: 'opacity 0.15s ease',
-              }}
-              onMouseEnter={e => { if (!post.starred) e.currentTarget.style.opacity = '0.6'; }}
-              onMouseLeave={e => { if (!post.starred) e.currentTarget.style.opacity = '0.25'; }}>
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1l1.8 3.6L13 5.3l-3 2.9.7 4.1L7 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L7 1z"
-                  stroke="#C17B6B" strokeWidth="1.2" fill={post.starred ? '#C17B6B' : 'none'} />
-              </svg>
-            </button>
-          )}
-          {canEdit && (
-            <button ref={btnRef} onClick={handleMenuOpen}
-              style={{ position: 'absolute', top: -2, right: 0, background: 'none', border: 'none', cursor: 'pointer', color: isHovered ? '#9E8880' : 'transparent', fontSize: 16, padding: '4px 8px', lineHeight: 1, transition: 'color 0.15s ease', zIndex: 10 }}>
-              ···
-            </button>
-          )}
-          <p style={{ fontSize: 13, color: isHovered ? '#7A2828' : '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', transition: 'color 0.15s ease', paddingRight: 24, paddingLeft: canEdit ? 20 : 0 }}>
+        {/* 클릭 레이어 */}
+        {canEdit && (
+          <div onClick={openEdit} style={{ position: 'absolute', left: 46, top: 0, right: 0, bottom: 0, zIndex: 1, cursor: 'pointer' }} />
+        )}
+
+        {/* 별 */}
+        {canEdit && (
+          <button onClick={e => { e.stopPropagation(); handleStar(); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', opacity: post.starred ? 1 : 0.25, transition: 'opacity 0.15s ease', position: 'relative', zIndex: 2 }}
+            onMouseEnter={e => { if (!post.starred) e.currentTarget.style.opacity = '0.6'; }}
+            onMouseLeave={e => { if (!post.starred) e.currentTarget.style.opacity = '0.25'; }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1l1.8 3.6L13 5.3l-3 2.9.7 4.1L7 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L7 1z" stroke="#C17B6B" strokeWidth="1.2" fill={post.starred ? '#C17B6B' : 'none'} />
+            </svg>
+          </button>
+        )}
+
+        {/* 본문 */}
+        <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 0 }}>
+          <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', paddingRight: canEdit ? 20 : 0 }}>
             {post.content}
           </p>
           {renderAttachment()}
-          <div style={{ marginTop: 4, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ marginTop: 4, display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
             {post.taskType && (
-              <span style={{ fontSize: 9, padding: '1px 5px', background: 'none', color: post.taskType === 'work' ? '#C17B6B' : '#9E8880', border: post.taskType === 'work' ? '1px solid #C17B6B' : '1px solid #9E8880' }}>
+              <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 3, background: post.taskType === 'personal' ? '#F0ECF5' : '#FFF5F2', color: post.taskType === 'personal' ? '#7B5EA7' : '#C17B6B', border: `1px solid ${post.taskType === 'personal' ? '#7B5EA7' : '#C17B6B'}` }}>
                 {post.taskType === 'work' ? '업무' : '개인'}
               </span>
             )}
-            {(() => {
-              const label =
-                !post.visibleTo || post.visibleTo.length === 0 ? '전체' :
-                post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? '나만' : '특정';
-              const color = label === '전체' ? '#639922' : label === '나만' ? '#378ADD' : '#BA7517';
-              return (
-                <span style={{ fontSize: 9, padding: '1px 5px', color, border: `1px solid ${color}` }}>
-                  {label}
-                </span>
-              );
-            })()}
+            <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 3, color: visColor, border: `1px solid ${visBorder}`, background: 'none' }}>
+              {visLabel}
+            </span>
             <span style={{ fontSize: 9, color: '#C4B8B0', marginLeft: 'auto' }}>{formatDate(post.createdAt)}</span>
           </div>
         </div>
+
+        {/* 휴지통 */}
+        {canEdit && (
+          <span onClick={e => { e.stopPropagation(); handleDelete(); }}
+            style={{ position: 'relative', zIndex: 2, cursor: 'pointer', flexShrink: 0, opacity: 0.2, transition: 'opacity 0.15s', display: 'flex', alignItems: 'center', marginTop: 2 }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '0.2')}>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <path d="M2 4h10M5 4V2.5h4V4M5.5 6v5M8.5 6v5M3 4l.7 7.5h6.6L11 4" stroke="#C17B6B" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+        )}
       </div>
 
-      {/* ··· 메뉴 */}
-      {showMenu && canEdit && (
-        <div style={{ position: 'fixed', top: menuPos.top, right: menuPos.right, background: '#fff', border: '1px solid #EDE5DC', zIndex: 100, minWidth: 100, boxShadow: '0 4px 12px rgba(44,20,16,0.08)' }}
-          onMouseLeave={() => setShowMenu(false)}>
-          <button
-            onClick={() => { setShowMenu(false); setEditContent(post.content); setEditVisibility(getInitialEditVisibility()); setEditSelectedUsers(post.visibleTo?.filter(e => e !== post.author) ?? []); setNewFile(null); setIsEditOpen(true); }}
-            style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-            수정
-          </button>
-          <button
-            onClick={() => { setShowMenu(false); setIsDeleteOpen(true); }}
-            style={{ display: 'block', width: '100%', padding: '8px 14px', textAlign: 'left', fontSize: 12, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-            삭제
-          </button>
-        </div>
-      )}
+      {/* 수정 팝업 — 13-13 패턴 */}
+      {isEditOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setIsEditOpen(false)}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', borderRadius: 6, width: '100%', maxWidth: 480, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+            onClick={e => e.stopPropagation()}>
 
-      {/* 삭제 모달 */}
-      {isDeleteOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 360, zIndex: 1001 }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 삭제</span>
+            {/* 헤더 */}
+            <div style={{ background: '#5C1F1F', padding: '16px 20px 14px', flexShrink: 0 }}>
+              {isEditingTitle ? (
+                <input value={editTitle} onChange={e => setEditTitle(e.target.value)}
+                  onBlur={() => setIsEditingTitle(false)}
+                  onKeyDown={e => { if (e.key === 'Enter') setIsEditingTitle(false); }}
+                  autoFocus
+                  style={{ fontSize: 15, fontWeight: 700, color: '#FDF8F4', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(253,248,244,0.4)', outline: 'none', width: '100%', fontFamily: 'inherit', padding: '2px 0' }} />
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4 }}>{editTitle}</span>
+                  {canEdit && (
+                    <span onClick={() => setIsEditingTitle(true)}
+                      style={{ opacity: 0.35, cursor: 'pointer', transition: 'opacity 0.15s', display: 'flex', alignItems: 'center' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '0.35')}>
+                      <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
+                        <path d="M8.5 1.5l2 2L3 11H1v-2L8.5 1.5z" stroke="#FDF8F4" strokeWidth="1.2" strokeLinejoin="round"/>
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: 'rgba(253,248,244,0.45)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.5 }}><rect x="1" y="2" width="10" height="9" rx="1.5" stroke="#FDF8F4" strokeWidth="1"/><path d="M1 5h10M4 1v2M8 1v2" stroke="#FDF8F4" strokeWidth="1" strokeLinecap="round"/></svg>
+                {formatDate(post.createdAt)}
+              </div>
             </div>
-            <div style={{ padding: '20px' }}>
-              <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6 }}>이 게시물을 삭제할까요?</p>
-              <p style={{ fontSize: 11, color: '#9E8880', marginTop: 4 }}>삭제된 게시물은 복구할 수 없습니다.</p>
+
+            {/* 상태바 */}
+            <div style={{ background: '#FDF8F4', borderBottom: '1px solid #EDE5DC', padding: '7px 20px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#9E8880', paddingRight: 10, borderRight: '1px solid #D5C9C0', marginRight: 10 }}>메모</span>
+              <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: editTaskType === 'personal' ? '#F0ECF5' : '#FFF5F2', color: editTaskType === 'personal' ? '#7B5EA7' : '#C17B6B', border: `1px solid ${editTaskType === 'personal' ? '#7B5EA7' : '#C17B6B'}` }}>
+                {editTaskType === 'work' ? '업무' : '개인'}
+              </span>
+              <span style={{ ...statusTagVis(), marginLeft: 4 }}>
+                {editVisibility === 'all' ? '전체' : editVisibility === 'me' ? '나만' : '특정'}
+              </span>
             </div>
-            <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
-              <button onClick={() => setIsDeleteOpen(false)}
-                style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
-              <button onClick={handleDelete} disabled={isDeleting}
-                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#C17B6B', color: '#FDF8F4', border: 'none', cursor: isDeleting ? 'not-allowed' : 'pointer' }}>
-                {isDeleting ? '삭제 중...' : '삭제'}
+
+            {/* 바디 */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>내용</div>
+                <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4}
+                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
+              </div>
+
+              {/* 첨부파일 */}
+              <div style={fieldSection}>
+                <div style={sectionLabel}>첨부파일</div>
+                {post.attachment ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: '0.5px solid #EDE5DC', background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="1" width="8" height="10" rx="1" stroke="#9E8880" strokeWidth="1"/><path d="M4 4h4M4 6.5h4M4 9h2" stroke="#9E8880" strokeWidth="0.8" strokeLinecap="round"/></svg>
+                      <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{post.attachment.name || '첨부파일'}</span>
+                      <a href={post.attachment.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#3B6D11', border: '1px solid #639922', padding: '1px 7px', borderRadius: 2, textDecoration: 'none' }}>열기</a>
+                    </div>
+                    <div onClick={() => fileInputRef.current?.click()}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '0.5px dashed #C17B6B', color: '#C17B6B', fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
+                      파일 교체
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 12, color: '#C4B8B0', marginBottom: 6 }}>없음</div>
+                    <div onClick={() => fileInputRef.current?.click()}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '0.5px dashed #C17B6B', color: '#C17B6B', fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
+                      + 파일 추가
+                    </div>
+                  </>
+                )}
+                <input ref={fileInputRef} type="file"
+                  accept={post.attachment?.type === 'image' ? 'image/*' : '*'}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) setNewFile(f); }}
+                  style={{ display: 'none' }} />
+                {newFile && <div style={{ fontSize: 11, color: '#C17B6B', marginTop: 4 }}>선택됨: {newFile.name}</div>}
+              </div>
+
+              {/* 구분선 */}
+              <div style={{ borderTop: '1px solid #EDE5DC', margin: '0 20px' }} />
+
+              {/* 구분 */}
+              <div style={{ ...fieldSection, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 28, flexShrink: 0 }}>구분</div>
+                <div style={{ display: 'flex', gap: 5 }}>
+                  {(['work', 'personal'] as const).map(t => (
+                    <div key={t} onClick={() => setEditTaskType(t)} style={taskBtnStyle(t)}>
+                      {t === 'work' ? '업무' : '개인'}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 보이는 범위 */}
+              <div style={fieldSection}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 52, flexShrink: 0 }}>보이는 범위</div>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    {(['all', 'me', 'specific'] as VisibilityType[]).map(v => (
+                      <div key={v} onClick={() => setEditVisibility(v)} style={visBtnStyle(v)}>
+                        {v === 'all' ? '전체' : v === 'me' ? '나만' : '특정'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {editVisibility === 'specific' && (
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
+                    {nonAdminUsers.map(u => {
+                      const sel = editSelectedUsers.includes(u.email);
+                      return (
+                        <div key={u.email} onClick={() => setEditSelectedUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])}
+                          style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #BA7517' : '1px solid rgba(186,117,23,0.32)', color: sel ? '#854F0B' : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
+                          {u.name || u.email.split('@')[0]}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 푸터 */}
+            <div style={{ background: '#FDF8F4', borderTop: '1px solid #EDE5DC', padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <button onClick={() => setIsEditOpen(false)}
+                  style={{ fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '5px 2px' }}>닫기</button>
+                <button onClick={async () => { await handleDelete(); setIsEditOpen(false); }}
+                  style={{ fontSize: 12, color: '#C17B6B', border: '1px solid #C17B6B', background: 'none', padding: '5px 12px', borderRadius: 3, cursor: 'pointer' }}>삭제</button>
+              </div>
+              <button onClick={handleEditSave} disabled={isUpdating || uploading}
+                style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: isUpdating ? 'not-allowed' : 'pointer' }}>
+                {uploading ? '업로드 중...' : isUpdating ? '저장 중...' : '저장'}
               </button>
             </div>
           </div>
@@ -286,7 +406,7 @@ export default function PostItem({ post }: PostItemProps) {
 
       {/* 이미지 확대 모달 */}
       {isModalOpen && post.attachment?.type === 'image' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => { setIsModalOpen(false); setZoom(1); setDragPos({ x: 0, y: 0 }); }}>
           <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{Math.round(zoom * 100)}%</span>
@@ -299,84 +419,6 @@ export default function PostItem({ post }: PostItemProps) {
               style={{ transform: `scale(${zoom}) translate(${dragPos.x / zoom}px, ${dragPos.y / zoom}px)`, transition: isDragging ? 'none' : 'transform 0.1s', cursor: isDragging ? 'grabbing' : 'grab', display: 'block', maxWidth: '90vw', maxHeight: '90vh' }}
               onMouseDown={handleMouseDown} onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} draggable={false} />
-          </div>
-        </div>
-      )}
-
-      {/* 수정 모달 */}
-      {isEditOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480, zIndex: 1001 }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>게시물 수정</span>
-            </div>
-            <div style={{ padding: '20px' }}>
-              {/* 내용 */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>내용</div>
-                <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4}
-                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
-              </div>
-
-              {/* 첨부파일 교체 */}
-              {post.attachment && (post.attachment.type === 'image' || post.attachment.type === 'file') && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>첨부파일 교체</div>
-                  <div onClick={() => fileInputRef.current?.click()}
-                    style={{ border: '1px dashed #EDE5DC', padding: 12, textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: 11, color: '#9E8880' }}>
-                      {newFile ? newFile.name : '클릭하여 파일 교체'}
-                    </div>
-                    {!newFile && (
-                      <div style={{ fontSize: 10, color: '#C4B8B0', marginTop: 4 }}>
-                        현재: {post.attachment.name || post.attachment.url.split('/').pop()?.split('?')[0]?.slice(0, 30)}
-                      </div>
-                    )}
-                  </div>
-                  <input ref={fileInputRef} type="file"
-                    accept={post.attachment.type === 'image' ? 'image/*' : '*'}
-                    onChange={e => { const f = e.target.files?.[0]; if (f) setNewFile(f); }}
-                    style={{ display: 'none' }} />
-                </div>
-              )}
-
-              {/* 보이는 범위 */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>보이는 범위</div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {(['all', 'me', 'specific'] as const).map(v => {
-                    const labels = { all: '전체', me: '나만', specific: '특정인' };
-                    return (
-                      <button key={v} onClick={() => setEditVisibility(v)}
-                        style={{ padding: '5px 12px', border: `1px solid ${editVisibility === v ? '#2C1810' : '#EDE5DC'}`, background: editVisibility === v ? '#FDF8F4' : '#fff', fontSize: 10, letterSpacing: '0.06em', color: editVisibility === v ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
-                        {labels[v]}
-                      </button>
-                    );
-                  })}
-                </div>
-                {editVisibility === 'specific' && (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                    {users.filter(u => u.email !== post.author && u.role !== 'admin').map(u => (
-                      <button key={u.email}
-                        onClick={() => setEditSelectedUsers(prev =>
-                          prev.includes(u.email) ? prev.filter(e => e !== u.email) : [...prev, u.email]
-                        )}
-                        style={{ padding: '4px 10px', fontSize: 10, border: `1px solid ${editSelectedUsers.includes(u.email) ? '#C17B6B' : '#EDE5DC'}`, background: editSelectedUsers.includes(u.email) ? '#FFF5F2' : '#fff', color: editSelectedUsers.includes(u.email) ? '#C17B6B' : '#9E8880', cursor: 'pointer' }}>
-                        {u.name || u.email}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
-              <button onClick={() => setIsEditOpen(false)}
-                style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
-              <button onClick={handleEdit} disabled={isUpdating || uploading}
-                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}>
-                {uploading ? '업로드 중...' : isUpdating ? '저장 중...' : '저장'}
-              </button>
-            </div>
           </div>
         </div>
       )}

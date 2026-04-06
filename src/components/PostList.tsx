@@ -88,6 +88,21 @@ export default function PostList({ posts, activeCategory, panelId, canEdit, sele
             )}
             style={{ flexShrink: 0, cursor: 'pointer', accentColor: '#C17B6B' }} />
         )}
+        {!selectMode && canEdit && (
+          <button
+            onClick={async () => {
+              try {
+                await usePostStore.getState().updatePost(p.id, { deleted: false, deletedAt: null });
+              } catch (e) {
+                console.error(e);
+                addToast({ message: '복구에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+              }
+            }}
+            style={{ fontSize: 9, color: '#C17B6B', flexShrink: 0, background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '1px 6px', letterSpacing: '0.04em' }}
+          >
+            복구
+          </button>
+        )}
         <span style={{ fontSize: 11, color: '#9E8880', textDecoration: 'line-through', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {p.content}
         </span>
