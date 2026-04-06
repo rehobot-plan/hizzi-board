@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, type CSSProperties } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { usePostStore } from '@/store/postStore';
 import { useUserStore } from '@/store/userStore';
@@ -25,6 +25,7 @@ interface PostData {
   category: string;
   visibleTo: string[];
   taskType?: 'work' | 'personal';
+  dueDate?: string;
   attachment?: { type: 'image' | 'file' | 'link'; url: string; name?: string };
 }
 
@@ -41,9 +42,20 @@ interface RequestData {
   dueDate?: string;
 }
 
-const BASE_CATEGORIES = ['할일', '메모'];
+type TabType = 'todo' | 'memo' | 'request';
+type TaskType = 'work' | 'personal';
+type VisibilityType = 'all' | 'me' | 'specific';
+type RequestVisibilityType = 'requestOnly' | 'all' | 'specific';
 
-export default function CreatePost({ panelId, onClose, categories, defaultCategory }: CreatePostProps) {
+function stripUndefined<T extends object>(obj: T): Partial<T> {
+  const cleaned = { ...obj } as Record<string, unknown>;
+  Object.keys(cleaned).forEach(k => {
+    if (cleaned[k] === undefined) delete cleaned[k];
+  });
+  return cleaned as Partial<T>;
+}
+
+export default function CreatePost({ panelId, onClose }: CreatePostProps) {
   const { user } = useAuthStore();
   const { addPost } = usePostStore();
   const { users } = useUserStore();
@@ -51,114 +63,106 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
   const { addRequest } = useTodoRequestStore();
   const { addToast } = useToastStore();
 
-  const allCategories = categories || BASE_CATEGORIES;
+  const myEmail = user?.email ?? '';
+  const myPanel = panels.find(p => p.ownerEmail === myEmail);
+  const otherUsers = users.filter(u => u.email !== myEmail && u.role !== 'admin');
 
-  const getInitialCategory = () => {
-    if (!defaultCategory || defaultCategory === '전체') return allCategories[0] || '메모';
-    if (allCategories.includes(defaultCategory)) return defaultCategory;
-    return allCategories[0] || '메모';
-  };
+  const [activeTab, setActiveTab] = useState<TabType>('todo');
 
-  const [category, setCategory] = useState(getInitialCategory());
-  const [taskType, setTaskType] = useState<'work' | 'personal'>('work');
-  // 할일/요청은 기본 'me', 나머지는 'all'
-  const [visibility, setVisibility] = useState<'all' | 'me' | 'specific'>(
-    getInitialCategory() === '할일' ? 'me' : 'all'
-  );
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [content, setContent] = useState('');
-  const [attachType, setAttachType] = useState<'none' | 'image' | 'file' | 'link'>('none');
   const [attachFile, setAttachFile] = useState<File | null>(null);
-  const [attachLink, setAttachLink] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 요청 전용 state
+  const [taskType, setTaskType] = useState<TaskType>('work');
+  const [visibility, setVisibility] = useState<VisibilityType>('all');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+
+  const [dueDate, setDueDate] = useState('');
+  const [addToCalendar, setAddToCalendar] = useState(false);
+
   const [requestTo, setRequestTo] = useState<string[]>([]);
   const [requestTitle, setRequestTitle] = useState('');
   const [requestContent, setRequestContent] = useState('');
   const [requestDueDate, setRequestDueDate] = useState('');
-  const [requestDueDateInput, setRequestDueDateInput] = useState('');
-  const [requestVisibility, setRequestVisibility] = useState<'requestOnly' | 'all' | 'specific'>('requestOnly');
-  const [requestSelectedUsers, setRequestSelectedUsers] = useState<string[]>([]);
+  const [requestVisibility, setRequestVisibility] = useState<RequestVisibilityType>('requestOnly');
+  const [requestSpecificUsers, setRequestSpecificUsers] = useState<string[]>([]);
   const [requestSubmitting, setRequestSubmitting] = useState(false);
-
-  const myEmail = user?.email ?? '';
-  const myPanel = panels.find(p => p.ownerEmail === myEmail);
-  const otherUsers = users.filter(u => u.email !== myEmail && u.role !== 'admin');
-  const nonAdminUsers = users.filter(u => u.email !== myEmail && u.role !== 'admin');
 
   useEscClose(onClose, true);
 
-  const toggleUser = (email: string) => {
-    setSelectedUsers(prev =>
-      prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
-    );
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setContent('');
+    setAttachFile(null);
+    setDueDate('');
+    setAddToCalendar(false);
+    setVisibility('all');
+    setSelectedUsers([]);
   };
 
-  // yyyymmdd → yyyy-mm-dd 변환
-  const parseDateInput = (val: string): string => {
-    // yyyymmdd 형식
-    const digits = val.replace(/\D/g, '');
-    if (digits.length === 8) {
-      return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}`;
-    }
-    // yyyy-mm-dd 형식 직접 입력
-    if (val.match(/^\d{4}-\d{2}-\d{2}$/)) return val;
-    return '';
-  };
-
-  const handleDueDateInput = (val: string) => {
-    setRequestDueDateInput(val);
-    const parsed = parseDateInput(val);
-    if (parsed) setRequestDueDate(parsed);
-    else setRequestDueDate('');
-  };
-
-  const handleCalendarDate = (val: string) => {
-    setRequestDueDate(val);
-    setRequestDueDateInput(val.replace(/-/g, ''));
+  const getVisibleTo = (): string[] => {
+    if (visibility === 'all') return [];
+    if (visibility === 'me') return [myEmail];
+    return [myEmail, ...selectedUsers.filter(e => e !== myEmail)];
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
-    const hasAttachment = (attachType === 'image' || attachType === 'file') && attachFile
-      || (attachType === 'link' && attachLink.trim());
-    if (!content.trim() && !hasAttachment) return;
-
+    if (!user || !content.trim()) return;
     setUploading(true);
     try {
-      let attachment = undefined;
-      if (attachType === 'image' || attachType === 'file') {
-        if (!attachFile) { setUploading(false); return; }
+      let attachment: PostData['attachment'] = undefined;
+      if (attachFile) {
         const storageRef = ref(storage, `uploads/${panelId}/${Date.now()}_${attachFile.name}`);
         await uploadBytes(storageRef, attachFile);
         const url = await getDownloadURL(storageRef);
-        attachment = { type: attachType, url, name: attachFile.name };
-      } else if (attachType === 'link' && attachLink.trim()) {
-        attachment = { type: 'link' as const, url: attachLink.trim() };
-      }
-
-      const visibleTo: string[] = [];
-      if (visibility === 'me') visibleTo.push(user.email!);
-      else if (visibility === 'specific') {
-        visibleTo.push(user.email!);
-        visibleTo.push(...selectedUsers.filter(e => e !== user.email));
+        const ext = attachFile.type.startsWith('image/') ? 'image' : 'file';
+        attachment = { type: ext, url, name: attachFile.name };
       }
 
       const postData: PostData = {
         panelId,
         content: content.trim(),
-        author: user.email!,
-        category,
-        visibleTo: visibility === 'all' ? [] : visibleTo,
+        author: myEmail,
+        category: activeTab === 'todo' ? '할일' : '메모',
+        visibleTo: getVisibleTo(),
       };
 
+      if (activeTab === 'todo') {
+        postData.taskType = taskType;
+        if (dueDate) postData.dueDate = dueDate;
+      }
+      if (activeTab === 'memo') {
+        postData.taskType = taskType;
+      }
       if (attachment) postData.attachment = attachment;
-      if (category === '할일') postData.taskType = taskType;
 
-      await addPost(postData);
-      onClose(category);
+      await addPost(stripUndefined(postData) as PostData);
+
+      if (activeTab === 'todo' && dueDate && addToCalendar) {
+        const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+          const calendarModule = await import('@/components/Calendar').catch(() => null);
+          const getEventColor: ((input: { taskType: TaskType; visibleTo: string[] }) => string) | undefined = calendarModule && 'getEventColor' in calendarModule
+            ? calendarModule.getEventColor as (input: { taskType: TaskType; visibleTo: string[] }) => string
+            : undefined;
+          const color = typeof getEventColor === 'function'
+            ? getEventColor({ taskType, visibleTo: getVisibleTo() })
+          : (taskType === 'work' ? '#3B6D11' : 'rgba(99,153,34,0.15)');
+        await addDoc(collection(db, 'calendarEvents'), stripUndefined({
+          title: content.trim(),
+          startDate: dueDate,
+          endDate: dueDate,
+          authorId: myEmail,
+          authorName: users.find(u => u.email === myEmail)?.name || myEmail.split('@')[0],
+          color,
+          taskType,
+          visibility: visibility === 'all' ? 'all' : visibility === 'me' ? 'me' : 'specific',
+          createdAt: serverTimestamp(),
+        }));
+      }
+
+      onClose(activeTab === 'todo' ? '할일' : '메모');
     } catch (err) {
       console.error('저장 오류:', err);
       addToast({ message: '게시물 저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
@@ -169,20 +173,17 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
   const handleRequestSubmit = async () => {
     if (!requestTitle.trim() || requestTo.length === 0) return;
-    // 관리자가 특정 패널에서 보낼 경우 해당 패널 오너를 발신자로
     const panelOwnerEmail = myPanel?.ownerEmail || myEmail;
     const fromPanelId = myPanel?.id || 'admin';
     setRequestSubmitting(true);
     try {
       const isTeam = requestTo.length > 1;
       const teamLabel = isTeam
-        ? requestTo.map(email => users.find(u => u.email === email)?.name || email.split('@')[0]).join(', ')
-        : null;
-
-      // 팀 요청이면 공유 ID 생성
+        ? requestTo.map(e => users.find(u => u.email === e)?.name || e.split('@')[0]).join(', ')
+        : undefined;
       const teamRequestId = isTeam
         ? `team_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-        : null;
+        : undefined;
 
       for (const toEmail of requestTo) {
         const toPanel = panels.find(p => p.ownerEmail === toEmail);
@@ -190,22 +191,25 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
 
         let visibleTo: string[] = [];
         if (requestVisibility === 'requestOnly') visibleTo = [panelOwnerEmail, ...requestTo];
-        else if (requestVisibility === 'specific') visibleTo = [panelOwnerEmail, ...requestTo, ...requestSelectedUsers];
+        else if (requestVisibility === 'all') visibleTo = [];
+        else if (requestVisibility === 'specific') {
+          visibleTo = [panelOwnerEmail, ...requestTo, ...requestSpecificUsers.filter(e => !requestTo.includes(e) && e !== panelOwnerEmail)];
+        }
 
         const requestData: RequestData = {
           fromEmail: panelOwnerEmail,
-          fromPanelId: fromPanelId,
+          fromPanelId,
           toEmail,
           toPanelId: toPanel.id,
           title: requestTitle.trim(),
           content: requestContent.trim(),
-          dueDate: requestDueDate || undefined,
           visibleTo,
-          teamLabel: teamLabel || undefined,
-          teamRequestId: teamRequestId || undefined,
+          teamLabel,
+          teamRequestId,
+          dueDate: requestDueDate || undefined,
         };
 
-        await addRequest(requestData);
+        await addRequest(stripUndefined(requestData) as RequestData);
       }
       onClose();
     } catch (err) {
@@ -216,289 +220,359 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
     }
   };
 
-  const attachIcons = {
-    image: <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="1" stroke="currentColor" strokeWidth="1.5"/><path d="M2 13l5-5 4 4 2-2 5 5" stroke="currentColor" strokeWidth="1.5"/></svg>,
-    file: <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 2h7l4 4v12H5V2z" stroke="currentColor" strokeWidth="1.5"/><path d="M12 2v4h4" stroke="currentColor" strokeWidth="1.5"/></svg>,
-    link: <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M8 12s-2-2-2-4a4 4 0 018 0c0 2-2 4-2 4M12 8s2 2 2 4a4 4 0 01-8 0c0-2 2-4 2-4" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  const divBtn = (active: boolean, colorOn: string, bgOn: string, borderOn: string, colorOff: string, borderOff: string) => ({
+    fontSize: 11, padding: '5px 13px', borderRadius: 3, cursor: 'pointer' as const,
+    border: `1px solid ${active ? borderOn : borderOff}`,
+    color: active ? colorOn : colorOff,
+    background: active ? bgOn : 'transparent',
+    transition: 'all 0.15s ease',
+  });
+
+  const taskBtnStyle = (t: TaskType) => {
+    const isOn = taskType === t;
+    if (t === 'work') return divBtn(isOn, '#C17B6B', '#FFF5F2', '#C17B6B', 'rgba(193,123,107,0.45)', 'rgba(193,123,107,0.35)');
+    return divBtn(isOn, '#7B5EA7', '#F0ECF5', '#7B5EA7', 'rgba(123,94,167,0.45)', 'rgba(123,94,167,0.35)');
   };
 
-  const isRequest = category === '요청';
+  const visBtnStyle = (v: VisibilityType) => {
+    const isOn = visibility === v;
+    const map = {
+      all: { on: '#3B6D11', border: '#639922', offC: 'rgba(59,109,17,0.45)', offB: 'rgba(99,153,34,0.35)' },
+      me: { on: '#185FA5', border: '#378ADD', offC: 'rgba(24,95,165,0.45)', offB: 'rgba(55,138,221,0.35)' },
+      specific: { on: '#854F0B', border: '#BA7517', offC: 'rgba(133,79,11,0.45)', offB: 'rgba(186,117,23,0.35)' },
+    };
+    const c = map[v];
+    return divBtn(isOn, c.on, 'transparent', c.border, c.offC, c.offB);
+  };
 
-  const tabList = [...allCategories, '요청'];
+  const reqVisBtnStyle = (v: RequestVisibilityType) => {
+    const isOn = requestVisibility === v;
+    if (v === 'requestOnly') return divBtn(isOn, '#993556', '#FBEAF0', '#993556', 'rgba(153,53,86,0.45)', 'rgba(153,53,86,0.35)');
+    if (v === 'all') return divBtn(isOn, '#3B6D11', 'transparent', '#639922', 'rgba(59,109,17,0.45)', 'rgba(99,153,34,0.35)');
+    return divBtn(isOn, '#854F0B', 'transparent', '#BA7517', 'rgba(133,79,11,0.45)', 'rgba(186,117,23,0.35)');
+  };
+
+  const sectionLabel: CSSProperties = {
+    fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+    color: '#C4B8B0', textTransform: 'uppercase', marginBottom: 7,
+  };
+
+  const fieldSection: CSSProperties = {
+    padding: '12px 20px', borderBottom: '1px solid #EDE5DC',
+  };
+
+  const statusTagWork: CSSProperties = {
+    fontSize: 10, padding: '2px 7px', borderRadius: 3, marginRight: 4,
+    background: taskType === 'personal' ? '#F0ECF5' : '#FFF5F2',
+    color: taskType === 'personal' ? '#7B5EA7' : '#C17B6B',
+    border: `1px solid ${taskType === 'personal' ? '#7B5EA7' : '#C17B6B'}`,
+  };
+
+  const statusTagVis = (): CSSProperties => {
+    const map = {
+      all: { color: '#3B6D11', border: '1px solid #639922' },
+      me: { color: '#185FA5', border: '1px solid #378ADD' },
+      specific: { color: '#854F0B', border: '1px solid #BA7517' },
+    };
+    return { fontSize: 10, padding: '2px 7px', borderRadius: 3, background: 'none', ...map[visibility] };
+  };
+
+  const tabLabel = { todo: '할일', memo: '메모', request: '요청' };
+  const isReady = activeTab === 'request'
+    ? requestTitle.trim().length > 0 && requestTo.length > 0
+    : content.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(44,20,16,0.4)' }}>
-      <div className="w-full max-w-lg" style={{ background: '#fff', border: '1px solid #EDE5DC' }}>
-
-        {/* 헤더 */}
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #EDE5DC' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>새 게시물</span>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: '#fff', border: '1px solid #EDE5DC', borderRadius: 6, width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ background: '#5C1F1F', padding: '15px 20px 13px', flexShrink: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(253,248,244,0.35)', marginBottom: 5 }}>
+            {activeTab === 'request' ? '요청 제목을 입력하세요' : '제목을 입력하세요'}
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(253,248,244,0.45)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.5 }}>
+              <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="#FDF8F4" strokeWidth="1"/>
+              <path d="M1 5h10M4 1v2M8 1v2" stroke="#FDF8F4" strokeWidth="1" strokeLinecap="round"/>
+            </svg>
+            {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+          </div>
         </div>
 
-        <div style={{ padding: '20px 24px' }}>
-
-          {/* 카테고리 탭 */}
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>카테고리</div>
-            <div style={{ display: 'flex', borderBottom: '1px solid #EDE5DC' }}>
-              {tabList.map(cat => (
-                <button key={cat}
-                  onClick={() => {
-                    setCategory(cat);
-                    if (cat === '할일' || cat === '요청') setVisibility('me');
-                    else setVisibility('all');
-                  }}
-                  style={{
-                    padding: '6px 12px', fontSize: 10, letterSpacing: '0.08em',
-                    color: category === cat ? (cat === '요청' ? '#C17B6B' : '#2C1810') : '#9E8880',
-                    borderBottom: category === cat ? `1.5px solid ${cat === '요청' ? '#C17B6B' : '#2C1810'}` : '1.5px solid transparent',
-                    marginBottom: -1, background: 'none', border: 'none',
-                    borderBottomStyle: 'solid', cursor: 'pointer',
-                  }}>
-                  {cat}
-                </button>
-              ))}
+        <div style={{ display: 'flex', borderBottom: '1px solid #EDE5DC', background: '#fff', flexShrink: 0 }}>
+          {(['todo', 'memo', 'request'] as TabType[]).map(tab => (
+            <div
+              key={tab}
+              onClick={() => handleTabChange(tab)}
+              style={{
+                flex: 1,
+                textAlign: 'center',
+                padding: '9px 4px',
+                fontSize: 12,
+                color: activeTab === tab ? '#5C1F1F' : '#C4B8B0',
+                borderBottom: activeTab === tab ? '2px solid #5C1F1F' : '2px solid transparent',
+                fontWeight: activeTab === tab ? 700 : 400,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}>
+              {tabLabel[tab]}
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* 요청 폼 */}
-          {isRequest ? (
-            <div>
-              {/* 받는 사람 */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880' }}>
-                    받는 사람
-                  </div>
-                  {requestTo.length >= 2 && (
-                    <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.06em' }}>
-                      팀 요청 ({requestTo.length}명)
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {otherUsers.map(u => {
-                    const isSelected = requestTo.includes(u.email);
-                    return (
-                      <button key={u.email}
-                        onClick={() => setRequestTo(prev =>
-                          prev.includes(u.email)
-                            ? prev.filter(e => e !== u.email)
-                            : [...prev, u.email]
-                        )}
-                        style={{
-                          padding: '5px 12px', fontSize: 10,
-                          border: `1px solid ${isSelected ? '#2C1810' : '#EDE5DC'}`,
-                          background: isSelected ? '#FDF8F4' : '#fff',
-                          color: isSelected ? '#2C1810' : '#9E8880',
-                          cursor: 'pointer',
-                          position: 'relative',
-                        }}>
-                        {u.name || u.email}
-                        {isSelected && (
-                          <span style={{ marginLeft: 4, color: '#C17B6B', fontSize: 9 }}>✓</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 제목 */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>무엇을</div>
-                <input value={requestTitle} onChange={e => setRequestTitle(e.target.value)}
-                  placeholder="요청 제목 (한 줄)"
-                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent' }} />
-              </div>
-
-              {/* 내용 */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>왜 / 어떻게</div>
-                <textarea value={requestContent} onChange={e => setRequestContent(e.target.value)}
-                  placeholder="상세 내용 (선택)"
-                  rows={3}
-                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
-              </div>
-
-              {/* 기한 */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880' }}>
-                    언제까지 <span style={{ fontWeight: 400, color: '#C4B8B0' }}>(선택)</span>
-                  </div>
-                  {requestDueDate && (
-                    <button onClick={() => { setRequestDueDate(''); setRequestDueDateInput(''); }}
-                      style={{ fontSize: 10, color: '#C4B8B0', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      ✕ 초기화
-                    </button>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
-                  {requestDueDate && !requestDueDateInput.includes('-') ? (
-                    <span
-                      onClick={() => { setRequestDueDateInput(''); }}
-                      style={{ fontSize: 13, color: '#2C1810', borderBottom: '1px solid #C17B6B', padding: '8px 0', cursor: 'text', flex: 1, letterSpacing: '0.02em' }}>
-                      {new Date(requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}
-                    </span>
-                  ) : (
-                    <input
-                      type="text"
-                      value={requestDueDateInput}
-                      onChange={e => handleDueDateInput(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && requestDueDate) {
-                          (e.target as HTMLInputElement).blur();
-                        }
-                      }}
-                      onBlur={() => {
-                        if (!requestDueDate) setRequestDueDateInput('');
-                      }}
-                      placeholder="yyyy-mm-dd"
-                      style={{ border: 'none', borderBottom: `1px solid ${requestDueDate ? '#C17B6B' : '#EDE5DC'}`, padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', flex: 1, letterSpacing: '0.04em' }}
-                      autoFocus={!!requestDueDateInput}
-                    />
-                  )}
-                  {/* 달력 아이콘 — 숨겨진 date input 트리거 */}
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ cursor: 'pointer', color: '#C4B8B0' }}>
-                      <rect x="1" y="2" width="12" height="11" rx="1" stroke="currentColor" strokeWidth="1.2"/>
-                      <path d="M4 1v2M10 1v2M1 5h12" stroke="currentColor" strokeWidth="1.2"/>
-                    </svg>
-                    <input
-                      type="date"
-                      value={requestDueDate}
-                      onChange={e => { handleCalendarDate(e.target.value); setRequestDueDateInput(''); }}
-                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
-                    />
-                  </div>
-                </div>
-                {requestDueDate && (
-                  <div style={{ fontSize: 10, color: '#C17B6B', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                      <rect x="1" y="2" width="12" height="11" rx="1" stroke="#C17B6B" strokeWidth="1.2"/>
-                      <path d="M4 1v2M10 1v2M1 5h12" stroke="#C17B6B" strokeWidth="1.2"/>
-                    </svg>
-                    수락 시 달력에 자동 등록됩니다
-                  </div>
-                )}
-              </div>
-
-              {/* 공개 범위 */}
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {([
-                    { v: 'requestOnly', label: '요청자+수신자' },
-                    { v: 'all', label: '전체 공개' },
-                    { v: 'specific', label: '특정인 추가' },
-                  ] as const).map(({ v, label }) => (
-                    <button key={v} onClick={() => setRequestVisibility(v)}
-                      style={{ padding: '5px 12px', fontSize: 10, border: `1px solid ${requestVisibility === v ? '#2C1810' : '#EDE5DC'}`, background: requestVisibility === v ? '#FDF8F4' : '#fff', color: requestVisibility === v ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                {requestVisibility === 'specific' && (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                    {otherUsers.filter(u => !requestTo.includes(u.email)).map(u => (
-                      <button key={u.email}
-                        onClick={() => setRequestSelectedUsers(prev => prev.includes(u.email) ? prev.filter(e => e !== u.email) : [...prev, u.email])}
-                        style={{ padding: '4px 10px', fontSize: 10, border: `1px solid ${requestSelectedUsers.includes(u.email) ? '#C17B6B' : '#EDE5DC'}`, background: requestSelectedUsers.includes(u.email) ? '#FFF5F2' : '#fff', color: requestSelectedUsers.includes(u.email) ? '#C17B6B' : '#9E8880', cursor: 'pointer' }}>
-                        {u.name || u.email}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+        <div style={{ background: '#FDF8F4', borderBottom: '1px solid #EDE5DC', padding: '7px 20px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#9E8880', paddingRight: 10, borderRight: '1px solid #D5C9C0', marginRight: 10 }}>
+            {activeTab === 'todo' ? '할일' : activeTab === 'memo' ? '메모' : '요청'}
+          </span>
+          {activeTab === 'request' ? (
+            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: '#FBEAF0', color: '#993556', border: '1px solid #993556' }}>요청</span>
           ) : (
             <>
-              {/* 내용 */}
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>내용</div>
-                <textarea value={content} onChange={e => setContent(e.target.value)}
-                  placeholder="내용을 입력하세요..." rows={4}
-                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
-              </div>
+              <span style={statusTagWork}>{taskType === 'personal' ? '개인' : '업무'}</span>
+              <span style={statusTagVis()}>{visibility === 'all' ? '전체' : visibility === 'me' ? '나만' : '특정'}</span>
+            </>
+          )}
+        </div>
 
-              {/* 첨부파일 */}
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>첨부파일 (선택)</div>
-                <div style={{ display: 'flex', gap: 6, marginBottom: attachType !== 'none' ? 10 : 0 }}>
-                  {(['none', 'image', 'file', 'link'] as const).map(t => {
-                    const labels = { none: '없음', image: '이미지', file: '파일', link: '링크' };
-                    return (
-                      <button key={t}
-                        onClick={() => { setAttachType(t); setAttachFile(null); setAttachLink(''); }}
-                        style={{ padding: '5px 10px', fontSize: 10, letterSpacing: '0.06em', border: `1px solid ${attachType === t ? '#C17B6B' : '#EDE5DC'}`, background: attachType === t ? '#FFF5F2' : '#fff', color: attachType === t ? '#C17B6B' : '#9E8880', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {t !== 'none' && attachIcons[t]}
-                        {labels[t]}
-                      </button>
-                    );
-                  })}
-                </div>
-                {(attachType === 'image' || attachType === 'file') && (
-                  <div onClick={() => fileInputRef.current?.click()}
-                    style={{ border: '1px dashed #EDE5DC', padding: 16, textAlign: 'center', cursor: 'pointer' }}>
-                    <div style={{ fontSize: 11, color: '#9E8880' }}>
-                      {attachFile ? attachFile.name : '클릭하여 파일 선택'}
-                    </div>
-                    {!attachFile && <div style={{ fontSize: 10, color: '#C4B8B0', marginTop: 3 }}>최대 20MB</div>}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {activeTab === 'memo' && (
+            <>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>내용</div>
+                <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="내용을 입력하세요 (선택)" rows={4} style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
+              </div>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>첨부파일</div>
+                {attachFile ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: '0.5px solid #EDE5DC', background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{attachFile.name}</span>
+                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer' }}>✕</span>
                   </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#C4B8B0', marginBottom: 7 }}>없음</div>
                 )}
-                {attachType === 'link' && (
-                  <input value={attachLink} onChange={e => setAttachLink(e.target.value)}
-                    placeholder="https://"
-                    style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent' }} />
-                )}
-                <input ref={fileInputRef} type="file"
-                  accept={attachType === 'image' ? 'image/*' : '*'}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) setAttachFile(f); }}
-                  style={{ display: 'none' }} />
+                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '0.5px dashed #C17B6B', color: '#C17B6B', fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
+                  + 파일 추가
+                </div>
+                <input ref={fileInputRef} type="file" onChange={e => { const f = e.target.files?.[0]; if (f) setAttachFile(f); }} style={{ display: 'none' }} />
               </div>
-
-              {/* 할일 구분 */}
-              {category === '할일' && (
-                <div style={{ marginBottom: 18 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>구분</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {(['work', 'personal'] as const).map(t => {
-                      const labels = { work: '업무', personal: '개인' };
-                      const activeColor = t === 'work' ? '#C17B6B' : '#9E8880';
+              <div style={{ borderTop: '1px solid #EDE5DC', margin: '0 20px' }} />
+              <div style={{ ...fieldSection, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 28, flexShrink: 0 }}>구분</div>
+                <div style={{ display: 'flex', gap: 5 }}>
+                  {(['work', 'personal'] as TaskType[]).map(t => (
+                    <div key={t} onClick={() => setTaskType(t)} style={taskBtnStyle(t)}>
+                      {t === 'work' ? '업무' : '개인'}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={fieldSection}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 52, flexShrink: 0 }}>보이는 범위</div>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    {(['all', 'me', 'specific'] as VisibilityType[]).map(v => (
+                      <div key={v} onClick={() => setVisibility(v)} style={visBtnStyle(v)}>
+                        {v === 'all' ? '전체' : v === 'me' ? '나만' : '특정'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {visibility === 'specific' && (
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
+                    {otherUsers.map(u => {
+                      const sel = selectedUsers.includes(u.email);
                       return (
-                        <button key={t} onClick={() => setTaskType(t)}
-                          style={{ padding: '5px 14px', border: `1px solid ${taskType === t ? activeColor : '#EDE5DC'}`, background: taskType === t ? (t === 'work' ? '#FFF5F2' : '#F5F0EE') : '#fff', fontSize: 10, letterSpacing: '0.06em', color: taskType === t ? activeColor : '#9E8880', cursor: 'pointer' }}>
-                          {labels[t]}
-                        </button>
+                        <div key={u.email} onClick={() => setSelectedUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #BA7517' : '1px solid rgba(186,117,23,0.32)', color: sel ? '#854F0B' : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
+                          {u.name || u.email.split('@')[0]}
+                        </div>
                       );
                     })}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            </>
+          )}
 
-              {/* 공개 범위 */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>보이는 범위</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {(['all', 'me', 'specific'] as const).map(v => {
-                    const labels = { all: '전체', me: '나만', specific: '특정인' };
+          {activeTab === 'todo' && (
+            <>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>내용</div>
+                <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="내용을 입력하세요 (선택)" rows={3} style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
+              </div>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>기한</div>
+                {dueDate ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, color: '#2C1810' }}>
+                        {new Date(dueDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                      </span>
+                      <span onClick={() => { setDueDate(''); setAddToCalendar(false); }} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer', lineHeight: 1 }}>✕</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginTop: 10, paddingTop: 9, borderTop: '1px dashed #EDE5DC' }}>
+                      <div onClick={() => setAddToCalendar(prev => !prev)} style={{ width: 14, height: 14, borderRadius: 2, border: `1px solid ${addToCalendar ? '#C17B6B' : '#D5C9C0'}`, background: addToCalendar ? '#C17B6B' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 1 }}>
+                        {addToCalendar && (
+                          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                            <path d="M1 3.5l2.5 2.5L8 1" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#9E8880', lineHeight: 1.45 }}>
+                        <span style={{ color: '#C17B6B', fontWeight: 600 }}>캘린더에도 등록</span> - 체크 시 내 캘린더에 일정이 함께 생성됩니다
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <span style={{ fontSize: 12, color: '#C4B8B0', borderBottom: '1px dashed #EDE5DC', paddingBottom: 2, cursor: 'pointer' }}>
+                      + 기한 추가
+                    </span>
+                    <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
+                  </div>
+                )}
+              </div>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>첨부파일</div>
+                {attachFile ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: '0.5px solid #EDE5DC', background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{attachFile.name}</span>
+                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer' }}>✕</span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#C4B8B0', marginBottom: 7 }}>없음</div>
+                )}
+                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '0.5px dashed #C17B6B', color: '#C17B6B', fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
+                  + 파일 추가
+                </div>
+                <input ref={fileInputRef} type="file" onChange={e => { const f = e.target.files?.[0]; if (f) setAttachFile(f); }} style={{ display: 'none' }} />
+              </div>
+              <div style={{ borderTop: '1px solid #EDE5DC', margin: '0 20px' }} />
+              <div style={{ ...fieldSection, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 28, flexShrink: 0 }}>구분</div>
+                <div style={{ display: 'flex', gap: 5 }}>
+                  {(['work', 'personal'] as TaskType[]).map(t => (
+                    <div key={t} onClick={() => setTaskType(t)} style={taskBtnStyle(t)}>
+                      {t === 'work' ? '업무' : '개인'}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={fieldSection}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 52, flexShrink: 0 }}>보이는 범위</div>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    {(['all', 'me', 'specific'] as VisibilityType[]).map(v => (
+                      <div key={v} onClick={() => setVisibility(v)} style={visBtnStyle(v)}>
+                        {v === 'all' ? '전체' : v === 'me' ? '나만' : '특정'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {visibility === 'specific' && (
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 8 }}>
+                    {otherUsers.map(u => {
+                      const sel = selectedUsers.includes(u.email);
+                      return (
+                        <div key={u.email} onClick={() => setSelectedUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #BA7517' : '1px solid rgba(186,117,23,0.32)', color: sel ? '#854F0B' : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
+                          {u.name || u.email.split('@')[0]}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {activeTab === 'request' && (
+            <>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>받는 사람</div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {otherUsers.map(u => {
+                    const sel = requestTo.includes(u.email);
                     return (
-                      <button key={v} onClick={() => setVisibility(v)}
-                        style={{ padding: '5px 12px', border: `1px solid ${visibility === v ? '#2C1810' : '#EDE5DC'}`, background: visibility === v ? '#FDF8F4' : '#fff', fontSize: 10, letterSpacing: '0.06em', color: visibility === v ? '#2C1810' : '#9E8880', cursor: 'pointer' }}>
-                        {labels[v]}
-                      </button>
+                      <div key={u.email} onClick={() => setRequestTo(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #993556' : '1px solid rgba(153,53,86,0.3)', color: sel ? '#993556' : 'rgba(153,53,86,0.4)', background: sel ? '#FBEAF0' : 'none' }}>
+                        {u.name || u.email.split('@')[0]}
+                        {requestTo.length >= 2 && sel && <span style={{ marginLeft: 3, fontSize: 9, color: '#C17B6B' }}>✓</span>}
+                      </div>
                     );
                   })}
                 </div>
-                {visibility === 'specific' && nonAdminUsers.length > 0 && (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                    {nonAdminUsers.map(u => (
-                      <button key={u.email} onClick={() => toggleUser(u.email)}
-                        style={{ padding: '4px 10px', border: `1px solid ${selectedUsers.includes(u.email) ? '#C17B6B' : '#EDE5DC'}`, background: selectedUsers.includes(u.email) ? '#FFF5F2' : '#fff', fontSize: 10, color: selectedUsers.includes(u.email) ? '#C17B6B' : '#9E8880', cursor: 'pointer' }}>
-                        {u.name || u.email}
-                      </button>
+                {requestTo.length >= 2 && (
+                  <div style={{ fontSize: 10, color: '#C17B6B', marginTop: 6 }}>팀 요청 ({requestTo.length}명)</div>
+                )}
+              </div>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>제목</div>
+                <input value={requestTitle} onChange={e => setRequestTitle(e.target.value)} placeholder="요청 제목을 입력하세요" style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+              </div>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>내용</div>
+                <textarea value={requestContent} onChange={e => setRequestContent(e.target.value)} placeholder="요청 내용을 입력하세요 (선택)" rows={3} style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
+              </div>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>기한</div>
+                {requestDueDate ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, color: '#2C1810' }}>
+                      {new Date(requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                    </span>
+                    <span onClick={() => setRequestDueDate('')} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer', lineHeight: 1 }}>✕</span>
+                  </div>
+                ) : (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <span style={{ fontSize: 12, color: '#C4B8B0', borderBottom: '1px dashed #EDE5DC', paddingBottom: 2, cursor: 'pointer' }}>
+                      + 기한 추가
+                    </span>
+                    <input type="date" value={requestDueDate} onChange={e => setRequestDueDate(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
+                  </div>
+                )}
+              </div>
+              <div style={fieldSection}>
+                <div style={sectionLabel}>첨부파일</div>
+                {attachFile ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: '0.5px solid #EDE5DC', background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{attachFile.name}</span>
+                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer' }}>✕</span>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#C4B8B0', marginBottom: 7 }}>없음</div>
+                )}
+                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '0.5px dashed #C17B6B', color: '#C17B6B', fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
+                  + 파일 추가
+                </div>
+                <input ref={fileInputRef} type="file" onChange={e => { const f = e.target.files?.[0]; if (f) setAttachFile(f); }} style={{ display: 'none' }} />
+              </div>
+              <div style={{ borderTop: '1px solid #EDE5DC', margin: '0 20px' }} />
+              <div style={fieldSection}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 52, flexShrink: 0 }}>보이는 범위</div>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    {[
+                      { v: 'requestOnly' as const, label: '요청자+수신자' },
+                      { v: 'all' as const, label: '전체공개' },
+                      { v: 'specific' as const, label: '특정' },
+                    ].map(({ v, label }) => (
+                      <div key={v} onClick={() => setRequestVisibility(v)} style={reqVisBtnStyle(v)}>
+                        {label}
+                      </div>
                     ))}
+                  </div>
+                </div>
+                {requestVisibility === 'specific' && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 10, color: '#C4B8B0', marginBottom: 5 }}>수신자 외 추가:</div>
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                      {otherUsers.filter(u => !requestTo.includes(u.email)).map(u => {
+                        const sel = requestSpecificUsers.includes(u.email);
+                        return (
+                          <div key={u.email} onClick={() => setRequestSpecificUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #BA7517' : '1px solid rgba(186,117,23,0.32)', color: sel ? '#854F0B' : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
+                            {u.name || u.email.split('@')[0]}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -506,22 +580,17 @@ export default function CreatePost({ panelId, onClose, categories, defaultCatego
           )}
         </div>
 
-        {/* 푸터 */}
-        <div style={{ padding: '14px 24px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button onClick={() => onClose()}
-            style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>
-            취소
+        <div style={{ background: '#FDF8F4', borderTop: '1px solid #EDE5DC', padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <button onClick={() => onClose()} style={{ fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '5px 2px' }}>
+            닫기
           </button>
-          {isRequest ? (
-            <button onClick={handleRequestSubmit}
-              disabled={requestSubmitting || !requestTitle.trim() || requestTo.length === 0}
-              style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: (!requestTitle.trim() || requestTo.length === 0) ? '#C4B8B0' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: (!requestTitle.trim() || requestTo.length === 0) ? 'not-allowed' : 'pointer' }}>
+          {activeTab === 'request' ? (
+            <button onClick={handleRequestSubmit} disabled={requestSubmitting || !isReady} style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: !isReady ? '#C4B8B0' : '#72243E', color: '#FDF8F4', border: 'none', cursor: !isReady ? 'not-allowed' : 'pointer' }}>
               {requestSubmitting ? '전송 중...' : '요청 보내기'}
             </button>
           ) : (
-            <button onClick={handleSubmit} disabled={uploading}
-              style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: uploading ? '#9E8880' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer' }}>
-              {uploading ? '업로드 중...' : '게시하기'}
+            <button onClick={handleSubmit} disabled={uploading || !isReady} style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: !isReady ? '#C4B8B0' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: !isReady ? 'not-allowed' : 'pointer' }}>
+              {uploading ? '업로드 중...' : '저장'}
             </button>
           )}
         </div>

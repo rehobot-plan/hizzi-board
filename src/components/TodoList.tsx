@@ -23,7 +23,13 @@ export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFi
   );
 
   const activeTodos = todoAll
-    .filter(p => !p.completed)
+      .filter(p => {
+        if (p.completed) return false;
+        if (!activeFilter || activeFilter.length === 0) return true;
+        if (p.requestFrom) return activeFilter.includes('요청');
+        if (p.taskType === 'personal') return activeFilter.includes('개인');
+        return activeFilter.includes('업무');
+      })
     .sort((a, b) => {
       if (a.starred && !b.starred) return -1;
       if (!a.starred && b.starred) return 1;
