@@ -45,6 +45,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [justChecked, setJustChecked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [showTeamTooltip, setShowTeamTooltip] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -214,9 +215,9 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={undefined}
-        title={isSpecific ? tooltipText : undefined}
+        onClick={post.requestId && canEdit && !justChecked ? () => setShowOrderModal(true) : undefined}
         style={{
+          cursor: post.requestId && canEdit && !justChecked ? 'pointer' : 'default',
           display: 'flex',
           alignItems: 'flex-start',
           gap: 8,
@@ -228,7 +229,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           transition: 'opacity 0.5s ease, transform 0.5s ease, background 0.15s ease',
           transform: justChecked ? 'translateX(8px)' : 'translateX(0)',
           background: isHovered && !justChecked ? '#FDF8F4' : '#fff',
-          cursor: 'default',
         }}
       >
         <div style={{
@@ -242,7 +242,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             return '#378ADD';
           })(),
           transition: 'background 0.15s ease',
-          pointerEvents: isSpecific ? 'auto' : 'none',
+          pointerEvents: 'none',
         }} />
 
         {canEdit && (
@@ -297,20 +297,53 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 }}>
                   FROM {post.requestFrom.split('@')[0]}
                 </span>
+                {post.visibleTo && post.visibleTo.length > 1 && (
+                  <div
+                    style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+                    onMouseEnter={e => { e.stopPropagation(); setShowTeamTooltip(true); }}
+                    onMouseLeave={() => setShowTeamTooltip(false)}
+                  >
+                    <span style={{
+                      fontSize: 9, padding: '1px 6px',
+                      background: '#F5F0EE', color: '#9E8880',
+                      letterSpacing: '0.06em', cursor: 'default',
+                    }}>
+                      TEAM
+                    </span>
+                    {showTeamTooltip && (
+                      <div style={{
+                        position: 'absolute', bottom: 'calc(100% + 4px)', left: 0,
+                        background: '#fff', border: '0.5px solid #EDE5DC',
+                        padding: '6px 8px', zIndex: 50,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        <div style={{
+                          display: 'flex', flexWrap: 'wrap', gap: 4,
+                          maxWidth: 240,
+                        }}>
+                          {post.visibleTo.map(email => {
+                            const u = users.find(u => u.email === email);
+                            return (
+                              <span key={email} style={{
+                                fontSize: 9, padding: '2px 7px',
+                                background: '#F5F0EE', color: '#9E8880',
+                                letterSpacing: '0.04em',
+                                flexBasis: post.visibleTo && post.visibleTo.length <= 3 ? 'auto' : 'calc(33% - 4px)',
+                              }}>
+                                {u?.name || email.split('@')[0]}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
             {justChecked && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>완료</span>}
           </div>
         </div>
-
-        {post.requestId && canEdit && !justChecked && (
-          <button
-            onClick={() => setShowOrderModal(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 11, padding: '4px 8px', lineHeight: 1, letterSpacing: '0.04em', flexShrink: 0 }}
-            title="업무 상세 보기">
-            ›
-          </button>
-        )}
 
         {canEdit && !justChecked && !post.requestId && (
           <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -489,7 +522,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                   color: !post.visibleTo || post.visibleTo.length === 0 ? '#3B6D11' : post.visibleTo.length > 1 ? '#854F0B' : '#185FA5',
                   border: !post.visibleTo || post.visibleTo.length === 0 ? '0.5px solid #639922' : post.visibleTo.length > 1 ? '0.5px solid #BA7517' : '0.5px solid #378ADD',
                 }}>
-                  {!post.visibleTo || post.visibleTo.length === 0 ? '전체' : post.visibleTo.length > 1 ? '지정' : '나만'}
+                  {!post.visibleTo || post.visibleTo.length === 0 ? '전체' : post.visibleTo.length > 1 ? '특정인' : '나만'}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
