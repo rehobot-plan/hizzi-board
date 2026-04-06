@@ -249,6 +249,16 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           transition: 'background 0.15s ease',
           pointerEvents: 'none',
         }} />
+        {/* 요청 할일 전체 클릭 레이어 — 체크박스/별 너비(28+8+8=44px) 제외 우측 영역 */}
+        {post.requestId && canEdit && !justChecked && (
+          <div
+            onClick={() => setShowOrderModal(true)}
+            style={{
+              position: 'absolute', left: 44, top: 0, right: 0, bottom: 0,
+              zIndex: 1, cursor: 'pointer',
+            }}
+          />
+        )}
 
         {canEdit && (
           <button onClick={e => { e.stopPropagation(); handleCheck(); }} disabled={checking || justChecked}
@@ -537,12 +547,15 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                   <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7" rx="1" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/><path d="M3 1v1.5M7 1v1.5M1 4h8" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/></svg>
                   {formatDate(post.createdAt)} 등록
                 </div>
-                {post.requestDueDate && (
-                  <div style={{ fontSize: 12, color: '#F4C0D1', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
-                    <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#F4C0D1" strokeWidth="1.2"/><path d="M5 3v2.2l1.4 1" stroke="#F4C0D1" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                    {new Date(post.requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })} 까지
-                  </div>
-                )}
+                {(post.requestDueDate || (post as any).dueDate) && (() => {
+                  const dueDateStr = post.requestDueDate || (post as any).dueDate;
+                  return (
+                    <div style={{ fontSize: 12, color: '#F4C0D1', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+                      <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#F4C0D1" strokeWidth="1.2"/><path d="M5 3v2.2l1.4 1" stroke="#F4C0D1" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                      {new Date(dueDateStr + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })} 까지
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
