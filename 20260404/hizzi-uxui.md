@@ -66,24 +66,37 @@ Leave     → rgba(83,74,183,0.15)   + #534AB7 border
 Request   → #993556 bg + 3px solid #72243E
 ```
 
-### Todo / Memo tags (통일 기준)
+### Todo / Memo tags (통일 기준 — 2026.04.06 확정)
+
 ```
-Task type (배경 없음 + 테두리만):
-  work     → color #C17B6B  border 1px solid #C17B6B
-  personal → color #9E8880  border 1px solid #9E8880
+태그 3분류 규칙:
 
-Visibility (배경 없음 + 테두리만):
-  all      → color #3B6D11  border 1px solid #639922
-  me       → color #185FA5  border 1px solid #378ADD
-  specific → color #854F0B  border 1px solid #BA7517
+[A] 카테고리 태그 (업무/개인/요청) — 바탕색 + 테두리 (동일 규격)
+  업무   → background #FFF5F2  color #C17B6B  border 1px solid #C17B6B
+  개인   → background #F0ECF5  color #7B5EA7  border 1px solid #7B5EA7
+  요청   → background #FBEAF0  color #993556  border 1px solid #993556
 
-FROM tag (received request):
-  background #FCEEE9  color #A0503A  border 0.5px solid #C17B6B
+[B] 공개범위 태그 (전체/나만/특정) — 테두리만, 배경 없음
+  전체   → color #3B6D11  border 1px solid #639922
+  나만   → color #185FA5  border 1px solid #378ADD
+  특정   → color #854F0B  border 1px solid #BA7517
+  ※ "특정인" 아닌 "특정"으로 표기
 
-TEAM tag:
-  background #F5F0EE  color #9E8880  (no border)
-  hover → tooltip with member chips (background #F5F0EE, no border)
+[C] From/TEAM 태그 — 배경만, 테두리 없음
+  From {이름} → background #FCEEE9  color #A0503A
+  TEAM        → background #F5F0EE  color #9E8880
+  TEAM hover  → tooltip with member chips (background #F5F0EE, no border)
   팀원 칩: 3명까지 1행, 4명부터 줄바꿈 (maxWidth: 240px, flexWrap: wrap)
+
+태그 순서:
+  일반 할일: 업무/개인 → 공개범위 → 날짜
+  요청 할일: 요청 → From {이름} → TEAM(팀일 때만) → 날짜
+  메모:      업무/개인 → 공개범위 → 날짜
+
+좌측 2px 띠 색상 (taskType 기준):
+  요청   → #993556
+  업무   → #C17B6B
+  개인   → #7B5EA7
 ```
 
 ### Button colors
@@ -405,6 +418,37 @@ bulk 삭제 (완료된 할일 / 삭제된 메모):
 hover 전용 UI (쓰레기통, ···): 롱프레스로 대체
 tooltip: hover 대신 tap → 표시 유지
 패널 탐색: 스와이프로 전환
+```
+
+---
+
+
+## 13-12. 업무상세 팝업 레이아웃 (2단 구조) ⭐
+
+```
+구조: 좌/우 2단
+
+헤더 (전체 너비, background #5C1F1F):
+  - 제목: 17px, fontWeight 700, color #FDF8F4
+  - 메타: 요청자→나 / 등록일 / 기한 — fontSize 11px
+  - 기한 색상: #F4C0D1 (강조)
+
+좌측 (width 230px, border-right):
+  - 상세 내용 / 공개·구분 태그 / 첨부파일(추가·삭제)
+
+우측 (flex 1):
+  - 댓글 목록: height 220px, overflow-y auto
+  - 내 댓글 우측 background #FFF5F2 / 상대 댓글 좌측 background #F5F0EE
+  - 입력창 + 전송 버튼
+
+푸터: 닫기(좌) + 완료 처리 블락버튼(우, #2C1810)
+
+완료처리 이중 진입:
+  - 패널 체크박스 → 즉시 완료 (팝업 없음)
+  - 팝업 내 완료 처리 버튼
+
+Firestore 댓글: todoRequests/{id}/comments
+  - 필드: content, author, authorEmail, createdAt
 ```
 
 ---

@@ -83,15 +83,21 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   const handleCheck = async () => {
     if (!canEdit || checking || justChecked) return;
-    if (post.requestId) {
-      setShowOrderModal(true);
-      return;
-    }
     setJustChecked(true);
     setChecking(true);
     setTimeout(async () => {
-      await updatePost(post.id, { completed: true, completedAt: new Date() });
-      setChecking(false);
+      try {
+        await updatePost(post.id, { completed: true, completedAt: new Date() });
+        if (post.requestId) {
+          await completeRequest(post.requestId);
+        }
+      } catch (e) {
+        console.error(e);
+        const { useToastStore } = await import('@/store/toastStore');
+        useToastStore.getState().addToast({ message: '완료 처리에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+      } finally {
+        setChecking(false);
+      }
     }, 600);
   };
 
@@ -216,9 +222,8 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={post.requestId && canEdit && !justChecked ? () => setShowOrderModal(true) : undefined}
         style={{
-          cursor: post.requestId && canEdit && !justChecked ? 'pointer' : 'default',
+          cursor: 'default',
           display: 'flex',
           alignItems: 'flex-start',
           gap: 8,
@@ -245,7 +250,14 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         }} />
 
         {canEdit && (
-          <button onClick={handleStar}
+          <button onClick={e => { e.stopPropagation(); handleCheck(); }} disabled={checking || justChecked}
+            style={{ width: 16, height: 16, border: `1.5px solid ${justChecked ? '#C17B6B' : '#EDE5DC'}`, background: justChecked ? '#C17B6B' : '#fff', cursor: justChecked ? 'default' : 'pointer', flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}>
+            {justChecked && <CheckIcon />}
+          </button>
+        )}
+
+        {canEdit && (
+          <button onClick={e => { e.stopPropagation(); handleStar(); }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', transition: 'opacity 0.15s ease', opacity: post.starred ? 1 : 0.25 }}
             onMouseEnter={e => { if (!post.starred) e.currentTarget.style.opacity = '0.6'; }}
             onMouseLeave={e => { if (!post.starred) e.currentTarget.style.opacity = '0.25'; }}>
@@ -253,15 +265,10 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           </button>
         )}
 
-        {canEdit && !post.requestId && (
-          <button onClick={handleCheck} disabled={checking || justChecked}
-            style={{ width: 16, height: 16, border: `1.5px solid ${justChecked ? '#C17B6B' : '#EDE5DC'}`, background: justChecked ? '#C17B6B' : '#fff', cursor: justChecked ? 'default' : 'pointer', flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}>
-            {justChecked && <CheckIcon />}
-          </button>
-        )}
-
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease' }}>
+          <div
+            onClick={post.requestId && canEdit && !justChecked ? () => setShowOrderModal(true) : undefined}
+            style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease', cursor: post.requestId && canEdit && !justChecked ? 'pointer' : 'default' }}>
             {renderContent()}
           </div>
           <div style={{ display: 'flex', gap: 4, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -499,73 +506,119 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       {showOrderModal && post.requestId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setShowOrderModal(false)}>
-          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 400, zIndex: 1001 }}
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 860, zIndex: 1001, display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ background: '#5C1F1F', padding: '18px 22px 14px' }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4, marginBottom: 10 }}>
+
+            {/* 헤더 */}
+            <div style={{ background: '#5C1F1F', padding: '20px 28px', flexShrink: 0 }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4, marginBottom: 12 }}>
                 {post.content}
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
                 {post.requestFrom && (
-                  <div style={{ fontSize: 10, color: 'rgba(253,248,244,0.65)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="3" r="2" stroke="rgba(253,248,244,0.65)" strokeWidth="1.2"/><path d="M1 9c0-2 1.8-3 4-3s4 1 4 3" stroke="rgba(253,248,244,0.65)" strokeWidth="1.2"/></svg>
-                    {post.requestFrom.split('@')[0]} → 나
+                  <div style={{ fontSize: 12, color: 'rgba(253,248,244,0.7)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="3" r="2" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/><path d="M1 9c0-2 1.8-3 4-3s4 1 4 3" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/></svg>
+                    {users.find(u => u.email === post.requestFrom)?.name || post.requestFrom.split('@')[0]} → 나
                   </div>
                 )}
-                <div style={{ fontSize: 10, color: 'rgba(253,248,244,0.65)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7" rx="1" stroke="rgba(253,248,244,0.65)" strokeWidth="1.2"/><path d="M3 1v1.5M7 1v1.5M1 4h8" stroke="rgba(253,248,244,0.65)" strokeWidth="1.2"/></svg>
+                <div style={{ fontSize: 12, color: 'rgba(253,248,244,0.7)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7" rx="1" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/><path d="M3 1v1.5M7 1v1.5M1 4h8" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/></svg>
                   {formatDate(post.createdAt)} 등록
+                </div>
+                {post.requestDueDate && (
+                  <div style={{ fontSize: 12, color: '#F4C0D1', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+                    <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#F4C0D1" strokeWidth="1.2"/><path d="M5 3v2.2l1.4 1" stroke="#F4C0D1" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                    {new Date(post.requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })} 까지
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 상태바 */}
+            <div style={{ background: '#FCEEE9', padding: '8px 28px', borderBottom: '1px solid #EDE5DC', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#993556', display: 'inline-block' }} />
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#993556' }}>진행중</span>
+            </div>
+
+            {/* 2단 바디 */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 360 }}>
+
+              {/* 좌측 고정 260px */}
+              <div style={{ width: 260, flexShrink: 0, borderRight: '1px solid #EDE5DC', padding: 20, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+
+                {post.requestContent && (
+                  <div>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 7 }}>상세 내용</div>
+                    <div style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{post.requestContent}</div>
+                  </div>
+                )}
+
+                <div style={{ height: '0.5px', background: '#EDE5DC' }} />
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 10, color: '#9E8880', width: 36, flexShrink: 0 }}>공개</span>
+                    <span style={{ fontSize: 9, padding: '3px 8px',
+                      color: !post.visibleTo || post.visibleTo.length === 0 ? '#3B6D11' : post.visibleTo.length > 1 ? '#854F0B' : '#185FA5',
+                      border: !post.visibleTo || post.visibleTo.length === 0 ? '1px solid #639922' : post.visibleTo.length > 1 ? '1px solid #BA7517' : '1px solid #378ADD',
+                    }}>
+                      {!post.visibleTo || post.visibleTo.length === 0 ? '전체' : post.visibleTo.length > 1 ? '특정' : '나만'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 10, color: '#9E8880', width: 36, flexShrink: 0 }}>구분</span>
+                    <span style={{ fontSize: 9, padding: '3px 8px', background: post.taskType === 'personal' ? '#F0ECF5' : '#FFF5F2', color: post.taskType === 'personal' ? '#7B5EA7' : '#C17B6B', border: `1px solid ${post.taskType === 'personal' ? '#7B5EA7' : '#C17B6B'}` }}>
+                      {post.taskType === 'personal' ? '개인' : '업무'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ height: '0.5px', background: '#EDE5DC' }} />
+
+                {/* 첨부파일 */}
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 7 }}>첨부파일</div>
+                  {post.attachment ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', border: '0.5px solid #EDE5DC', background: '#fff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/><path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/></svg>
+                          <span style={{ fontSize: 12, color: '#2C1810' }}>{post.attachment.name || '첨부파일'}</span>
+                        </div>
+                        <a href={post.attachment.url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: 10, color: '#C17B6B', textDecoration: 'none' }}>열기</a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: '#C4B8B0' }}>없음</div>
+                  )}
+                </div>
+              </div>
+
+              {/* 우측 댓글 — flex:1 */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ textAlign: 'center', fontSize: 10, color: '#C4B8B0' }}>댓글 기능은 준비 중입니다</div>
+                </div>
+                <div style={{ borderTop: '1px solid #EDE5DC', padding: '10px 16px', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+                  <input
+                    placeholder="메모를 남겨주세요..."
+                    disabled
+                    style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', padding: '5px 0', fontFamily: 'inherit', opacity: 0.4, cursor: 'not-allowed' }}
+                  />
+                  <button disabled style={{ fontSize: 10, padding: '7px 16px', background: '#EDE5DC', color: '#9E8880', border: 'none', cursor: 'not-allowed' }}>전송</button>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: '#FCEEE9', padding: '7px 22px', borderBottom: '1px solid #EDE5DC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#993556', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#993556', display: 'inline-block' }} />
-                진행중
-              </span>
-              {post.requestDueDate && (
-                <span style={{ fontSize: 10, color: '#A0503A', fontWeight: 600, background: '#FFF5F2', border: '0.5px solid #C17B6B', padding: '2px 8px' }}>
-                  {new Date(post.requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}까지
-                </span>
-              )}
-            </div>
-
-            <div style={{ padding: '18px 22px' }}>
-              {post.requestContent && (
-                <>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 5 }}>상세 내용</div>
-                  <div style={{ fontSize: 12, color: '#2C1810', lineHeight: 1.7, marginBottom: 14, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                    {post.requestContent}
-                  </div>
-                  <div style={{ height: '0.5px', background: '#EDE5DC', marginBottom: 12 }} />
-                </>
-              )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 }}>
-                <span style={{ fontSize: 10, color: '#9E8880', width: 36, flexShrink: 0 }}>공개</span>
-                <span style={{ fontSize: 9, padding: '2px 7px', letterSpacing: '0.06em',
-                  background: !post.visibleTo || post.visibleTo.length === 0 ? 'rgba(99,153,34,0.15)' : post.visibleTo.length > 1 ? 'rgba(186,117,23,0.15)' : 'rgba(55,138,221,0.15)',
-                  color: !post.visibleTo || post.visibleTo.length === 0 ? '#3B6D11' : post.visibleTo.length > 1 ? '#854F0B' : '#185FA5',
-                  border: !post.visibleTo || post.visibleTo.length === 0 ? '0.5px solid #639922' : post.visibleTo.length > 1 ? '0.5px solid #BA7517' : '0.5px solid #378ADD',
-                }}>
-                  {!post.visibleTo || post.visibleTo.length === 0 ? '전체' : post.visibleTo.length > 1 ? '특정인' : '나만'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 10, color: '#9E8880', width: 36, flexShrink: 0 }}>구분</span>
-                <span style={{ fontSize: 9, padding: '2px 7px', letterSpacing: '0.06em', background: '#FFF5F2', color: '#C17B6B', border: '0.5px solid #C17B6B' }}>
-                  {post.taskType === 'personal' ? '개인' : '업무'}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ padding: '12px 22px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* 푸터 */}
+            <div style={{ padding: '12px 28px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <button onClick={() => setShowOrderModal(false)}
-                style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>
+                style={{ fontSize: 11, letterSpacing: '0.04em', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>
                 닫기
               </button>
               <button onClick={handleComplete} disabled={isCompleting}
-                style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: isCompleting ? 'not-allowed' : 'pointer', opacity: isCompleting ? 0.6 : 1 }}>
+                style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '9px 24px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: isCompleting ? 'not-allowed' : 'pointer', opacity: isCompleting ? 0.6 : 1 }}>
                 {isCompleting ? '처리 중...' : '완료 처리'}
               </button>
             </div>
