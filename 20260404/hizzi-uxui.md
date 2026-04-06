@@ -66,11 +66,24 @@ Leave     → rgba(83,74,183,0.15)   + #534AB7 border
 Request   → #993556 bg + 3px solid #72243E
 ```
 
-### Todo tags
+### Todo / Memo tags (통일 기준)
 ```
-Task type:    work → #C17B6B / #FFF5F2   |  personal → #9E8880 / #F5F0EE
-Visibility:   all → green  |  me → blue  |  specific → amber
-FROM tag (received request): #FCEEE9 bg + #A0503A text + 0.5px solid #C17B6B border
+Task type (배경 없음 + 테두리만):
+  work     → color #C17B6B  border 1px solid #C17B6B
+  personal → color #9E8880  border 1px solid #9E8880
+
+Visibility (배경 없음 + 테두리만):
+  all      → color #3B6D11  border 1px solid #639922
+  me       → color #185FA5  border 1px solid #378ADD
+  specific → color #854F0B  border 1px solid #BA7517
+
+FROM tag (received request):
+  background #FCEEE9  color #A0503A  border 0.5px solid #C17B6B
+
+TEAM tag:
+  background #F5F0EE  color #9E8880  (no border)
+  hover → tooltip with member chips (background #F5F0EE, no border)
+  팀원 칩: 3명까지 1행, 4명부터 줄바꿈 (maxWidth: 240px, flexWrap: wrap)
 ```
 
 ### Button colors
@@ -120,7 +133,6 @@ Cancel:  text #9E8880  no bg  no border
 ```
 
 **⚠️ NEVER use `margin: '0 -20px'` on hover layers.**
-This causes layout breakage inside `overflow-y: auto` parents.
 Use `inset: 0` only.
 
 ---
@@ -132,8 +144,8 @@ function getLeftBorderColor(post: Post): string {
   if (post.requestFrom) return '#993556'  // received request
   if (post.starred)     return '#C17B6B'  // starred
   if (!post.visibleTo || post.visibleTo.length === 0) return '#639922'   // all
-  if (post.visibleTo.length === 1 && post.visibleTo[0] === post.author)  // me only
-    return '#378ADD'
+  if (post.visibleTo.length === 1 && post.visibleTo[0] === post.author)
+    return '#378ADD'  // me only
   return '#BA7517'  // specific
 }
 ```
@@ -160,12 +172,10 @@ function getLeftBorderColor(post: Post): string {
 ## 8. Calendar Click Guard Pattern
 
 ```typescript
-// Required on every calendar event element
 <div data-event="true" ...>
 
-// In the parent click/mouseUp handler:
 const clickedEvent = (e.target as HTMLElement).closest('[data-event="true"]')
-if (clickedEvent) return  // don't open add-event popup
+if (clickedEvent) return
 
 // Left border: only render when isStart || isSingle
 {(isStart || isSingle) && <div style={{ borderLeft: '3px solid ...' }} />}
@@ -231,7 +241,175 @@ Never: 0.3s or longer / linear / transitions on padding or margin
 
 ---
 
-## 13. Pre-flight Design Checklist
+## 13. UX Principles ⭐ (2026.04.06 확정)
+
+> 이 섹션은 새 기능 설계 전 반드시 확인. 결정된 원칙이며 임의 변경 금지.
+> 변경 필요 시 오너 승인 후 업데이트.
+
+### 13-1. 정보 계층 구조
+
+```
+패널 (Panel)
+  └─ 탭바 인라인에 패널명 표시 (좌측) + 탭 (우측)
+      └─ 할일 탭: 필터 바 (업무 / 요청 / 개인) + 우측 + 게시물
+      └─ 메모 탭: 필터 바 숨김, + 게시물만 표시
+          └─ 아이템 (제목 + 내용 2줄 미리보기 + 태그)
+```
+
+### 13-2. 필터 원칙
+
+```
+할일 탭 필터 버튼: 업무 / 요청 / 개인  (전체 버튼 없음)
+기본 선택: 업무 + 요청 동시 활성 (중복 선택 허용)
+동작: 선택된 필터에 해당하는 아이템만 표시
+      아무것도 선택 안 된 상태 → 전체 표시 (엣지케이스 방어)
+메모 탭: 필터 바 완전 숨김
+```
+
+### 13-3. 할일 아이템 구조
+
+```
+[왼쪽 2px 컬러 선] [체크박스] [즐겨찾기 별] [제목]          [쓰레기통]
+                                             [내용 2줄 미리보기]
+                                             [태그들] [날짜]
+
+왼쪽 2px 선 컬러 규칙: getLeftBorderColor() 함수 기준 (Section 6)
+체크박스: 완료 처리 (요청 할일은 체크 시 업무상세 팝업)
+즐겨찾기: 별 아이콘, 클릭 시 starred 토글 → 상단 정렬
+쓰레기통: hover 시 표시, 클릭 시 0.3s 딜레이 후 soft delete
+```
+
+### 13-4. 할일 데이터 구조 (확정 — Firestore 반영 필요)
+
+```typescript
+// posts 컬렉션 추가 필드
+{
+  title: string          // 할일 제목 (기존 content → title로 분리)
+  content?: string       // 할일 상세 내용 (선택사항, 2줄 미리보기)
+  dueDate?: string       // 기한 (선택사항, 모든 할일에 적용 가능)
+                         // 기한 있으면 캘린더 자동 등록 연동 가능
+}
+
+// 마이그레이션 필요:
+// 기존 content → title (기존 데이터 content를 title로 읽음)
+// content 필드 신규 추가
+```
+
+### 13-5. 정렬 기준
+
+```
+할일 목록 정렬 우선순위:
+  1. starred = true → 최상단
+  2. dueDate 임박순 (오늘 기준 D-day 계산, dueDate 없으면 하위)
+  3. createdAt 최신순
+
+메모 목록 정렬 우선순위:
+  1. starred = true → 최상단
+  2. createdAt 최신순
+```
+
+### 13-6. 삭제 원칙
+
+```
+단건 삭제:
+  - 쓰레기통 클릭 → 0.3s 딜레이 후 soft delete
+  - confirm 없음 (빠른 삭제 우선)
+  - 삭제된 항목 → "삭제된 할일" 섹션에서 복구 가능
+
+bulk 삭제 (완료된 할일 / 삭제된 메모):
+  - 선택 모드 → 선택 삭제 / 전체 삭제
+  - try/catch/finally 필수 (rules.md R6.3)
+```
+
+### 13-7. 완료 처리 원칙
+
+```
+체크박스 클릭:
+  → 0.6s 체크 애니메이션
+  → 완료된 할일 섹션으로 이동
+  → undo 없음 (완료 섹션에서 복구 가능)
+
+요청 할일 체크:
+  → 업무상세 팝업 열림 (직접 완료처리 버튼)
+  → todoRequests.status = 'completed' cascade 필수
+  → 완료 시 요청자에게 토스트 알림 발송 (Section 13-9 참고)
+```
+
+### 13-8. 수정 원칙
+
+```
+할일 수정: ··· 메뉴 → 모달 (제목 + 내용 + 구분 + 공개범위 + 기한)
+메모 수정: ··· 메뉴 → 모달 (내용 + 공개범위)
+요청 할일: 수정 불가 (받은 요청은 읽기 전용)
+```
+
+### 13-9. 요청함 (TodoRequestModal) UX ⭐
+
+```
+위치: 패널 탭바 우측 우편함 아이콘 (현행 유지)
+배지: 처리 필요 건수 표시 (수락 대기 중인 것만 카운트)
+
+구조: 탭 없음 — 단일 스크롤, 행동 기준 섹션 4개로 그룹핑
+
+섹션 1 — 내가 수락해야 함 (최상단, 가장 강조)
+  - 조건: toEmail = 나, status = 'pending'
+  - 색상: #993556 (핑크 강조)
+  - 액션: 수락 / 반려 버튼 인라인 표시
+
+섹션 2 — 내가 진행 중
+  - 조건: toEmail = 나, status = 'accepted'
+  - 색상: #C17B6B (terracotta)
+  - 액션: 업무상세 보기 (클릭 시 work-order 팝업)
+
+섹션 3 — 상대방 처리 대기 중
+  - 조건: fromEmail = 나, status = 'pending' | 'accepted'
+  - 색상: #9E8880 (gray)
+  - pending: 요청 취소 버튼 표시
+  - accepted: 진행중 상태 표시만
+
+섹션 4 — 완료 · 반려 · 취소 (기본 접힘)
+  - 조건: status = 'completed' | 'rejected' | 'cancelled'
+  - 기본값: 접혀있음 (▼ 펼치기)
+  - 색상: #3B6D11 (green, 완료 느낌)
+
+방향 태그:
+  FROM {이름} → 받은 것  (background #FCEEE9, color #A0503A, border #C17B6B)
+  TO {이름}   → 보낸 것  (background #F5F0EE, color #9E8880)
+```
+
+### 13-10. 완료 알림 원칙 (C안 — 토스트 + 배지 혼합)
+
+```
+트리거: 수신자가 요청 할일 완료 처리 시
+
+요청자 화면:
+  1. 토스트 팝업 (즉시)
+     - 메시지: "{이름}님이 완료했습니다"
+     - 서브: "{할일 제목} · 방금"
+     - 자동 닫힘: 4초
+  2. 요청함 배지 숫자 증가 (새 완료 알림)
+  3. 요청함 섹션 4(완료)에 기록
+
+구현 방식:
+  - todoRequests 컬렉션 onSnapshot 리스너에서
+    status가 'accepted' → 'completed'로 변경된 경우 감지
+  - fromEmail === 현재 유저 → 토스트 발송
+  - 이미 본 완료 알림은 중복 발송 안 함 (notifiedAt 필드 활용)
+```
+
+### 13-11. 모바일 대응 원칙 (향후 구현 시 기준)
+
+```
+터치 타겟: 최소 44px 높이
+필터 버튼: 가로 스크롤 허용 (overflow-x: auto)
+hover 전용 UI (쓰레기통, ···): 롱프레스로 대체
+tooltip: hover 대신 tap → 표시 유지
+패널 탐색: 스와이프로 전환
+```
+
+---
+
+## 14. Pre-flight Design Checklist
 
 ```
 □ Is hover layer using inset:0 (not negative margin)?
@@ -241,11 +419,16 @@ Never: 0.3s or longer / linear / transitions on padding or margin
 □ Is undefined never saved to Firestore (visibleTo, attachments)?
 □ Is the color assignment following the color-meaning system?
 □ Does edit modal match create form in options and layout?
+□ Is tag style using border-only (no background) pattern?
+□ Is filter bar hidden on memo tab?
+□ Does todo item show title + 2-line body preview?
+□ Does TodoRequestModal use section-based layout (not tabs)?
+□ Does completion trigger toast + badge for requester?
 ```
 
 ---
 
-## 14. Lessons Learned ⭐
+## 15. Lessons Learned ⭐
 
 ```
 Calendar event click conflict:
@@ -268,8 +451,16 @@ any type:
 
 Specific visibility shown as "me only":
   ❌ length > 0 → 'me' → ✅ length===1 && [0]===author → 'me'; else → 'specific'
+
+Tag style inconsistency (PostItem vs TodoItem):
+  ❌ 각 컴포넌트 별도 정의 → ✅ Section 3 color meaning system 기준 통일
+  Rule: 배경 없음 + 테두리만 (border-only pattern)
+
+TodoRequestModal tab UX confusion:
+  ❌ 받은/보낸/진행중/완료 탭 → ✅ 행동 기준 섹션 그룹 (탭 없음)
+  Rule: "내가 수락해야 함" 최상단, 완료는 기본 접힘
 ```
 
 ---
 
-*Updated: 2026.04.05*
+*Updated: 2026.04.06 (UX 원칙 / 요청함 UX / 완료 알림 패턴 추가)*

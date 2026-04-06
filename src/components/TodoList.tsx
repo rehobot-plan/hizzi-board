@@ -9,15 +9,25 @@ interface TodoListProps {
   ownerEmail?: string | null;
   posts: Post[];
   canEdit: boolean;
+  activeFilter?: ('업무' | '요청' | '개인')[];
 }
 
-export default function TodoList({ panelId, ownerEmail, posts, canEdit }: TodoListProps) {
+export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFilter = ['업무', '요청'] }: TodoListProps) {
   const todoAll = posts.filter(p =>
     p.panelId === panelId && p.category === '할일'
   );
 
   const activeTodos = todoAll
     .filter(p => !p.completed)
+    .filter(p => {
+      if (!activeFilter || activeFilter.length === 0) return true;
+      const isRequest = !!p.requestId || !!p.requestFrom;
+      const taskType = p.taskType ?? 'work';
+      if (activeFilter.includes('요청') && isRequest) return true;
+      if (activeFilter.includes('업무') && !isRequest && taskType === 'work') return true;
+      if (activeFilter.includes('개인') && !isRequest && taskType === 'personal') return true;
+      return false;
+    })
     .sort((a, b) => {
       if (a.starred && !b.starred) return -1;
       if (!a.starred && b.starred) return 1;

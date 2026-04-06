@@ -39,6 +39,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [memoSelectMode, setMemoSelectMode] = useState(false);
+  const [todoFilter, setTodoFilter] = useState<('업무' | '요청' | '개인')[]>(['업무', '요청']);
 
   const { posts, deletePost } = usePostStore();
   const { user } = useAuthStore();
@@ -113,136 +114,160 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
       data-panel-id={id}
       style={{ transition: "background 0.2s, border 0.2s" }}
     >
-      {/* 탭 영역 */}
-      <div className="flex gap-4 mb-0 border-b border-[#EDE5DC] bg-[#FDF8F4] px-5 pt-4 pb-0 items-center justify-between">
-        <div className="flex gap-4">
-        {categoryList.map((cat) => {
-          const isBase = BASE_CATEGORIES.includes(cat);
-          return (
-            <div key={cat} className="relative flex items-center group">
-              {editingTab === cat ? (
-                <input
-                  className="px-3 py-2 border-b-2 text-[10px] uppercase tracking-widest focus:outline-none bg-transparent"
-                  value={tabNameDraft}
-                  autoFocus
-                  onChange={(e) => setTabNameDraft(e.target.value)}
-                  onBlur={() => saveTabName(cat, tabNameDraft)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      saveTabName(cat, tabNameDraft);
-                    }
-                  }}
-                  style={{ minWidth: 48, borderBottom: `2px solid #C17B6B` }}
-                />
-              ) : (
-                <button
-                  className={`px-3 py-2 border-b-2 text-[10px] uppercase tracking-widest ${activeCategory === cat ? "font-bold" : ""}`}
-                  style={{
-                    borderBottom: activeCategory === cat ? "2px solid #C17B6B" : "2px solid transparent",
-                    color: activeCategory === cat ? "#C17B6B" : "#2C1810",
-                    background: "transparent",
-                    transition: "background 0.2s, border 0.2s, color 0.2s",
-                  }}
-                  onClick={() => setActiveCategory(cat)}
-                  onDoubleClick={() => {
-                    if (!isBase && canAddCategory) {
-                      setEditingTab(cat);
-                      setTabNameDraft(cat);
-                    }
-                  }}
-                  type="button"
-                >
-                  {cat}
-                </button>
-              )}
-              {canAddCategory && !isBase && (
-                <button
-                  className="ml-0.5 text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
-                  title="탭 삭제"
-                  onClick={() => {
-                    setDeleteTarget(cat);
-                    setShowDeleteModal(true);
-                  }}
-                  type="button"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          );
-        })}
-        </div>
-        {(isOwner || user?.role === 'admin') && ownerEmail && <div className="pb-1"><TodoRequestBadge panelOwnerEmail={ownerEmail} /></div>}
-      </div>
-      {/* 패널 제목 영역 */}
-      <div className="flex justify-between items-center px-5 py-4 border-b border-[#EDE5DC] bg-white">
-        {!isEditing ? (
-          <h3
-            className="text-xs font-bold text-[#2C1810] uppercase tracking-widest select-none"
-            style={{
-              letterSpacing: "0.18em",
-              cursor: canRename ? 'pointer' : 'default',
-              borderBottom: canRename ? '1px dashed transparent' : 'none',
-              transition: 'border-color 0.15s, color 0.15s',
-            }}
-            onClick={() => canRename && setIsEditing(true)}
-            onMouseEnter={e => {
-              if (canRename) {
-                e.currentTarget.style.borderBottomColor = '#EDE5DC';
-                e.currentTarget.style.color = '#7A2828';
-              }
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderBottomColor = 'transparent';
-              e.currentTarget.style.color = '#2C1810';
-            }}
-            tabIndex={0}
-            title={canRename ? '클릭하여 이름 변경' : ''}
-          >
-            {panelName}
-          </h3>
-        ) : (
-          <input
-            ref={panelNameInputRef}
-            value={panelName}
-            onChange={(e) => setPanelName(e.target.value)}
-            onBlur={savePanelName}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") savePanelName();
-            }}
-            className="border-b border-[#EDE5DC] px-1 py-0.5 mr-1 text-xs uppercase tracking-widest"
-            autoFocus
-            style={{ minWidth: 60 }}
-          />
-        )}
-        <div className="flex items-center gap-2">
-          {canCreate && activeCategory !== '할일' && (
-            <button
-              onClick={() => { setMemoSelectMode(v => !v); }}
+      {/* 탭 영역 — 패널명 인라인 */}
+      <div className="flex mb-0 border-b border-[#EDE5DC] bg-[#FDF8F4] px-5 pt-4 pb-0 items-center justify-between">
+        {/* 패널명 인라인 (좌측) */}
+        <div className="pb-2 pr-4 flex-shrink-0">
+          {!isEditing ? (
+            <span
+              className="text-[10px] font-bold text-[#2C1810] uppercase tracking-widest select-none"
               style={{
-                fontSize: 10, letterSpacing: '0.04em',
-                color: memoSelectMode ? '#C17B6B' : '#9E8880',
-                background: 'none',
-                border: `1px solid ${memoSelectMode ? '#C17B6B' : '#EDE5DC'}`,
-                cursor: 'pointer', padding: '2px 8px',
-                transition: 'all 0.15s ease',
-                marginTop: 8,
+                letterSpacing: '0.18em',
+                cursor: canRename ? 'pointer' : 'default',
+                transition: 'color 0.15s',
               }}
+              onClick={() => canRename && setIsEditing(true)}
+              onMouseEnter={e => { if (canRename) e.currentTarget.style.color = '#7A2828'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#2C1810'; }}
+              title={canRename ? '클릭하여 이름 변경' : ''}
             >
-              {memoSelectMode ? '취소' : '선택'}
-            </button>
-          )}
-          {canCreate && (
-            <button
-              onClick={() => setShowCreate(true)}
-              className="px-3 py-1 border border-[#C17B6B] text-[#C17B6B] bg-white rounded-none text-[10px] uppercase tracking-widest outline-none hover:bg-[#FDF8F4] transition mt-2"
-              style={{ boxShadow: "none" }}
-            >
-              + 게시물
-            </button>
+              {panelName}
+            </span>
+          ) : (
+            <input
+              ref={panelNameInputRef}
+              value={panelName}
+              onChange={(e) => setPanelName(e.target.value)}
+              onBlur={savePanelName}
+              onKeyDown={(e) => { if (e.key === 'Enter') savePanelName(); }}
+              className="border-b border-[#EDE5DC] px-1 py-0.5 text-[10px] uppercase tracking-widest"
+              autoFocus
+              style={{ minWidth: 60 }}
+            />
           )}
         </div>
+        {/* 탭 버튼 (우측) */}
+        <div className="flex gap-4 items-center">
+          {categoryList.map((cat) => {
+            const isBase = BASE_CATEGORIES.includes(cat);
+            return (
+              <div key={cat} className="relative flex items-center group">
+                {editingTab === cat ? (
+                  <input
+                    className="px-3 py-2 border-b-2 text-[10px] uppercase tracking-widest focus:outline-none bg-transparent"
+                    value={tabNameDraft}
+                    autoFocus
+                    onChange={(e) => setTabNameDraft(e.target.value)}
+                    onBlur={() => saveTabName(cat, tabNameDraft)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveTabName(cat, tabNameDraft);
+                      }
+                    }}
+                    style={{ minWidth: 48, borderBottom: '2px solid #C17B6B' }}
+                  />
+                ) : (
+                  <button
+                    className={`px-3 py-2 border-b-2 text-[10px] uppercase tracking-widest ${activeCategory === cat ? 'font-bold' : ''}`}
+                    style={{
+                      borderBottom: activeCategory === cat ? '2px solid #C17B6B' : '2px solid transparent',
+                      color: activeCategory === cat ? '#C17B6B' : '#2C1810',
+                      background: 'transparent',
+                      transition: 'background 0.2s, border 0.2s, color 0.2s',
+                    }}
+                    onClick={() => setActiveCategory(cat)}
+                    onDoubleClick={() => {
+                      if (!isBase && canAddCategory) {
+                        setEditingTab(cat);
+                        setTabNameDraft(cat);
+                      }
+                    }}
+                    type="button"
+                  >
+                    {cat}
+                  </button>
+                )}
+                {canAddCategory && !isBase && (
+                  <button
+                    className="ml-0.5 text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
+                    title="탭 삭제"
+                    onClick={() => {
+                      setDeleteTarget(cat);
+                      setShowDeleteModal(true);
+                    }}
+                    type="button"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {(isOwner || user?.role === 'admin') && ownerEmail && (
+          <div className="pb-2 pl-2"><TodoRequestBadge panelOwnerEmail={ownerEmail} /></div>
+        )}
+      </div>
+
+      {/* 필터 바 영역 */}
+      <div className="flex items-center px-5 py-2 border-b border-[#EDE5DC] bg-white gap-2">
+        {activeCategory === '할일' && (
+          <>
+            {(['업무', '요청', '개인'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setTodoFilter(prev =>
+                  prev.includes(f)
+                    ? prev.filter(x => x !== f)
+                    : [...prev, f]
+                )}
+                style={{
+                  fontSize: 10, letterSpacing: '0.04em',
+                  color: todoFilter.includes(f) ? '#C17B6B' : '#9E8880',
+                  background: 'none',
+                  border: `1px solid ${todoFilter.includes(f) ? '#C17B6B' : '#EDE5DC'}`,
+                  cursor: 'pointer', padding: '2px 10px',
+                  transition: 'all 0.15s ease',
+                }}
+                type="button"
+              >
+                {f}
+              </button>
+            ))}
+          </>
+        )}
+        <div style={{ flex: 1 }} />
+        {canCreate && activeCategory !== '할일' && (
+          <button
+            onClick={() => { setMemoSelectMode(v => !v); }}
+            style={{
+              fontSize: 10, letterSpacing: '0.04em',
+              color: memoSelectMode ? '#C17B6B' : '#9E8880',
+              background: 'none',
+              border: `1px solid ${memoSelectMode ? '#C17B6B' : '#EDE5DC'}`,
+              cursor: 'pointer', padding: '2px 8px',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {memoSelectMode ? '취소' : '선택'}
+          </button>
+        )}
+        {canCreate && (
+          <button
+            onClick={() => setShowCreate(true)}
+            style={{
+              fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
+              padding: '2px 12px', border: '1px solid #C17B6B',
+              color: '#C17B6B', background: '#fff', cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+          >
+            + 게시물
+          </button>
+        )}
       </div>
       {/* 게시물 목록 */}
       <div className="flex-1 overflow-y-auto px-5">
@@ -252,6 +277,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             ownerEmail={ownerEmail}
             posts={posts}
             canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+            activeFilter={todoFilter}
           />
         ) : (
           <PostList

@@ -58,14 +58,8 @@ Claude 소통 원칙:
 
 새 기능 요청 시 Claude 행동 순서:
 1. 기능 의도 파악 후 객관식으로 필요한 정보 수집
-   - 누가 / 어떤 조건에서 / 어떤 결과를 보는지
-   - 기존 기능과 충돌 또는 연동 가능성
-   - 상태 변경(status/completed 등)이 생기는지
-   - 질문은 한 번에 하나씩, 객관식으로
-2. 훅 추출 여부 판단 — 오너가 빠르게 결정할 수 있게 경우의 수를 먼저 제시
-   판단 기준: 2개 이상 컴포넌트에서 즉시 사용 or 확실히 늘어날 구조 → 훅 추출
+2. 훅 추출 여부 판단
 3. flows.md 기준 cascade 영향 범위 선언
-   - 새 흐름이면 flows.md에 먼저 추가 후 코드 작성
 4. rules.md pre-flight checklist 확인 (SECTION 9 명령 블록 원칙 포함)
 5. 관련 파일 📎 첨부 후 코드 작성
 
@@ -80,26 +74,15 @@ Claude 소통 원칙:
 오너가 /wrap 입력 시 Claude 행동 순서:
 
 STEP 1 — 이번 세션 변경 내용 스캔 후 MD별 업데이트 필요 여부 판단:
-
   master.md  → 스키마·파일구조·기술부채·버그히스토리·CLI 변경 시
   rules.md   → 규칙 추가·수정·섹션 변경 시
   flows.md   → 새 상태 흐름·cascade 추가·변경 시
-  uxui.md    → 컬러·컴포넌트·레이아웃 패턴 변경 시
+  uxui.md    → 컬러·컴포넌트·UX원칙·레이아웃 패턴 변경 시
   session.md → 매 세션 항상 업데이트
 
-STEP 2 — 오너에게 보고:
-  예) "이번 세션 MD 업데이트 현황:
-       session.md ✅ 업데이트 필요
-       rules.md   ✅ 업데이트 필요
-       master.md  — 변경 없음
-       flows.md   — 변경 없음
-       uxui.md    — 변경 없음"
-
-STEP 3 — 필요한 MD만 업데이트 후 파일 생성
-  → present_files로 한 번에 전달
-
+STEP 2 — 오너에게 보고
+STEP 3 — 필요한 MD만 업데이트 후 파일 생성 (present_files로 한 번에)
 STEP 4 — 다음 세션 파일 첨부 가이드 출력
-  → 업데이트된 MD 목록 명시
 ```
 
 ---
@@ -137,98 +120,111 @@ Owner confirms → session continues or wraps (/wrap)
 - Firestore Rules deployed, Cache-Control headers added
 
 ### 2026.04.03 Evening 1
-- Request completion sync: check → todoRequest status 'completed'
-- Undo completion sync: restore → status 'accepted'
-- FROM tag design (terracotta left line + FROM name tag)
-- Received todo: disable edit/delete
-- Calendar: block add-event popup on event click
-- Calendar: show 3 events + +n overflow popup
-- Calendar: event detail shows request info
-- Team request: calendar dedup + show all assignees
-- useEscClose hook created + applied to all modals
+- Request completion sync / undo sync / FROM tag / work-order modal
+- Calendar: click guard / overflow popup / event detail / team dedup
+- useEscClose hook
 
 ### 2026.04.03 Evening 2
-- Color meaning system applied (calendar / todo / buttons)
-- Todo edit modal: specific visibility option added
-- Work-order modal (click request todo → show brief)
-- Accept/reject buttons: pastel green/pink (B variant)
-- Calendar event block rendering
-- Add-event: taskType + visibility selector UI
-- Technical debt analysis complete, 8 MDs drafted
+- Color meaning system / visibility options / accept/reject buttons
+- Calendar event block rendering / add-event UI
 - `any` type ban rule established
 
 ### 2026.04.05 — Technical Debt Session
 - Panel.tsx refactor → CompletedTodo / TodoList / PostList 분리
-- Bug fixes: ghost re-render, memo layout, specific visibility
 
-### 2026.04.05 — MD Restructure Session
-- Restructured 7 MDs → 5 MDs, hizzi-rules.md 신설
-
-### 2026.04.05 — Quality Session
-- any type 제거, error handling 통일, useVisibilityTooltip hook 생성
-
-### 2026.04.05 — Memo UX Session
-- postStore addPost 낙관적 업데이트
-- 메모 soft delete + 삭제된 메모 섹션 + 태그 표시
+### 2026.04.05 — MD Restructure + Quality + Memo UX Session
+- 5개 MD 구조 확립 / any 제거 / error handling 통일
+- postStore 낙관적 업데이트 / soft delete / 삭제된 메모 섹션 / 태그 표시
 
 ### 2026.04.06 — 현재 세션
-- **CompletedTodo.tsx 롤백** ✅
-- **완료된 할일 선택/전체 삭제 버그 수정** ✅
-  - deletePost → hardDeletePost 교체 + try/catch/finally + addToast
-- **PostList.tsx 선택/전체 삭제 try/catch/finally** ✅
-- **살아있는 메모 선택 삭제 (B안)** ✅
-  - Panel.tsx 선택 버튼 + PostList.tsx 액션바 + 체크박스
-  - 전체 삭제 버튼 추가
-- **MD 구조 개선** ✅
-  - 명령 블록 작성 원칙 → rules.md SECTION 9로 이관
-  - 소통 원칙 7번 추가: "먼저 제안하기"
-  - 약속어(/status /pf /block /wrap) 세션 프롬프트에 추가
-  - /wrap 동작 정의 (5개 MD 업데이트 필요 여부 자동 체크 + 파일 생성)
-- **특정인 visibility 전체 버그 수정** ✅
-  - PostItem tooltip 미작동 → 최상위 div로 title 이동
-  - TodoItem tooltip 미작동 → 최상위 div로 title 이동
+- **버그 수정** ✅
+  - CompletedTodo 선택/전체 삭제: deletePost → hardDeletePost + try/catch/finally
+  - PostList 선택/전체 삭제: try/catch/finally + addToast
+  - 특정인 tooltip 전체 수정 (PostItem/TodoItem — 브라우저 title → 커스텀)
   - TodoItem 태그 "지정" → "특정인"
-  - TodoItem editSpecificUsers 초기값 author 제외 처리
+  - TodoItem editSpecificUsers 초기값 author 제외
   - TodoRequestModal 팀원 목록 렌더링 추가
-- **TodoItem margin: '0 -20px'** 🟡 별도 티켓
-  - R5.2 위반이나 레이아웃 영향 범위 확인 필요 — 다음 세션 처리
+  - 팝업 내 공개범위 "지정" → "특정인"
+- **신규 기능** ✅
+  - 살아있는 메모 선택 삭제 B안 (Panel 선택버튼 + PostList 액션바 + 전체삭제)
+  - 메모 즐겨찾기 (starred 토글 + 상단 정렬)
+  - 팀 요청 할일 TEAM tooltip 커스텀 (가로 칩, 3명 1행)
+  - 팀 요청 할일 전체 클릭 → 팝업 오픈 + "상세 보기 ›" B안
+  - 할일/메모 태그 스타일 통일 (배경 없음 + 테두리만)
+- **MD 개선** ✅
+  - rules.md SECTION 9 신설 (명령 블록 원칙 이관)
+  - session.md 약속어(/wrap /status /pf /block) + /wrap 동작 정의
+  - uxui.md SECTION 13 UX 원칙 신설 (9개 원칙 확정)
+  - uxui.md SECTION 13-9 요청함 UX (행동 기준 섹션 구조)
+  - uxui.md SECTION 13-10 완료 알림 원칙 (토스트 + 배지 C안)
+- **TodoItem margin: '0 -20px'** 🟡 별도 티켓 (R5.2 위반, 레이아웃 확인 필요)
 
 ---
 
 ## 🔴 Remaining Work — Priority Order
 
-### Immediate
+### Phase 1 — 패널 레이아웃 + 필터 바 (다음 우선)
 ```
-1. TodoItem margin: '0 -20px' 제거 (R5.2)
-   - padding으로 동일 시각 효과 유지 후 레이아웃 확인
-   - 파일: TodoItem.tsx
-```
+1. 패널명 → 탭바 인라인 이동
+   - 탭바 좌측 패널명, 우측 탭 버튼
+   - 파일: Panel.tsx
 
-### Next sessions
-```
-2. Calendar "편집" → "수정" label change
+2. 필터 바 추가 (업무 / 요청 / 개인)
+   - 기본 선택: 업무+요청 동시 / 중복 선택 허용
+   - 메모 탭에서 숨김
+   - 파일: Panel.tsx · TodoList.tsx
 
-3. Multi-day event edit/delete-all
-   - Date range editable in detail modal
-   - "전체 삭제" button
-
-4. Leave edit: start/end date selector
-
-5. Request archive (completed/rejected/cancelled → searchable)
-
-6. Team leader confirmation flow (2-step)
+3. + 게시물 버튼 → 필터 바 우측으로 이동
+   - 파일: Panel.tsx
 ```
 
-### Leave
+### Phase 2 — 할일 아이템 구조 개선
 ```
-- Self-apply leave + approval flow
-- Leave request A4 print form
+4. 아이템 레이아웃: 체크박스 → 별 → 제목 → 쓰레기통
+   내용 2줄 미리보기 항상 표시
+   파일: TodoItem.tsx
+
+5. 쓰레기통 삭제 버튼 (hover 시 표시, 0.3s 딜레이 soft delete)
+   파일: TodoItem.tsx
+
+6. 정렬: 즐겨찾기 → 기한임박 → 최신순
+   파일: TodoList.tsx
 ```
 
-### Separate sessions
+### Phase 3 — 할일 제목+내용+기한 구조 (대형, 별도 세션)
 ```
+7. Firestore posts 스키마: content → title 분리 + content 신규 + dueDate 전체 확장
+   마이그레이션 스크립트 필요 / flows.md 업데이트 선행
+
+8. CreatePost 할일 생성 UI: 제목+내용+기한 선택기
+   파일: CreatePost.tsx
+
+9. 할일 수정 모달: 제목+내용+기한 편집
+   파일: TodoItem.tsx
+
+10. 기한 있는 할일 → 캘린더 자동 등록 연동
+    파일: postStore.ts · Calendar.tsx · flows.md
+```
+
+### Phase 4 — 요청함 UX 재편 (별도 세션)
+```
+11. TodoRequestModal 탭 구조 → 행동 기준 섹션 구조로 전면 개편
+    섹션: 내가 수락해야 함 / 내가 진행 중 / 상대방 대기 중 / 완료(접힘)
+    파일: TodoRequestModal.tsx
+
+12. 완료 알림 토스트 (요청자에게)
+    todoRequests onSnapshot에서 status 변경 감지 → addToast
+    파일: todoRequestStore.ts · toastStore.ts
+```
+
+### 기타
+```
+- TodoItem margin: '0 -20px' 제거 (R5.2) — 레이아웃 확인 필요
+- Calendar "편집" → "수정" label change
+- Multi-day event edit/delete-all
+- Leave edit: start/end date selector
+- Request archive searchable
 - Mobile full unification
-- Common hooks: useFileUpload, useIsMobile, useCanEdit
 ```
 
 ---
@@ -252,17 +248,13 @@ Architect 탭 (이 탭, 매 세션):
   📎 hizzi-flows.md
   📎 hizzi-uxui.md
   📎 hizzi-session.md
-  → 세션 프롬프트 붙여넣기 (약속어 /wrap /status /pf /block 포함)
+  → 세션 프롬프트 붙여넣기
 
-Reviewer 탭 (리뷰 전용, 세션당 한 번만 세팅):
+Reviewer 탭 (리뷰 전용):
   📎 hizzi-rules.md
   📎 hizzi-review-agent.md
-  → PART 1 프롬프트 붙여넣기
-  → "이해했으면 '리뷰 준비 완료'라고만 답해" 전송
-
-hizzi-review-agent.md는 Architect 탭에 올리지 않는다.
 ```
 
 ---
 
-*Updated: 2026.04.06 (약속어 + /wrap 동작 정의 추가)*
+*Updated: 2026.04.06 (UX 설계 세션 — 요청함/완료알림/필터/아이템구조 확정)*
