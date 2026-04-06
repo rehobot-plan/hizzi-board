@@ -98,7 +98,7 @@ export default function CompletedTodo({ completedTodos, canEdit }: CompletedTodo
           </button>
         )}
         <span style={{ fontSize: 11, color: '#9E8880', textDecoration: 'line-through', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {p.content}
+          {p.title || p.content}
         </span>
         <span style={{ fontSize: 9, padding: '1px 5px', background: isWork ? '#FFF5F2' : '#F5F0EE', color: isWork ? '#C17B6B' : '#9E8880', flexShrink: 0 }}>
           {isWork ? '업무' : '개인'}

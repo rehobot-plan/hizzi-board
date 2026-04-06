@@ -15,6 +15,7 @@ export interface Post {
   id: string;
   panelId: string;
   content: string;
+  title?: string;
   attachment?: PostAttachment;
   author: string;
   createdAt: Date;

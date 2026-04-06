@@ -81,7 +81,7 @@ export default function DeletedTodo({ deletedTodos, canEdit }: DeletedTodoProps)
           </button>
         )}
         <span style={{ fontSize: 11, color: '#9E8880', textDecoration: 'line-through', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {p.content}
+          {p.title || p.content}
         </span>
         <span style={{ fontSize: 8, padding: '1px 5px', background: taskBg, color: taskColor, border: `1px solid ${taskColor}`, flexShrink: 0 }}>
           {taskLabel}

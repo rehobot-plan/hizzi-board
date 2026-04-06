@@ -20,6 +20,7 @@ interface CreatePostProps {
 
 interface PostData {
   panelId: string;
+  title?: string;
   content: string;
   author: string;
   category: string;
@@ -78,6 +79,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
 
   const [activeTab, setActiveTab] = useState<TabType>('todo');
 
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [attachFile, setAttachFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -104,6 +106,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
+    setTitle('');
     setContent('');
     setAttachFile(null);
     setDueDate('');
@@ -142,6 +145,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
       };
 
       if (activeTab === 'todo') {
+        if (title.trim()) postData.title = title.trim();
         postData.taskType = taskType;
         if (dueDate) postData.dueDate = dueDate;
       }
@@ -293,14 +297,14 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
   const tabLabel = { todo: '할일', memo: '메모', request: '요청' };
   const isReady = activeTab === 'request'
     ? requestTitle.trim().length > 0 && requestTo.length > 0
-    : content.trim().length > 0;
+    : activeTab === 'todo' ? title.trim().length > 0 : content.trim().length > 0;
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ background: '#fff', border: '1px solid #EDE5DC', borderRadius: 6, width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ background: '#5C1F1F', padding: '15px 20px 13px', flexShrink: 0, minHeight: 52 }}>
           {(() => {
-            const titleText = activeTab === 'request' ? requestTitle : content;
+            const titleText = activeTab === 'request' ? requestTitle : activeTab === 'todo' ? title : content;
             if (!titleText.trim()) return null;
             return (
               <div style={{ fontSize: 15, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4, wordBreak: 'break-word' }}>
@@ -408,8 +412,17 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
           {activeTab === 'todo' && (
             <>
               <div style={fieldSection}>
+                <div style={sectionLabel}>제목</div>
+                <input
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="할일 제목을 입력하세요"
+                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
+                />
+              </div>
+              <div style={fieldSection}>
                 <div style={sectionLabel}>내용</div>
-                <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="내용을 입력하세요 (선택)" rows={3} style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
+                <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="상세 내용을 입력하세요 (선택)" rows={3} style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>기한</div>

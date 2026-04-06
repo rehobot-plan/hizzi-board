@@ -329,8 +329,20 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         <div style={{ flex: 1, minWidth: 0 }}>
           {/* 제목 행: 제목 + 휴지통(일반 할일만) */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 4 }}>
-            <div style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease', flex: 1 }}>
-              {renderContent()}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease' }}>
+                {renderContent()}
+              </div>
+              {!post.requestFrom && post.content && post.title && (
+                <div style={{ fontSize: 11, color: '#C4B8B0', marginTop: 2, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {post.content}
+                </div>
+              )}
+              {post.requestFrom && post.requestContent && (
+                <div style={{ fontSize: 11, color: '#C4B8B0', marginTop: 2, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {post.requestContent}
+                </div>
+              )}
             </div>
             {canEdit && !post.requestId && !justChecked && (
               <span
