@@ -33,12 +33,14 @@ export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFi
     .sort((a, b) => {
       if (a.starred && !b.starred) return -1;
       if (!a.starred && b.starred) return 1;
-      if (a.starred && b.starred) {
-        const aT = a.starredAt ? new Date(a.starredAt).getTime() : 0;
-        const bT = b.starredAt ? new Date(b.starredAt).getTime() : 0;
-        return bT - aT;
-      }
-      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      const aDue = a.dueDate || a.requestDueDate;
+      const bDue = b.dueDate || b.requestDueDate;
+      if (aDue && bDue) {
+        const diff = new Date(aDue).getTime() - new Date(bDue).getTime();
+        if (diff !== 0) return diff;
+      } else if (aDue) return -1;
+      else if (bDue) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
   const completedTodos = todoAll
