@@ -10,6 +10,8 @@ interface PostListProps {
   activeCategory: string;
   panelId: string;
   canEdit: boolean;
+  selectMode?: boolean;
+  onSelectModeChange?: (v: boolean) => void;
 }
 
 function formatTime(d: Date): string {
@@ -17,13 +19,12 @@ function formatTime(d: Date): string {
   return dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function PostList({ posts, activeCategory, panelId, canEdit }: PostListProps) {
-  const { hardDeletePost } = usePostStore();
+export default function PostList({ posts, activeCategory, panelId, canEdit, selectMode = false, onSelectModeChange }: PostListProps) {
+  const { hardDeletePost, deletePost } = usePostStore();
   const { addToast } = useToastStore();
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [showPastDeleted, setShowPastDeleted] = useState(false);
-  const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const today = new Date();
@@ -114,8 +115,55 @@ export default function PostList({ posts, activeCategory, panelId, canEdit }: Po
       {activePosts.length === 0 && (
         <p className="text-[#C1B6A6] text-center text-xs py-4 leading-relaxed">게시물이 없습니다</p>
       )}
+      {selectMode && canEdit && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 0', borderBottom: '1px solid #EDE5DC',
+          marginBottom: 4,
+        }}>
+          <span style={{ fontSize: 10, color: '#9E8880', flex: 1 }}>
+            {selectedIds.length > 0 ? `${selectedIds.length}개 선택됨` : '삭제할 메모를 선택하세요'}
+          </span>
+          <button
+            onClick={async () => {
+              if (selectedIds.length === 0) return;
+              try {
+                for (const id of selectedIds) await deletePost(id);
+              } catch (e) {
+                console.error(e);
+                addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+              } finally {
+                setSelectedIds([]);
+                onSelectModeChange?.(false);
+              }
+            }}
+            disabled={selectedIds.length === 0}
+            style={{
+              fontSize: 10, padding: '2px 10px',
+              color: selectedIds.length > 0 ? '#C17B6B' : '#C4B8B0',
+              background: 'none',
+              border: `1px solid ${selectedIds.length > 0 ? '#C17B6B' : '#EDE5DC'}`,
+              cursor: selectedIds.length > 0 ? 'pointer' : 'default',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            삭제 ({selectedIds.length})
+          </button>
+        </div>
+      )}
       {visiblePosts.map((post) => (
-        <div key={post.id} style={{ position: 'relative' }}>
+        <div key={post.id} style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          {selectMode && canEdit && (
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(post.id)}
+              onChange={() => setSelectedIds(prev =>
+                prev.includes(post.id) ? prev.filter(id => id !== post.id) : [...prev, post.id]
+              )}
+              style={{ flexShrink: 0, marginTop: 14, cursor: 'pointer', accentColor: '#C17B6B' }}
+            />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
           {activeCategory === '전체' && post.category && post.category !== '전체' && (
             <span style={{
               fontSize: 9, padding: '1px 6px', marginBottom: 4, display: 'inline-block', letterSpacing: '0.06em',
@@ -126,6 +174,7 @@ export default function PostList({ posts, activeCategory, panelId, canEdit }: Po
             </span>
           )}
           <PostItem post={post} />
+          </div>
         </div>
       ))}
       {activePosts.length > 5 && (
@@ -148,7 +197,7 @@ export default function PostList({ posts, activeCategory, panelId, canEdit }: Po
               {canEdit && deletedPosts.length > 0 && (
                 <div style={{ display: 'flex', gap: 8, padding: '6px 0', alignItems: 'center', borderBottom: '1px solid #EDE5DC' }}>
                   <button
-                    onClick={() => { setSelectMode(v => !v); setSelectedIds([]); }}
+                    onClick={() => { onSelectModeChange?.(!selectMode); setSelectedIds([]); }}
                     style={{ fontSize: 10, color: selectMode ? '#C17B6B' : '#9E8880', background: 'none', border: `1px solid ${selectMode ? '#C17B6B' : '#EDE5DC'}`, cursor: 'pointer', padding: '2px 8px', letterSpacing: '0.04em' }}>
                     {selectMode ? '선택 취소' : '선택'}
                   </button>
@@ -162,7 +211,7 @@ export default function PostList({ posts, activeCategory, panelId, canEdit }: Po
                           addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
                         } finally {
                           setSelectedIds([]);
-                          setSelectMode(false);
+                          onSelectModeChange?.(false);
                         }
                       }}
                       style={{ fontSize: 10, color: '#C17B6B', background: 'none', border: '1px solid #C17B6B', cursor: 'pointer', padding: '2px 8px' }}>

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { usePostStore } from "@/store/postStore";
 import { usePanelStore } from "@/store/panelStore";
 import { useAuthStore } from "@/store/authStore";
+import { useEscClose } from '@/hooks/useEscClose';
 import CreatePost from "./CreatePost";
 import TodoRequestBadge from "./TodoRequestBadge";
 import TodoList from "./TodoList";
@@ -37,6 +38,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [categoryList, setCategoryList] = useState<string[]>(categories || DEFAULT_CATEGORIES);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [memoSelectMode, setMemoSelectMode] = useState(false);
 
   const { posts, deletePost } = usePostStore();
   const { user } = useAuthStore();
@@ -69,6 +71,8 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const canCreate = user && (user.role === "admin" || isOwner);
   const canRename = user && (user.role === "admin" || isOwner);
   const canAddCategory = canCreate;
+
+  useEscClose(() => setMemoSelectMode(false), memoSelectMode);
 
   // 패널 이름 인라인 편집
   const savePanelName = async () => {
@@ -213,6 +217,22 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           />
         )}
         <div className="flex items-center gap-2">
+          {canCreate && activeCategory !== '할일' && (
+            <button
+              onClick={() => { setMemoSelectMode(v => !v); }}
+              style={{
+                fontSize: 10, letterSpacing: '0.04em',
+                color: memoSelectMode ? '#C17B6B' : '#9E8880',
+                background: 'none',
+                border: `1px solid ${memoSelectMode ? '#C17B6B' : '#EDE5DC'}`,
+                cursor: 'pointer', padding: '2px 8px',
+                transition: 'all 0.15s ease',
+                marginTop: 8,
+              }}
+            >
+              {memoSelectMode ? '취소' : '선택'}
+            </button>
+          )}
           {canCreate && (
             <button
               onClick={() => setShowCreate(true)}
@@ -239,6 +259,8 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             activeCategory={activeCategory}
             panelId={id}
             canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+            selectMode={memoSelectMode}
+            onSelectModeChange={setMemoSelectMode}
           />
         )}
       </div>

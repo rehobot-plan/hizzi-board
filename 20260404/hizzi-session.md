@@ -10,7 +10,7 @@
 글로벌로 갈 기업이라 처음부터 단단하게 구조를 잡아가고 있어. 속도보다 정확성이 우선.
 
 첨부한 5개 MD가 전체 맥락이야. 코드 짜기 전에 반드시:
-1. hizzi-rules.md의 Pre-flight Checklist 확인
+1. hizzi-rules.md의 Pre-flight Checklist 확인 (명령 블록 작성 원칙 SECTION 9 포함)
 2. hizzi-flows.md에서 영향받는 상태 흐름 확인
 3. 관련 파일 📎 첨부 후 분석
 
@@ -46,6 +46,10 @@ Claude 소통 원칙:
    작업 시작 전 완료 기준을 먼저 정의.
    → "빌드 성공 + 배포 확인 + 기능 동작 확인 = 완료"
 
+7. 먼저 제안하기
+   한 MD/파일을 수정할 때 다른 MD/파일과의 중복·충돌도 함께 체크하고 선제 제안.
+   오너가 먼저 말해야 하는 상황을 만들지 않는다.
+
 새 기능 요청 시 Claude 행동 순서:
 1. 기능 의도 파악 후 객관식으로 필요한 정보 수집
    - 누가 / 어떤 조건에서 / 어떤 결과를 보는지
@@ -53,16 +57,10 @@ Claude 소통 원칙:
    - 상태 변경(status/completed 등)이 생기는지
    - 질문은 한 번에 하나씩, 객관식으로
 2. 훅 추출 여부 판단 — 오너가 빠르게 결정할 수 있게 경우의 수를 먼저 제시
-   예시 형식:
-   "이 로직, 현재 A / B 2개 컴포넌트에 닿아요.
-    앞으로 연결될 가능성:
-      - C 추가 시 → 자동 적용 필요
-      - D에도 동일 구조 사용 중
-    훅으로 빼는 게 맞을 것 같아요. 진행할까요?"
    판단 기준: 2개 이상 컴포넌트에서 즉시 사용 or 확실히 늘어날 구조 → 훅 추출
 3. flows.md 기준 cascade 영향 범위 선언
    - 새 흐름이면 flows.md에 먼저 추가 후 코드 작성
-4. rules.md pre-flight checklist 확인
+4. rules.md pre-flight checklist 확인 (SECTION 9 명령 블록 원칙 포함)
 5. 관련 파일 📎 첨부 후 코드 작성
 
 오늘 할 작업: [여기에 입력]
@@ -77,7 +75,7 @@ Owner (direction)
   ↓
 Claude.ai — Architect Agent
   reads all 5 MDs
-  runs Pre-flight Checklist (hizzi-rules.md)
+  runs Pre-flight Checklist (hizzi-rules.md) — SECTION 9 명령 블록 원칙 포함
   maps cascade effects (hizzi-flows.md)
   writes Claude Code commands
   ↓
@@ -86,32 +84,6 @@ Claude Code — Executor
   reports result
   ↓
 Owner confirms → session continues or wraps
-```
-
----
-
-## 명령 블록 작성 원칙
-
-```
-1. 모든 명령 블록 맨 앞에 안전 규칙 명시:
-   "규칙: 대상 코드를 찾지 못하면 즉시 중단하고 보고할 것.
-    유사한 다른 위치에 임의 적용 금지."
-
-2. 모든 명령 블록 끝에 진행 여부 명시:
-   → "바로 붙여도 됩니다" (빌드 통과 + 리뷰 PASS 완료된 경우)
-   → "리뷰 후 진행하세요 — 이유: ..." (다중 파일 수정 / 상태 변경 / 리뷰 미완료)
-   ※ 코드 설계 완료 후 블록 작성 직전, ①~④ 반드시 순서대로 체크할 것.
-      설계가 끝났다고 바로 블록을 작성하지 않는다.
-
-3. 빌드와 배포는 항상 한 블록으로:
-   git add . && git commit -m "..." && npx vercel --prod
-
-4. 배포 커밋 메시지 아래에 "배포 후 확인 항목" 블록 항상 포함:
-   예)
-   배포 후 확인:
-   1. 기능 A 동작 여부
-   2. 기능 B 동작 여부
-   3. 기존 기능 C 영향 없는지
 ```
 
 ---
@@ -150,96 +122,56 @@ Owner confirms → session continues or wraps
 - `any` type ban rule established
 
 ### 2026.04.05 — Technical Debt Session
-- **Panel.tsx refactor** ✅
-  - CompletedTodo.tsx (completed todos + bulk delete + date grouping)
-  - TodoList.tsx (active todos + sort + CompletedTodo composition)
-  - PostList.tsx (memo/post list + load more)
-  - Panel.tsx: skeleton only, unused imports/state/functions removed
-  - Build success, deployed
-- **Bug fixes** ✅
-  - Ghost re-render after delete: deletePost optimistic update
-  - Memo tab layout broken: PostItem hover layer margin removed
-  - Specific visibility shown as "me only": PostItem editVisibility logic fixed + 'specific' option added to edit modal
-  - CreatePost specific save: author now included in visibleTo
+- Panel.tsx refactor → CompletedTodo / TodoList / PostList 분리
+- Bug fixes: ghost re-render, memo layout, specific visibility
 
 ### 2026.04.05 — MD Restructure Session
-- Restructured 7 MDs → 5 MDs
-- New file: hizzi-rules.md (root-cause constraints + pre-flight checklist)
-- hizzi-flows.md: enhanced with cascade tables
-- hizzi-master.md: absorbed 협업패턴_가이드.md + 앞으로의방향_정리.md + 기술부채.md
-- Removed: 협업패턴_가이드.md, 앞으로의방향_정리.md, 기술_부채.md (all absorbed)
-- Agent architecture designed (Architect → parallel: Code / Review / Test)
-- Review Agent system prompt + template created (hizzi-review-agent.md)
+- Restructured 7 MDs → 5 MDs, hizzi-rules.md 신설
 
 ### 2026.04.05 — Quality Session
-- **Bug fix** ✅
-  - Specific visibility shown as "me only" in PostItem/TodoItem: editVisibility init logic fixed
-  - CreatePost specific save: author included in visibleTo
-  - PostItem/TodoItem edit modal: 'specific' option added
-- **Error handling unification** ✅
-  - TodoItem.tsx / todoRequestStore.ts / CreatePost.tsx / LeaveManager.tsx / Calendar.tsx
-  - toastStore.ts: extended to accept `{ message, type }` object
-- **any type removal** ✅
-  - PostUpdates / NewTodoRequestDoc / AddPostData / PostData / RequestData / CalendarEvent|LeaveEvent
-- **useVisibilityTooltip hook** ✅
-  - src/hooks/useVisibilityTooltip.ts 생성, PostItem/TodoItem 적용
+- any type 제거, error handling 통일, useVisibilityTooltip hook 생성
 
 ### 2026.04.05 — Memo UX Session
-- **Bug fix** ✅
-  - postStore addPost 낙관적 업데이트 추가
-  - onSnapshot serverTimestamp pending 문서 필터 (createdAt null 방어)
-  - 메모 작성 후 빈 화면 현상 해결
-- **메모 soft delete** ✅
-  - postStore: deletePost → soft delete (deleted/deletedAt), hardDeletePost 추가
-  - Panel.tsx: filteredPosts에 deleted 필터 추가
-- **삭제된 메모 섹션** ✅
-  - PostList.tsx: 오늘/이전 날짜 그룹, 선택삭제/전체삭제
-  - CompletedTodo와 동일한 UX 흐름
-- **메모 아이템 태그 표시** ✅
-  - PostItem.tsx: 업무/개인, 전체/나만/특정인 태그 추가
-  - 날짜 표시 형식 할일과 통일
-- **메모 선택 삭제** 🔴 미완료 → 다음 세션으로 이월
-  - CompletedTodo.tsx 잘못 수정됨 → 롤백 필요
+- postStore addPost 낙관적 업데이트
+- 메모 soft delete + 삭제된 메모 섹션 + 태그 표시
 
-### 2026.04.05 — 현재 세션
+### 2026.04.06 — 현재 세션
 - **CompletedTodo.tsx 롤백** ✅
-  - git checkout -- src/components/CompletedTodo.tsx 완료
-  - 워킹트리 clean 확인
-- **메모 선택 삭제 구조 판단** ✅
-  - Panel.tsx memoSelectedIds 끌어올리기 불필요 판단
-  - PostList.tsx가 선택 상태를 자체 완결하는 구조로 충분
-- **PostList.tsx 선택삭제/전체삭제 try/catch/finally 적용** ✅
-  - rules.md R6.3 (loop async → try/catch/finally) 적용
-  - useToastStore import + addToast 에러 핸들링 추가
-- **워크플로우 개선** ✅
-  - 명령 블록 작성 원칙 2번에 체크 순서 강조 문구 추가
-  - 워크플로우 시각화 다이어그램 작성
+- **완료된 할일 선택/전체 삭제 버그 수정** ✅
+  - deletePost → hardDeletePost 교체 + try/catch/finally + addToast
+- **PostList.tsx 선택/전체 삭제 try/catch/finally** ✅
+- **MD 구조 개선** ✅
+  - 명령 블록 작성 원칙 → rules.md SECTION 9로 이관 (session.md 중복 제거)
+  - 소통 원칙 7번 추가: "먼저 제안하기"
+- **살아있는 메모 선택 삭제 (B안)** 🔴 진행 중
 
 ---
 
 ## 🔴 Remaining Work — Priority Order
 
-### Immediate (next session 최우선)
+### Immediate (진행 중)
 ```
-1. 버그: 특정인 공개범위 hover tooltip 미작동 (처리된 것으로 추정 — 다음 세션 시작 시 확인)
-   - useVisibilityTooltip 훅은 생성됐으나 실제 동작 안 됨
-   - 원인: title 속성이 2px 선 div에 적용돼 hover 영역이 너무 좁음
-   - 확인 필요 파일: PostItem.tsx, TodoItem.tsx
+1. 살아있는 메모 선택 삭제 (B안)
+   - Panel.tsx: 메모 탭일 때 "선택" 버튼 노출 (+ 게시물 왼쪽)
+   - PostList.tsx: 선택 모드 시 액션바 + 체크박스
+   - 삭제: deletePost (soft delete) / ESC + 버튼 취소
 ```
 
 ### Next sessions
 ```
-2. Calendar "편집" → "수정" label change
+2. 버그: 특정인 hover tooltip 미작동 (처리된 것으로 추정 — 확인 필요)
 
-3. Multi-day event edit/delete-all
+3. Calendar "편집" → "수정" label change
+
+4. Multi-day event edit/delete-all
    - Date range editable in detail modal
    - "전체 삭제" button
 
-4. Leave edit: start/end date selector
+5. Leave edit: start/end date selector
 
-5. Request archive (completed/rejected/cancelled → searchable)
+6. Request archive (completed/rejected/cancelled → searchable)
 
-6. Team leader confirmation flow (2-step)
+7. Team leader confirmation flow (2-step)
 ```
 
 ### Leave
@@ -290,12 +222,10 @@ Reviewer 탭 (리뷰 전용, 세션당 한 번만 세팅):
   📎 hizzi-review-agent.md
   → PART 1 프롬프트 붙여넣기
   → "이해했으면 '리뷰 준비 완료'라고만 답해" 전송
-  → 이후 이 탭은 리뷰 요청만 받음 (다른 대화 금지)
 
 hizzi-review-agent.md는 Architect 탭에 올리지 않는다.
-Reviewer 탭이 이미 열려 있으면 세션 중 재세팅 불필요.
 ```
 
 ---
 
-*Updated: 2026.04.05 (워크플로우 개선 세션)*
+*Updated: 2026.04.06 (MD 구조 개선 / 명령 블록 원칙 이관)*

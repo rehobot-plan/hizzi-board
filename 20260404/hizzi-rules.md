@@ -311,11 +311,11 @@ try {
   for (const id of ids) { await deletePost(id) }
 } catch (e) {
   console.error(e)
+  addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' })
 } finally {
   setSelectedIds([])
   setSelectMode(false)
 }
-// deletePost 내부에 addToast가 있으면 여기선 중복 toast 불필요
 ```
 
 ### Pre-flight questions
@@ -377,6 +377,55 @@ useMultiSelect(items)          — planned: checkbox multi-select
 
 ---
 
+## SECTION 9 — 명령 블록 작성 원칙
+
+### Root cause of recurring bugs
+코드 설계에 집중하다 보면 블록을 작성하는 순간에 형식 체크를 건너뛰게 된다.
+규칙이 session.md에만 있으면 코드 작성 흐름에서 놓치기 쉽다.
+→ 명령 블록도 코드의 일부이므로 rules.md에서 관리한다.
+
+### Rules
+
+**R9.1 — 모든 명령 블록 맨 앞에 안전 규칙 명시**
+```
+규칙: 대상 코드를 찾지 못하면 즉시 중단하고 보고할 것.
+유사한 다른 위치에 임의 적용 금지.
+```
+
+**R9.2 — 모든 명령 블록 끝에 진행 여부 반드시 명시**
+```
+→ "바로 붙여도 됩니다"
+   조건: 단일 파일 / 상태 변경 없음 / cascade 없음 / 범위 좁음
+
+→ "리뷰 후 진행하세요 — 이유: ..."
+   조건: 다중 파일 수정 / 상태 변경 / cascade 있음 / 리뷰 미완료
+```
+
+**R9.3 — 빌드와 배포는 항상 한 블록으로**
+```
+git add . && git commit -m "..." && npx vercel --prod
+```
+Claude Code에서 수정 완료 보고가 오는 즉시 이 블록을 제공한다.
+절대 배포를 별도 메시지로 분리하지 않는다.
+
+**R9.4 — 배포 블록 아래에 "배포 후 확인 항목" 항상 포함**
+```
+배포 후 확인:
+1. 기능 A 동작 여부
+2. 기능 B 동작 여부
+3. 기존 기능 C 영향 없는지
+```
+
+### 명령 블록 작성 직전 체크리스트
+```
+□ 안전 규칙이 맨 앞에 있는가? (R9.1)
+□ 바로 붙여도 됩니다 / 리뷰 후 진행 판단이 맨 끝에 있는가? (R9.2)
+□ commit + deploy가 한 블록인가? (R9.3)
+□ 배포 후 확인 항목이 포함됐는가? (R9.4)
+```
+
+---
+
 ## MASTER PRE-FLIGHT CHECKLIST
 > Run through this before writing any code. Takes 30 seconds. Saves hours.
 
@@ -411,8 +460,14 @@ ERROR HANDLING
 설계 정확성
 □ 조건에 사용된 값이 실제 파일에 존재하는가?
 □ 리뷰 체크포인트를 실제 파일에서 확인했는가?
+
+명령 블록
+□ 안전 규칙 맨 앞?
+□ 진행 여부 맨 끝?
+□ commit + deploy 한 블록?
+□ 배포 후 확인 항목 포함?
 ```
 
 ---
 
-*Updated: 2026.04.05 (Memo UX Session)*
+*Updated: 2026.04.06 (명령 블록 원칙 이관)*
