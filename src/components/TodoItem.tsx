@@ -249,12 +249,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           transition: 'background 0.15s ease',
           pointerEvents: 'none',
         }} />
-        {/* 요청 할일 전체 클릭 레이어 — 체크박스/별 너비(28+8+8=44px) 제외 우측 영역 */}
+        {/* 요청 할일 전체 클릭 레이어 — 체크박스(16)+별(14)+gap(8+8)=46px 이후 우측 */}
         {post.requestId && canEdit && !justChecked && (
           <div
             onClick={() => setShowOrderModal(true)}
             style={{
-              position: 'absolute', left: 44, top: 0, right: 0, bottom: 0,
+              position: 'absolute', left: 66, top: 0, right: 0, bottom: 0,
               zIndex: 1, cursor: 'pointer',
             }}
           />
@@ -262,14 +262,14 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
         {canEdit && (
           <button onClick={e => { e.stopPropagation(); handleCheck(); }} disabled={checking || justChecked}
-            style={{ width: 16, height: 16, border: `1.5px solid ${justChecked ? '#C17B6B' : '#EDE5DC'}`, background: justChecked ? '#C17B6B' : '#fff', cursor: justChecked ? 'default' : 'pointer', flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease' }}>
+            style={{ width: 16, height: 16, border: `1.5px solid ${justChecked ? '#C17B6B' : '#EDE5DC'}`, background: justChecked ? '#C17B6B' : '#fff', cursor: justChecked ? 'default' : 'pointer', flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', position: 'relative', zIndex: 2 }}>
             {justChecked && <CheckIcon />}
           </button>
         )}
 
         {canEdit && (
           <button onClick={e => { e.stopPropagation(); handleStar(); }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', transition: 'opacity 0.15s ease', opacity: post.starred ? 1 : 0.25 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', transition: 'opacity 0.15s ease', opacity: post.starred ? 1 : 0.25, position: 'relative', zIndex: 2 }}
             onMouseEnter={e => { if (!post.starred) e.currentTarget.style.opacity = '0.6'; }}
             onMouseLeave={e => { if (!post.starred) e.currentTarget.style.opacity = '0.25'; }}>
             <StarIcon filled={!!post.starred} />
@@ -549,6 +549,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 </div>
                 {(post.requestDueDate || (post as any).dueDate) && (() => {
                   const dueDateStr = post.requestDueDate || (post as any).dueDate;
+                  console.log('[dueDate]', post.id, dueDateStr);
                   return (
                     <div style={{ fontSize: 12, color: '#F4C0D1', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
                       <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#F4C0D1" strokeWidth="1.2"/><path d="M5 3v2.2l1.4 1" stroke="#F4C0D1" strokeWidth="1.2" strokeLinecap="round"/></svg>
