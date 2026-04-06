@@ -55,6 +55,15 @@ function stripUndefined<T extends object>(obj: T): Partial<T> {
   return cleaned as Partial<T>;
 }
 
+const parseDateInput = (val: string): string => {
+  const digits = val.replace(/\D/g, '');
+  if (digits.length === 8) {
+    return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  return '';
+};
+
 export default function CreatePost({ panelId, onClose }: CreatePostProps) {
   const { user } = useAuthStore();
   const { addPost } = usePostStore();
@@ -78,6 +87,8 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
   const [visibility, setVisibility] = useState<VisibilityType>('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
+  const [dueDateInput, setDueDateInput] = useState('');
+  const [requestDueDateInput, setRequestDueDateInput] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [addToCalendar, setAddToCalendar] = useState(false);
 
@@ -96,7 +107,9 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
     setContent('');
     setAttachFile(null);
     setDueDate('');
+    setDueDateInput('');
     setAddToCalendar(false);
+    setRequestDueDateInput('');
     setVisibility('all');
     setSelectedUsers([]);
   };
@@ -285,17 +298,16 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ background: '#fff', border: '1px solid #EDE5DC', borderRadius: 6, width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ background: '#5C1F1F', padding: '15px 20px 13px', flexShrink: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(253,248,244,0.35)', marginBottom: 5 }}>
-            {activeTab === 'request' ? '요청 제목을 입력하세요' : '제목을 입력하세요'}
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(253,248,244,0.45)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.5 }}>
-              <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="#FDF8F4" strokeWidth="1"/>
-              <path d="M1 5h10M4 1v2M8 1v2" stroke="#FDF8F4" strokeWidth="1" strokeLinecap="round"/>
-            </svg>
-            {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
-          </div>
+        <div style={{ background: '#5C1F1F', padding: '15px 20px 13px', flexShrink: 0, minHeight: 52 }}>
+          {(() => {
+            const titleText = activeTab === 'request' ? requestTitle : content;
+            if (!titleText.trim()) return null;
+            return (
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4, wordBreak: 'break-word' }}>
+                {titleText}
+              </div>
+            );
+          })()}
         </div>
 
         <div style={{ display: 'flex', borderBottom: '1px solid #EDE5DC', background: '#fff', flexShrink: 0 }}>
@@ -401,33 +413,57 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>기한</div>
-                {dueDate ? (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 13, color: '#2C1810' }}>
-                        {new Date(dueDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
-                      </span>
-                      <span onClick={() => { setDueDate(''); setAddToCalendar(false); }} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer', lineHeight: 1 }}>✕</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginTop: 10, paddingTop: 9, borderTop: '1px dashed #EDE5DC' }}>
-                      <div onClick={() => setAddToCalendar(prev => !prev)} style={{ width: 14, height: 14, borderRadius: 2, border: `1px solid ${addToCalendar ? '#C17B6B' : '#D5C9C0'}`, background: addToCalendar ? '#C17B6B' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 1 }}>
-                        {addToCalendar && (
-                          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-                            <path d="M1 3.5l2.5 2.5L8 1" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#9E8880', lineHeight: 1.45 }}>
-                        <span style={{ color: '#C17B6B', fontWeight: 600 }}>캘린더에도 등록</span> - 체크 시 내 캘린더에 일정이 함께 생성됩니다
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <span style={{ fontSize: 12, color: '#C4B8B0', borderBottom: '1px dashed #EDE5DC', paddingBottom: 2, cursor: 'pointer' }}>
-                      + 기한 추가
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={dueDateInput}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setDueDateInput(val);
+                      const parsed = parseDateInput(val);
+                      if (parsed) setDueDate(parsed);
+                      else if (!val) { setDueDate(''); setAddToCalendar(false); }
+                    }}
+                    placeholder="yyyymmdd"
+                    style={{ border: 'none', borderBottom: `1px solid ${dueDate ? '#C17B6B' : '#EDE5DC'}`, padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', width: 110, letterSpacing: '0.04em', fontFamily: 'inherit' }}
+                  />
+                  {dueDate && (
+                    <span style={{ fontSize: 12, color: '#9E8880' }}>
+                      {new Date(dueDate + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })}
                     </span>
-                    <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
+                  )}
+                  <div style={{ position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                    <svg width="15" height="15" viewBox="0 0 12 12" fill="none" style={{ color: '#C4B8B0', cursor: 'pointer' }}>
+                      <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
+                      <path d="M1 5h10M4 1v2M8 1v2" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+                    </svg>
+                    <input type="date" value={dueDate}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setDueDate(val);
+                        setDueDateInput(val.replace(/-/g, ''));
+                      }}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+                  </div>
+                  {dueDate && (
+                    <span onClick={() => { setDueDate(''); setDueDateInput(''); setAddToCalendar(false); }}
+                      style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer', lineHeight: 1, marginLeft: 2 }}>✕</span>
+                  )}
+                </div>
+                {dueDate && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginTop: 10, paddingTop: 9, borderTop: '1px dashed #EDE5DC' }}>
+                    <div
+                      onClick={() => setAddToCalendar(prev => !prev)}
+                      style={{ width: 14, height: 14, borderRadius: 2, border: `1px solid ${addToCalendar ? '#C17B6B' : '#D5C9C0'}`, background: addToCalendar ? '#C17B6B' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 1 }}>
+                      {addToCalendar && (
+                        <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+                          <path d="M1 3.5l2.5 2.5L8 1" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#9E8880', lineHeight: 1.45 }}>
+                      <span style={{ color: '#C17B6B', fontWeight: 600 }}>캘린더에도 등록</span> - 체크 시 내 캘린더에 일정이 함께 생성됩니다
+                    </div>
                   </div>
                 )}
               </div>
@@ -513,21 +549,43 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>기한</div>
-                {requestDueDate ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 13, color: '#2C1810' }}>
-                      {new Date(requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={requestDueDateInput}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setRequestDueDateInput(val);
+                      const parsed = parseDateInput(val);
+                      if (parsed) setRequestDueDate(parsed);
+                      else if (!val) setRequestDueDate('');
+                    }}
+                    placeholder="yyyymmdd"
+                    style={{ border: 'none', borderBottom: `1px solid ${requestDueDate ? '#C17B6B' : '#EDE5DC'}`, padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', width: 110, letterSpacing: '0.04em', fontFamily: 'inherit' }}
+                  />
+                  {requestDueDate && (
+                    <span style={{ fontSize: 12, color: '#9E8880' }}>
+                      {new Date(requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })}
                     </span>
-                    <span onClick={() => setRequestDueDate('')} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer', lineHeight: 1 }}>✕</span>
+                  )}
+                  <div style={{ position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                    <svg width="15" height="15" viewBox="0 0 12 12" fill="none" style={{ color: '#C4B8B0', cursor: 'pointer' }}>
+                      <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
+                      <path d="M1 5h10M4 1v2M8 1v2" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+                    </svg>
+                    <input type="date" value={requestDueDate}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setRequestDueDate(val);
+                        setRequestDueDateInput(val.replace(/-/g, ''));
+                      }}
+                      style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
                   </div>
-                ) : (
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <span style={{ fontSize: 12, color: '#C4B8B0', borderBottom: '1px dashed #EDE5DC', paddingBottom: 2, cursor: 'pointer' }}>
-                      + 기한 추가
-                    </span>
-                    <input type="date" value={requestDueDate} onChange={e => setRequestDueDate(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%' }} />
-                  </div>
-                )}
+                  {requestDueDate && (
+                    <span onClick={() => { setRequestDueDate(''); setRequestDueDateInput(''); }}
+                      style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer', lineHeight: 1, marginLeft: 2 }}>✕</span>
+                  )}
+                </div>
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>첨부파일</div>
