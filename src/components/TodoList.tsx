@@ -1,8 +1,9 @@
 'use client';
 
-import { Post } from '@/store/postStore';
+import { Post, usePostStore } from '@/store/postStore';
 import TodoItem from './TodoItem';
 import CompletedTodo from './CompletedTodo';
+import DeletedTodo from './DeletedTodo';
 
 interface TodoListProps {
   panelId: string;
@@ -12,9 +13,13 @@ interface TodoListProps {
   activeFilter?: ('업무' | '요청' | '개인')[];
 }
 
-export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFilter }: TodoListProps) {
+export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFilter = ['업무', '요청'] }: TodoListProps) {
+  const { posts: allPosts } = usePostStore();
   const todoAll = posts.filter(p =>
     p.panelId === panelId && p.category === '할일' && !p.deleted
+  );
+  const deletedTodos = allPosts.filter(p =>
+    p.panelId === panelId && p.category === '할일' && p.deleted === true
   );
 
   const activeTodos = todoAll
@@ -47,6 +52,7 @@ export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFi
         <TodoItem key={post.id} post={post} canEdit={canEdit} />
       ))}
       <CompletedTodo completedTodos={completedTodos} canEdit={canEdit} />
+      <DeletedTodo deletedTodos={deletedTodos} canEdit={canEdit} />
     </>
   );
 }
