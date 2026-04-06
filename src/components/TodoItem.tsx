@@ -46,6 +46,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showTeamTooltip, setShowTeamTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
   const [showSpecificTooltip, setShowSpecificTooltip] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -332,42 +333,53 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 {post.visibleTo && post.visibleTo.length > 1 && (
                   <div
                     style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
-                    onMouseEnter={e => { e.stopPropagation(); setShowTeamTooltip(true); }}
+                    onMouseEnter={e => {
+                      e.stopPropagation();
+                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      setTooltipPos({ top: rect.bottom + 6, left: rect.left });
+                      setShowTeamTooltip(true);
+                    }}
                     onMouseLeave={() => setShowTeamTooltip(false)}
                   >
                     <span style={{
-                      fontSize: 9, padding: '1px 6px',
+                      fontSize: 9, padding: '2px 7px',
                       background: '#F5F0EE', color: '#9E8880',
-                      letterSpacing: '0.06em', cursor: 'default',
+                      letterSpacing: '0.04em', cursor: 'default',
                     }}>
                       TEAM
                     </span>
-                    {showTeamTooltip && (
+                    {showTeamTooltip && typeof window !== 'undefined' && createPortal(
                       <div style={{
-                        position: 'absolute', bottom: 'calc(100% + 4px)', left: 0,
-                        background: '#fff', border: '0.5px solid #EDE5DC',
-                        padding: '6px 8px', zIndex: 50,
-                        whiteSpace: 'nowrap',
+                        position: 'fixed',
+                        top: tooltipPos.top,
+                        left: tooltipPos.left,
+                        background: '#fff',
+                        border: '0.5px solid #EDE5DC',
+                        padding: '8px',
+                        zIndex: 9999,
+                        boxShadow: '0 4px 12px rgba(44,20,16,0.08)',
                       }}>
                         <div style={{
-                          display: 'flex', flexWrap: 'wrap', gap: 4,
-                          maxWidth: 240,
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(3, auto)',
+                          gap: 4,
                         }}>
                           {post.visibleTo.map(email => {
                             const u = users.find(u => u.email === email);
                             return (
                               <span key={email} style={{
-                                fontSize: 9, padding: '2px 7px',
+                                fontSize: 9, padding: '3px 8px',
                                 background: '#F5F0EE', color: '#9E8880',
                                 letterSpacing: '0.04em',
-                                flexBasis: post.visibleTo && post.visibleTo.length <= 3 ? 'auto' : 'calc(33% - 4px)',
+                                whiteSpace: 'nowrap',
                               }}>
                                 {u?.name || email.split('@')[0]}
                               </span>
                             );
                           })}
                         </div>
-                      </div>
+                      </div>,
+                      document.body
                     )}
                   </div>
                 )}
