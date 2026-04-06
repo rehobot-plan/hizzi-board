@@ -133,13 +133,14 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const handleDetailSave = async () => {
     if (!detailTitle.trim()) return;
     try {
-      await updatePost(post.id, {
+      const updates: Partial<{ content: string; taskType: 'work' | 'personal'; visibleTo: string[] }> = {
         content: detailTitle.trim(),
         taskType: detailTaskType,
         visibleTo: detailVisibility === 'all' ? []
           : detailVisibility === 'specific' ? [post.author, ...detailSpecificUsers.filter(e => e !== post.author)]
           : [post.author],
-      });
+      };
+      await updatePost(post.id, updates);
       setShowDetailModal(false);
     } catch (e) {
       console.error(e);
@@ -158,8 +159,13 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   const handleDelete = async () => {
     if (!canEdit) return;
-    await deletePost(post.id);
-    setShowMenu(false);
+    try {
+      await deletePost(post.id);
+    } catch (e) {
+      console.error(e);
+      const { useToastStore } = await import('@/store/toastStore');
+      useToastStore.getState().addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+    }
   };
 
   const handleEditOpen = () => {
@@ -697,7 +703,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             onClick={e => e.stopPropagation()}>
 
             {/* 헤더 — 제목 + 연필 바로 옆 */}
-            <div style={{ background: '#2C1810', padding: '18px 24px' }}>
+            <div style={{ background: '#5C1F1F', padding: '18px 24px' }}>
               {isEditingTitle ? (
                 <input
                   value={detailTitle}
