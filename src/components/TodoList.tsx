@@ -9,9 +9,10 @@ interface TodoListProps {
   ownerEmail?: string | null;
   posts: Post[];
   canEdit: boolean;
+  activeFilter?: ('업무' | '요청' | '개인')[];
 }
 
-export default function TodoList({ panelId, ownerEmail, posts, canEdit }: TodoListProps) {
+export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFilter }: TodoListProps) {
   const todoAll = posts.filter(p =>
     p.panelId === panelId && p.category === '할일' && !p.deleted
   );
