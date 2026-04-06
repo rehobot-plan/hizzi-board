@@ -395,6 +395,23 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 )}
               </>
             )}
+            {(post.requestDueDate || (post as any).dueDate) && (() => {
+              const dueDateStr = post.requestDueDate || (post as any).dueDate;
+              const due = new Date(dueDateStr + 'T00:00:00');
+              const today = new Date(); today.setHours(0, 0, 0, 0);
+              const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              const isUrgent = diffDays <= 3;
+              const dueColor = isUrgent ? '#993556' : '#C17B6B';
+              return (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 8, padding: '2px 6px', background: isUrgent ? '#FBEAF0' : '#FFF5F2', color: dueColor, border: `1px solid ${dueColor}` }}>
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                    <circle cx="5" cy="5" r="4" stroke={dueColor} strokeWidth="1.2"/>
+                    <path d="M5 3v2.2l1.4 1" stroke={dueColor} strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                  {due.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
+                </span>
+              );
+            })()}
             <span style={{ fontSize: 9, color: '#C4B8B0', marginLeft: 'auto' }}>{formatDate(post.createdAt)}</span>
             {justChecked && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>완료</span>}
           </div>
