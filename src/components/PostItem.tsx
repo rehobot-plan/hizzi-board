@@ -191,7 +191,7 @@ export default function PostItem({ post }: PostItemProps) {
             <span>{getAuthorName(post.author)}</span>
             <span>{formatDate(post.createdAt)}</span>
             {post.taskType && (
-              <span style={{ fontSize: 9, padding: '1px 5px', background: post.taskType === 'work' ? '#FFF5F2' : '#F5F0EE', color: post.taskType === 'work' ? '#C17B6B' : '#9E8880' }}>
+              <span style={{ fontSize: 9, padding: '1px 5px', background: 'none', color: post.taskType === 'work' ? '#C17B6B' : '#9E8880', border: post.taskType === 'work' ? '1px solid #C17B6B' : '1px solid #9E8880' }}>
                 {post.taskType === 'work' ? '업무' : '개인'}
               </span>
             )}

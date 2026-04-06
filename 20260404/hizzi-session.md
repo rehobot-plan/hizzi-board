@@ -21,6 +21,12 @@
 - 세션 마무리는 내가 제안
 - 새 기능 전 반드시 아래 순서 준수
 
+약속어 (입력 즉시 해당 동작 실행):
+/status  → Remaining Work 현황 출력
+/pf      → rules.md pre-flight checklist 실행
+/block   → 명령 블록 작성 (R9 체크리스트 포함)
+/wrap    → 세션 마무리 (아래 "/wrap 동작 정의" 참고)
+
 Claude 소통 원칙:
 1. 결정 전 구조적 비교 제시
    선택지가 있을 때 → "A vs B — X:Y 비율로 B 추천, 이유: ..."
@@ -68,6 +74,36 @@ Claude 소통 원칙:
 
 ---
 
+## /wrap 동작 정의
+
+```
+오너가 /wrap 입력 시 Claude 행동 순서:
+
+STEP 1 — 이번 세션 변경 내용 스캔 후 MD별 업데이트 필요 여부 판단:
+
+  master.md  → 스키마·파일구조·기술부채·버그히스토리·CLI 변경 시
+  rules.md   → 규칙 추가·수정·섹션 변경 시
+  flows.md   → 새 상태 흐름·cascade 추가·변경 시
+  uxui.md    → 컬러·컴포넌트·레이아웃 패턴 변경 시
+  session.md → 매 세션 항상 업데이트
+
+STEP 2 — 오너에게 보고:
+  예) "이번 세션 MD 업데이트 현황:
+       session.md ✅ 업데이트 필요
+       rules.md   ✅ 업데이트 필요
+       master.md  — 변경 없음
+       flows.md   — 변경 없음
+       uxui.md    — 변경 없음"
+
+STEP 3 — 필요한 MD만 업데이트 후 파일 생성
+  → present_files로 한 번에 전달
+
+STEP 4 — 다음 세션 파일 첨부 가이드 출력
+  → 업데이트된 MD 목록 명시
+```
+
+---
+
 ## Agent Workflow
 
 ```
@@ -83,7 +119,7 @@ Claude Code — Executor
   runs commands, builds, deploys
   reports result
   ↓
-Owner confirms → session continues or wraps
+Owner confirms → session continues or wraps (/wrap)
 ```
 
 ---
@@ -140,38 +176,47 @@ Owner confirms → session continues or wraps
 - **완료된 할일 선택/전체 삭제 버그 수정** ✅
   - deletePost → hardDeletePost 교체 + try/catch/finally + addToast
 - **PostList.tsx 선택/전체 삭제 try/catch/finally** ✅
+- **살아있는 메모 선택 삭제 (B안)** ✅
+  - Panel.tsx 선택 버튼 + PostList.tsx 액션바 + 체크박스
+  - 전체 삭제 버튼 추가
 - **MD 구조 개선** ✅
-  - 명령 블록 작성 원칙 → rules.md SECTION 9로 이관 (session.md 중복 제거)
+  - 명령 블록 작성 원칙 → rules.md SECTION 9로 이관
   - 소통 원칙 7번 추가: "먼저 제안하기"
-- **살아있는 메모 선택 삭제 (B안)** 🔴 진행 중
+  - 약속어(/status /pf /block /wrap) 세션 프롬프트에 추가
+  - /wrap 동작 정의 (5개 MD 업데이트 필요 여부 자동 체크 + 파일 생성)
+- **특정인 visibility 전체 버그 수정** ✅
+  - PostItem tooltip 미작동 → 최상위 div로 title 이동
+  - TodoItem tooltip 미작동 → 최상위 div로 title 이동
+  - TodoItem 태그 "지정" → "특정인"
+  - TodoItem editSpecificUsers 초기값 author 제외 처리
+  - TodoRequestModal 팀원 목록 렌더링 추가
+- **TodoItem margin: '0 -20px'** 🟡 별도 티켓
+  - R5.2 위반이나 레이아웃 영향 범위 확인 필요 — 다음 세션 처리
 
 ---
 
 ## 🔴 Remaining Work — Priority Order
 
-### Immediate (진행 중)
+### Immediate
 ```
-1. 살아있는 메모 선택 삭제 (B안)
-   - Panel.tsx: 메모 탭일 때 "선택" 버튼 노출 (+ 게시물 왼쪽)
-   - PostList.tsx: 선택 모드 시 액션바 + 체크박스
-   - 삭제: deletePost (soft delete) / ESC + 버튼 취소
+1. TodoItem margin: '0 -20px' 제거 (R5.2)
+   - padding으로 동일 시각 효과 유지 후 레이아웃 확인
+   - 파일: TodoItem.tsx
 ```
 
 ### Next sessions
 ```
-2. 버그: 특정인 hover tooltip 미작동 (처리된 것으로 추정 — 확인 필요)
+2. Calendar "편집" → "수정" label change
 
-3. Calendar "편집" → "수정" label change
-
-4. Multi-day event edit/delete-all
+3. Multi-day event edit/delete-all
    - Date range editable in detail modal
    - "전체 삭제" button
 
-5. Leave edit: start/end date selector
+4. Leave edit: start/end date selector
 
-6. Request archive (completed/rejected/cancelled → searchable)
+5. Request archive (completed/rejected/cancelled → searchable)
 
-7. Team leader confirmation flow (2-step)
+6. Team leader confirmation flow (2-step)
 ```
 
 ### Leave
@@ -198,14 +243,6 @@ Owner confirms → session continues or wraps
 
 ---
 
-## Session Wrap-up Checklist
-
-```
-1. Add completed work → ✅ Completed Work Log
-2. Add new items → Remaining Work
-3. Download 5 MDs (master / rules / flows / uxui / session)
-```
-
 ## Next Session — File Attachment Guide
 
 ```
@@ -215,7 +252,7 @@ Architect 탭 (이 탭, 매 세션):
   📎 hizzi-flows.md
   📎 hizzi-uxui.md
   📎 hizzi-session.md
-  → 세션 프롬프트 붙여넣기
+  → 세션 프롬프트 붙여넣기 (약속어 /wrap /status /pf /block 포함)
 
 Reviewer 탭 (리뷰 전용, 세션당 한 번만 세팅):
   📎 hizzi-rules.md
@@ -228,4 +265,4 @@ hizzi-review-agent.md는 Architect 탭에 올리지 않는다.
 
 ---
 
-*Updated: 2026.04.06 (MD 구조 개선 / 명령 블록 원칙 이관)*
+*Updated: 2026.04.06 (약속어 + /wrap 동작 정의 추가)*

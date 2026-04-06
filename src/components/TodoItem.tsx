@@ -46,6 +46,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showTeamTooltip, setShowTeamTooltip] = useState(false);
+  const [showSpecificTooltip, setShowSpecificTooltip] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -72,7 +73,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   const isWork = post.taskType === 'work';
   const tagColor = isWork ? '#C17B6B' : '#9E8880';
-  const tagBg = isWork ? '#FFF5F2' : '#F5F0EE';
+  const tagBorder = isWork ? '1px solid #C17B6B' : '1px solid #9E8880';
   const tagLabel = isWork ? '업무' : '개인';
 
   const formatDate = (date: Date) => {
@@ -264,18 +265,45 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             {renderContent()}
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
-            <span style={{ fontSize: 9, padding: '1px 6px', background: tagBg, color: tagColor, letterSpacing: '0.06em' }}>{tagLabel}</span>
+            <span style={{ fontSize: 9, padding: '1px 6px', background: 'none', color: tagColor, border: tagBorder, letterSpacing: '0.06em' }}>{tagLabel}</span>
             {!post.requestFrom && (() => {
               const v = post.visibleTo;
               const isAll = !v || v.length === 0;
               const isSpec = v && v.length > 1;
               const label = isAll ? '전체' : isSpec ? '특정인' : '나만';
               const color = isAll ? '#3B6D11' : isSpec ? '#854F0B' : '#185FA5';
-              const bg = isAll ? 'rgba(99,153,34,0.15)' : isSpec ? 'rgba(186,117,23,0.15)' : 'rgba(55,138,221,0.15)';
-              const border = isAll ? '0.5px solid #639922' : isSpec ? '0.5px solid #BA7517' : '0.5px solid #378ADD';
+              const border = isAll ? '1px solid #639922' : isSpec ? '1px solid #BA7517' : '1px solid #378ADD';
               return (
-                <span style={{ fontSize: 9, padding: '1px 6px', background: bg, color, border, letterSpacing: '0.06em' }}>
-                  {label}
+                <span style={{ position: 'relative', display: 'inline-block' }}>
+                  <span
+                    style={{ fontSize: 9, padding: '1px 6px', background: 'none', color, border, letterSpacing: '0.06em' }}
+                    onMouseEnter={() => setShowSpecificTooltip(true)}
+                    onMouseLeave={() => setShowSpecificTooltip(false)}
+                  >
+                    {label}
+                  </span>
+                  {label === '특정인' && showSpecificTooltip && (
+                    <div style={{
+                      position: 'absolute', top: 'calc(100% + 4px)', left: 0,
+                      background: '#fff', border: '0.5px solid #EDE5DC',
+                      padding: '6px 8px', zIndex: 50, whiteSpace: 'nowrap',
+                    }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 240 }}>
+                        {post.visibleTo.map(email => {
+                          const u = users.find(u => u.email === email);
+                          return (
+                            <span key={email} style={{
+                              fontSize: 9, padding: '2px 7px',
+                              background: '#F5F0EE', color: '#9E8880',
+                              letterSpacing: '0.04em',
+                            }}>
+                              {u?.name || email.split('@')[0]}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </span>
               );
             })()}
