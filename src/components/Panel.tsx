@@ -146,8 +146,13 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             />
           )}
         </div>
-        {/* 탭 버튼 (우측) */}
-        <div className="flex gap-4 items-center">
+        {/* 탭 버튼 + 편지봉투 (우측 정렬) */}
+        <div className="flex items-center">
+          {(isOwner || user?.role === 'admin') && ownerEmail && (
+            <div className="pb-2 pr-2">
+              <TodoRequestBadge panelOwnerEmail={ownerEmail} />
+            </div>
+          )}
           {categoryList.map((cat) => {
             const isBase = BASE_CATEGORIES.includes(cat);
             return (
@@ -205,9 +210,6 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
             );
           })}
         </div>
-        {(isOwner || user?.role === 'admin') && ownerEmail && (
-          <div className="pb-2 pl-2"><TodoRequestBadge panelOwnerEmail={ownerEmail} /></div>
-        )}
       </div>
 
       {/* 필터 바 영역 */}

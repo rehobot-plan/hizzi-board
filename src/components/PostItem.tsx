@@ -42,6 +42,19 @@ export default function PostItem({ post }: PostItemProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
   const { updatePost, deletePost } = usePostStore();
+  const handleStar = async () => {
+    if (!canEdit) return;
+    try {
+      await updatePost(post.id, {
+        starred: !post.starred,
+        starredAt: post.starred ? null : new Date(),
+      });
+    } catch (e) {
+      console.error(e);
+      const { useToastStore } = await import('@/store/toastStore');
+      useToastStore.getState().addToast({ message: '저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+    }
+  };
   const { users } = useUserStore();
   const { isSpecific, tooltipText } = useVisibilityTooltip(post.visibleTo ?? [], users);
 
@@ -178,18 +191,34 @@ export default function PostItem({ post }: PostItemProps) {
 
         <div style={{ position: 'relative', zIndex: 1 }}>
           {canEdit && (
+            <button
+              onClick={handleStar}
+              style={{
+                position: 'absolute', top: -2, left: 0,
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '4px 4px', zIndex: 10,
+                opacity: post.starred ? 1 : 0.25,
+                transition: 'opacity 0.15s ease',
+              }}
+              onMouseEnter={e => { if (!post.starred) e.currentTarget.style.opacity = '0.6'; }}
+              onMouseLeave={e => { if (!post.starred) e.currentTarget.style.opacity = '0.25'; }}>
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1l1.8 3.6L13 5.3l-3 2.9.7 4.1L7 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7L7 1z"
+                  stroke="#C17B6B" strokeWidth="1.2" fill={post.starred ? '#C17B6B' : 'none'} />
+              </svg>
+            </button>
+          )}
+          {canEdit && (
             <button ref={btnRef} onClick={handleMenuOpen}
               style={{ position: 'absolute', top: -2, right: 0, background: 'none', border: 'none', cursor: 'pointer', color: isHovered ? '#9E8880' : 'transparent', fontSize: 16, padding: '4px 8px', lineHeight: 1, transition: 'color 0.15s ease', zIndex: 10 }}>
               ···
             </button>
           )}
-          <p style={{ fontSize: 13, color: isHovered ? '#7A2828' : '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', transition: 'color 0.15s ease', paddingRight: 24 }}>
+          <p style={{ fontSize: 13, color: isHovered ? '#7A2828' : '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', transition: 'color 0.15s ease', paddingRight: 24, paddingLeft: canEdit ? 20 : 0 }}>
             {post.content}
           </p>
           {renderAttachment()}
-          <div style={{ fontSize: 11, color: isHovered ? '#C17B6B' : '#9E8880', marginTop: 4, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', transition: 'color 0.15s ease' }}>
-            <span>{getAuthorName(post.author)}</span>
-            <span>{formatDate(post.createdAt)}</span>
+          <div style={{ marginTop: 4, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             {post.taskType && (
               <span style={{ fontSize: 9, padding: '1px 5px', background: 'none', color: post.taskType === 'work' ? '#C17B6B' : '#9E8880', border: post.taskType === 'work' ? '1px solid #C17B6B' : '1px solid #9E8880' }}>
                 {post.taskType === 'work' ? '업무' : '개인'}
@@ -198,14 +227,15 @@ export default function PostItem({ post }: PostItemProps) {
             {(() => {
               const label =
                 !post.visibleTo || post.visibleTo.length === 0 ? '전체' :
-                post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? '나만' : '특정인';
+                post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? '나만' : '특정';
               const color = label === '전체' ? '#639922' : label === '나만' ? '#378ADD' : '#BA7517';
               return (
-                <span style={{ fontSize: 9, padding: '1px 5px', color, border: `1px solid ${color}`, opacity: 0.8 }}>
+                <span style={{ fontSize: 9, padding: '1px 5px', color, border: `1px solid ${color}` }}>
                   {label}
                 </span>
               );
             })()}
+            <span style={{ fontSize: 9, color: '#C4B8B0', marginLeft: 'auto' }}>{formatDate(post.createdAt)}</span>
           </div>
         </div>
       </div>

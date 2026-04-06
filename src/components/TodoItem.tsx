@@ -78,7 +78,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   const formatDate = (date: Date) => {
     const d = date instanceof Date ? date : new Date(date);
-    return d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+    return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' });
   };
 
   const handleCheck = async () => {
@@ -248,7 +248,9 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
         {canEdit && (
           <button onClick={handleStar}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', transition: 'opacity 0.15s ease' }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', transition: 'opacity 0.15s ease', opacity: post.starred ? 1 : 0.25 }}
+            onMouseEnter={e => { if (!post.starred) e.currentTarget.style.opacity = '0.6'; }}
+            onMouseLeave={e => { if (!post.starred) e.currentTarget.style.opacity = '0.25'; }}>
             <StarIcon filled={!!post.starred} />
           </button>
         )}
@@ -264,13 +266,13 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           <div style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease' }}>
             {renderContent()}
           </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
-            <span style={{ fontSize: 9, padding: '1px 6px', background: 'none', color: tagColor, border: tagBorder, letterSpacing: '0.06em' }}>{tagLabel}</span>
+          <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+            {!post.requestFrom && <span style={{ fontSize: 9, padding: '1px 6px', background: 'none', color: tagColor, border: tagBorder, letterSpacing: '0.06em' }}>{tagLabel}</span>}
             {!post.requestFrom && (() => {
               const v = post.visibleTo;
               const isAll = !v || v.length === 0;
               const isSpec = v && v.length > 1;
-              const label = isAll ? '전체' : isSpec ? '특정인' : '나만';
+              const label = isAll ? '전체' : isSpec ? '특정' : '나만';
               const color = isAll ? '#3B6D11' : isSpec ? '#854F0B' : '#185FA5';
               const border = isAll ? '1px solid #639922' : isSpec ? '1px solid #BA7517' : '1px solid #378ADD';
               return (
@@ -282,7 +284,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                   >
                     {label}
                   </span>
-                  {label === '특정인' && showSpecificTooltip && (
+                  {label === '특정' && showSpecificTooltip && (
                     <div style={{
                       position: 'absolute', top: 'calc(100% + 4px)', left: 0,
                       background: '#fff', border: '0.5px solid #EDE5DC',
@@ -307,7 +309,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 </span>
               );
             })()}
-            <span style={{ fontSize: 10, color: '#C4B8B0' }}>{formatDate(post.createdAt)}</span>
             {post.requestFrom && (
               <>
                 <div style={{
@@ -369,6 +370,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 )}
               </>
             )}
+            <span style={{ fontSize: 9, color: '#C4B8B0', marginLeft: 'auto' }}>{formatDate(post.createdAt)}</span>
             {justChecked && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>완료</span>}
           </div>
         </div>
