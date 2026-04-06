@@ -237,10 +237,8 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           width: 2,
           background: (() => {
             if (post.requestFrom) return '#993556';
-            if (post.starred) return '#C17B6B';
-            if (!post.visibleTo || post.visibleTo.length === 0) return '#639922';
-            if (post.visibleTo.length > 1) return '#BA7517';
-            return '#378ADD';
+            if (post.taskType === 'personal') return '#7B5EA7';
+            return '#C17B6B';
           })(),
           transition: 'background 0.15s ease',
           pointerEvents: 'none',
@@ -266,8 +264,14 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           <div style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease' }}>
             {renderContent()}
           </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
-            {!post.requestFrom && <span style={{ fontSize: 9, padding: '1px 6px', background: 'none', color: tagColor, border: tagBorder, letterSpacing: '0.06em' }}>{tagLabel}</span>}
+          <div style={{ display: 'flex', gap: 4, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* 카테고리 태그 — 업무/개인/요청 */}
+            {post.requestFrom ? (
+              <span style={{ fontSize: 9, padding: '2px 7px', background: '#FBEAF0', color: '#993556', border: '1px solid #993556', letterSpacing: '0.04em' }}>요청</span>
+            ) : (
+              <span style={{ fontSize: 9, padding: '2px 7px', background: post.taskType === 'personal' ? '#F0ECF5' : '#FFF5F2', color: post.taskType === 'personal' ? '#7B5EA7' : '#C17B6B', border: `1px solid ${post.taskType === 'personal' ? '#7B5EA7' : '#C17B6B'}`, letterSpacing: '0.04em' }}>{tagLabel}</span>
+            )}
+            {/* 공개범위 태그 — 일반 할일만 */}
             {!post.requestFrom && (() => {
               const v = post.visibleTo;
               const isAll = !v || v.length === 0;
@@ -312,12 +316,11 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             {post.requestFrom && (
               <>
                 <span style={{
-                  fontSize: 9, padding: '1px 6px',
+                  fontSize: 9, padding: '2px 7px',
                   background: '#FCEEE9', color: '#A0503A',
-                  border: '0.5px solid #C17B6B',
-                  letterSpacing: '0.06em',
+                  letterSpacing: '0.04em',
                 }}>
-                  FROM {post.requestFrom.split('@')[0]}
+                  From {users.find(u => u.email === post.requestFrom)?.name || post.requestFrom?.split('@')[0]}
                 </span>
                 {post.visibleTo && post.visibleTo.length > 1 && (
                   <div

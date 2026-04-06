@@ -114,21 +114,20 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
       data-panel-id={id}
       style={{ transition: "background 0.2s, border 0.2s" }}
     >
-      {/* 탭 영역 — 패널명 인라인 */}
-      <div className="flex mb-0 border-b border-[#EDE5DC] bg-[#FDF8F4] px-5 pt-4 pb-0 items-center justify-between">
-        {/* 패널명 인라인 (좌측) */}
-        <div className="pb-2 pr-4 flex-shrink-0">
+      {/* 헤더: 패널명 행 + 탭 행 분리 */}
+      <div className="border-b border-[#EDE5DC] bg-[#FDF8F4]">
+        {/* 패널명 행 — 크게 단독 */}
+        <div className="px-5 pt-3 pb-2" style={{ borderBottom: '0.5px solid rgba(237,229,220,0.6)' }}>
           {!isEditing ? (
             <span
-              className="text-[10px] font-bold text-[#2C1810] uppercase tracking-widest select-none"
               style={{
-                letterSpacing: '0.18em',
-                cursor: canRename ? 'pointer' : 'default',
-                transition: 'color 0.15s',
+                fontSize: 16, fontWeight: 700, color: '#2C1810',
+                letterSpacing: '0.02em', cursor: canRename ? 'pointer' : 'default',
+                transition: 'color 0.15s', display: 'block',
               }}
               onClick={() => canRename && setIsEditing(true)}
-              onMouseEnter={e => { if (canRename) e.currentTarget.style.color = '#7A2828'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = '#2C1810'; }}
+              onMouseEnter={e => { if (canRename) (e.currentTarget as HTMLElement).style.color = '#7A2828'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#2C1810'; }}
               title={canRename ? '클릭하여 이름 변경' : ''}
             >
               {panelName}
@@ -140,16 +139,15 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
               onChange={(e) => setPanelName(e.target.value)}
               onBlur={savePanelName}
               onKeyDown={(e) => { if (e.key === 'Enter') savePanelName(); }}
-              className="border-b border-[#EDE5DC] px-1 py-0.5 text-[10px] uppercase tracking-widest"
+              style={{ fontSize: 16, fontWeight: 700, border: 'none', borderBottom: '1px solid #EDE5DC', outline: 'none', background: 'transparent', color: '#2C1810', minWidth: 80 }}
               autoFocus
-              style={{ minWidth: 60 }}
             />
           )}
         </div>
-        {/* 탭 버튼 + 편지봉투 (우측 정렬) */}
-        <div className="flex items-center">
+        {/* 탭 행 — 편지봉투 + 탭 중앙정렬, 우측 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', height: 36, paddingRight: 20 }}>
           {(isOwner || user?.role === 'admin') && ownerEmail && (
-            <div className="pb-2 pr-2">
+            <div style={{ display: 'flex', alignItems: 'center', height: 36, paddingRight: 8 }}>
               <TodoRequestBadge panelOwnerEmail={ownerEmail} />
             </div>
           )}
@@ -159,35 +157,27 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
               <div key={cat} className="relative flex items-center group">
                 {editingTab === cat ? (
                   <input
-                    className="px-3 py-2 border-b-2 text-[10px] uppercase tracking-widest focus:outline-none bg-transparent"
+                    style={{ height: 36, padding: '0 12px', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', background: 'transparent', border: 'none', borderBottom: '2px solid #C17B6B', outline: 'none', minWidth: 48 }}
                     value={tabNameDraft}
                     autoFocus
                     onChange={(e) => setTabNameDraft(e.target.value)}
                     onBlur={() => saveTabName(cat, tabNameDraft)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        saveTabName(cat, tabNameDraft);
-                      }
-                    }}
-                    style={{ minWidth: 48, borderBottom: '2px solid #C17B6B' }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveTabName(cat, tabNameDraft); } }}
                   />
                 ) : (
                   <button
-                    className={`px-3 py-2 border-b-2 text-[10px] uppercase tracking-widest ${activeCategory === cat ? 'font-bold' : ''}`}
                     style={{
+                      height: 36, padding: '0 12px',
                       borderBottom: activeCategory === cat ? '2px solid #C17B6B' : '2px solid transparent',
-                      color: activeCategory === cat ? '#C17B6B' : '#2C1810',
-                      background: 'transparent',
-                      transition: 'background 0.2s, border 0.2s, color 0.2s',
+                      color: activeCategory === cat ? '#C17B6B' : '#9E8880',
+                      background: 'transparent', border: 'none',
+                      fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em',
+                      fontWeight: activeCategory === cat ? 700 : 400,
+                      cursor: 'pointer',
+                      transition: 'color 0.15s, border-color 0.15s',
                     }}
                     onClick={() => setActiveCategory(cat)}
-                    onDoubleClick={() => {
-                      if (!isBase && canAddCategory) {
-                        setEditingTab(cat);
-                        setTabNameDraft(cat);
-                      }
-                    }}
+                    onDoubleClick={() => { if (!isBase && canAddCategory) { setEditingTab(cat); setTabNameDraft(cat); } }}
                     type="button"
                   >
                     {cat}
@@ -197,14 +187,9 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
                   <button
                     className="ml-0.5 text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"
                     title="탭 삭제"
-                    onClick={() => {
-                      setDeleteTarget(cat);
-                      setShowDeleteModal(true);
-                    }}
+                    onClick={() => { setDeleteTarget(cat); setShowDeleteModal(true); }}
                     type="button"
-                  >
-                    ×
-                  </button>
+                  >×</button>
                 )}
               </div>
             );
