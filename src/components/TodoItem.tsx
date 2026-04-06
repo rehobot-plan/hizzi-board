@@ -52,9 +52,23 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailContent, setDetailContent] = useState(post.content);
+  const [detailTaskType, setDetailTaskType] = useState<'work' | 'personal'>(post.taskType || 'work');
+  const [detailVisibility, setDetailVisibility] = useState<'all' | 'me' | 'specific'>(
+    !post.visibleTo || post.visibleTo.length === 0 ? 'all'
+      : post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? 'me'
+      : 'specific'
+  );
+  const [detailSpecificUsers, setDetailSpecificUsers] = useState<string[]>(
+    post.visibleTo?.filter(e => e !== post.author) ?? []
+  );
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [detailTitle, setDetailTitle] = useState(post.content);
 
   useEscClose(() => setIsEditOpen(false), isEditOpen);
   useEscClose(() => setShowOrderModal(false), showOrderModal);
+  useEscClose(() => setShowDetailModal(false), showDetailModal);
 
   const [editContent, setEditContent] = useState(post.content);
   const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(
@@ -113,6 +127,24 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       setShowOrderModal(false);
     } finally {
       setIsCompleting(false);
+    }
+  };
+
+  const handleDetailSave = async () => {
+    if (!detailTitle.trim()) return;
+    try {
+      await updatePost(post.id, {
+        content: detailTitle.trim(),
+        taskType: detailTaskType,
+        visibleTo: detailVisibility === 'all' ? []
+          : detailVisibility === 'specific' ? [post.author, ...detailSpecificUsers.filter(e => e !== post.author)]
+          : [post.author],
+      });
+      setShowDetailModal(false);
+    } catch (e) {
+      console.error(e);
+      const { useToastStore } = await import('@/store/toastStore');
+      useToastStore.getState().addToast({ message: '저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     }
   };
 
@@ -249,14 +281,26 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           transition: 'background 0.15s ease',
           pointerEvents: 'none',
         }} />
-        {/* 요청 할일 전체 클릭 레이어 — 체크박스(16)+별(14)+gap(8+8)=46px 이후 우측 */}
-        {post.requestId && canEdit && !justChecked && (
+        {/* 클릭 레이어 — 요청/일반 둘 다 */}
+        {canEdit && !justChecked && (
           <div
-            onClick={() => setShowOrderModal(true)}
-            style={{
-              position: 'absolute', left: 66, top: 0, right: 0, bottom: 0,
-              zIndex: 1, cursor: 'pointer',
+            onClick={() => {
+              if (post.requestId) setShowOrderModal(true);
+              else {
+                setDetailTitle(post.content);
+                setDetailContent(post.content);
+                setDetailTaskType(post.taskType || 'work');
+                setDetailVisibility(
+                  !post.visibleTo || post.visibleTo.length === 0 ? 'all'
+                    : post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? 'me'
+                    : 'specific'
+                );
+                setDetailSpecificUsers(post.visibleTo?.filter(e => e !== post.author) ?? []);
+                setIsEditingTitle(false);
+                setShowDetailModal(true);
+              }
             }}
+            style={{ position: 'absolute', left: 66, top: 0, right: 0, bottom: 0, zIndex: 1, cursor: 'pointer' }}
           />
         )}
 
@@ -277,10 +321,23 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         )}
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            onClick={post.requestId && canEdit && !justChecked ? () => setShowOrderModal(true) : undefined}
-            style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease', cursor: post.requestId && canEdit && !justChecked ? 'pointer' : 'default' }}>
-            {renderContent()}
+          {/* 제목 행: 제목 + 휴지통(일반 할일만) */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 4 }}>
+            <div style={{ fontSize: 13, lineHeight: 1.5, textDecoration: justChecked ? 'line-through' : 'none', color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', transition: 'all 0.15s ease', flex: 1 }}>
+              {renderContent()}
+            </div>
+            {canEdit && !post.requestId && !justChecked && (
+              <span
+                onClick={e => { e.stopPropagation(); handleDelete(); }}
+                style={{ cursor: 'pointer', flexShrink: 0, opacity: 0.2, transition: 'opacity 0.15s', position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', marginTop: 2 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.2')}
+              >
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 4h10M5 4V2.5h4V4M5.5 6v5M8.5 6v5M3 4l.7 7.5h6.6L11 4" stroke="#C17B6B" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 4, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
             {/* 카테고리 태그 — 업무/개인/요청 */}
@@ -417,42 +474,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           </div>
         </div>
 
-        {canEdit && !justChecked && !post.requestId && (
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <button
-              ref={menuBtnRef}
-              onClick={() => setShowMenu(v => !v)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4B8B0', fontSize: 16, padding: '8px 12px', lineHeight: 1, transition: 'color 0.15s ease' }}>
-              ···
-            </button>
-            {showMenu && typeof window !== 'undefined' && createPortal(
-              <div
-                style={{
-                  position: 'fixed',
-                  top: menuBtnRef.current ? menuBtnRef.current.getBoundingClientRect().bottom + 4 : 0,
-                  left: menuBtnRef.current ? menuBtnRef.current.getBoundingClientRect().left : 0,
-                  background: '#fff', border: '1px solid #EDE5DC',
-                  zIndex: 9999, minWidth: 80,
-                  boxShadow: '0 4px 12px rgba(44,20,16,0.08)'
-                }}
-                onMouseLeave={() => setShowMenu(false)}>
-                <button onClick={handleEditOpen}
-                  style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#2C1810', background: 'none', border: 'none', cursor: 'pointer' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-                  수정
-                </button>
-                <button onClick={handleDelete}
-                  style={{ display: 'block', width: '100%', padding: '7px 12px', textAlign: 'left', fontSize: 11, color: '#C17B6B', background: 'none', border: 'none', cursor: 'pointer' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#FFF5F2')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-                  삭제
-                </button>
-              </div>,
-              document.body
-            )}
-          </div>
-        )}
+
       </div>
       {isEditOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
@@ -664,6 +686,161 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '9px 24px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: isCompleting ? 'not-allowed' : 'pointer', opacity: isCompleting ? 0.6 : 1 }}>
                 {isCompleting ? '처리 중...' : '완료 처리'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDetailModal && !post.requestId && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => setShowDetailModal(false)}>
+          <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480, zIndex: 1001 }}
+            onClick={e => e.stopPropagation()}>
+
+            {/* 헤더 — 제목 + 연필 바로 옆 */}
+            <div style={{ background: '#2C1810', padding: '18px 24px' }}>
+              {isEditingTitle ? (
+                <input
+                  value={detailTitle}
+                  onChange={e => setDetailTitle(e.target.value)}
+                  onBlur={() => setIsEditingTitle(false)}
+                  onKeyDown={e => { if (e.key === 'Enter') setIsEditingTitle(false); }}
+                  autoFocus
+                  style={{ fontSize: 17, fontWeight: 700, color: '#FDF8F4', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(253,248,244,0.4)', outline: 'none', width: '100%', fontFamily: 'inherit', marginBottom: 8, padding: '2px 0' }}
+                />
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 17, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4 }}>{detailTitle}</span>
+                  {canEdit && (
+                    <span
+                      onClick={() => setIsEditingTitle(true)}
+                      style={{ opacity: 0.35, cursor: 'pointer', transition: 'opacity 0.15s', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '0.35')}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
+                        <path d="M8.5 1.5l2 2L3 11H1v-2L8.5 1.5z" stroke="#FDF8F4" strokeWidth="1.2" strokeLinejoin="round"/>
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: 'rgba(253,248,244,0.6)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7" rx="1" stroke="rgba(253,248,244,0.6)" strokeWidth="1.2"/><path d="M3 1v1.5M7 1v1.5M1 4h8" stroke="rgba(253,248,244,0.6)" strokeWidth="1.2"/></svg>
+                {formatDate(post.createdAt)} 등록
+              </div>
+            </div>
+
+            {/* 상태바 */}
+            <div style={{ padding: '8px 24px', borderBottom: '1px solid #EDE5DC', display: 'flex', gap: 6, background: '#FDF8F4' }}>
+              <span style={{ fontSize: 9, padding: '3px 9px', background: detailTaskType === 'personal' ? '#F0ECF5' : '#FFF5F2', color: detailTaskType === 'personal' ? '#7B5EA7' : '#C17B6B', border: `1px solid ${detailTaskType === 'personal' ? '#7B5EA7' : '#C17B6B'}` }}>
+                {detailTaskType === 'personal' ? '개인' : '업무'}
+              </span>
+              <span style={{ fontSize: 9, padding: '3px 9px', color: detailVisibility === 'all' ? '#3B6D11' : detailVisibility === 'me' ? '#185FA5' : '#854F0B', border: `1px solid ${detailVisibility === 'all' ? '#639922' : detailVisibility === 'me' ? '#378ADD' : '#BA7517'}` }}>
+                {detailVisibility === 'all' ? '전체' : detailVisibility === 'me' ? '나만' : '특정'}
+              </span>
+            </div>
+
+            {/* 바디 */}
+            <div style={{ padding: '22px 24px' }}>
+              {/* 내용 */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>내용 <span style={{ fontSize: 8, color: '#C4B8B0', fontWeight: 400, letterSpacing: 0 }}>(선택)</span></div>
+                <textarea
+                  value={detailContent}
+                  onChange={e => setDetailContent(e.target.value)}
+                  rows={3}
+                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }}
+                  placeholder="상세 내용을 입력하세요..."
+                />
+              </div>
+
+              {/* 구분 */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>구분</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['work', 'personal'] as const).map(t => {
+                    const isOn = detailTaskType === t;
+                    const onColor = t === 'work' ? '#C17B6B' : '#7B5EA7';
+                    const onBg = t === 'work' ? '#FFF5F2' : '#F0ECF5';
+                    const onBorder = t === 'work' ? '#C17B6B' : '#7B5EA7';
+                    return (
+                      <button key={t} onClick={() => setDetailTaskType(t)}
+                        style={{
+                          fontSize: 9, padding: '4px 14px',
+                          border: `1px solid ${isOn ? onBorder : `rgba(${t === 'work' ? '193,123,107' : '123,94,167'},0.25)`}`,
+                          color: isOn ? onColor : `rgba(${t === 'work' ? '193,123,107' : '123,94,167'},0.35)`,
+                          background: isOn ? onBg : '#fff',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => { if (!isOn) { e.currentTarget.style.borderColor = onBorder; e.currentTarget.style.color = onColor; e.currentTarget.style.background = onBg; } }}
+                        onMouseLeave={e => { if (!isOn) { e.currentTarget.style.borderColor = `rgba(${t === 'work' ? '193,123,107' : '123,94,167'},0.25)`; e.currentTarget.style.color = `rgba(${t === 'work' ? '193,123,107' : '123,94,167'},0.35)`; e.currentTarget.style.background = '#fff'; } }}>
+                        {t === 'work' ? '업무' : '개인'}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 보이는 범위 */}
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>보이는 범위</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {([
+                    { v: 'all', label: '전체', color: '#3B6D11', border: '#639922', rgb: '99,153,34' },
+                    { v: 'me', label: '나만', color: '#185FA5', border: '#378ADD', rgb: '55,138,221' },
+                    { v: 'specific', label: '특정', color: '#854F0B', border: '#BA7517', rgb: '186,117,23' },
+                  ] as const).map(({ v, label, color, border, rgb }) => {
+                    const isOn = detailVisibility === v;
+                    return (
+                      <button key={v} onClick={() => setDetailVisibility(v)}
+                        style={{
+                          fontSize: 9, padding: '4px 12px',
+                          border: `1px solid ${isOn ? border : `rgba(${rgb},0.25)`}`,
+                          color: isOn ? color : `rgba(${rgb.split(',').map(n => Math.round(parseInt(n)*0.6)).join(',')},0.5)`,
+                          background: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={e => { if (!isOn) { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = color; } }}
+                        onMouseLeave={e => { if (!isOn) { e.currentTarget.style.borderColor = `rgba(${rgb},0.25)`; e.currentTarget.style.color = `rgba(${rgb.split(',').map(n => Math.round(parseInt(n)*0.6)).join(',')},0.5)`; } }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {detailVisibility === 'specific' && nonAdminUsers.length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                    {nonAdminUsers.map(u => (
+                      <button key={u.email}
+                        onClick={() => setDetailSpecificUsers(prev =>
+                          prev.includes(u.email) ? prev.filter(e => e !== u.email) : [...prev, u.email]
+                        )}
+                        style={{ padding: '4px 10px', fontSize: 10, border: `1px solid ${detailSpecificUsers.includes(u.email) ? '#C17B6B' : '#EDE5DC'}`, background: detailSpecificUsers.includes(u.email) ? '#FFF5F2' : '#fff', color: detailSpecificUsers.includes(u.email) ? '#C17B6B' : '#9E8880', cursor: 'pointer' }}>
+                        {u.name || u.email}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 푸터 */}
+            <div style={{ padding: '10px 24px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <button onClick={() => setShowDetailModal(false)}
+                  style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
+                <button onClick={async () => {
+                  try {
+                    await handleDelete();
+                    setShowDetailModal(false);
+                  } catch (e) {
+                    console.error(e);
+                    const { useToastStore } = await import('@/store/toastStore');
+                    useToastStore.getState().addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+                  }
+                }}
+                  style={{ fontSize: 10, color: '#C17B6B', border: '1px solid #C17B6B', background: 'none', padding: '6px 14px', cursor: 'pointer' }}>삭제</button>
+              </div>
+              <button onClick={handleDetailSave}
+                style={{ fontSize: 10, padding: '8px 20px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer', letterSpacing: '0.06em' }}>저장</button>
             </div>
           </div>
         </div>
