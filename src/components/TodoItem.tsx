@@ -208,12 +208,15 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         visibleTo,
         ...attachmentUpdate,
       };
-      if (detailDueDate) updates.dueDate = detailDueDate;
+      const normalizedDue = detailDueDate.length === 8
+        ? `${detailDueDate.slice(0, 4)}-${detailDueDate.slice(4, 6)}-${detailDueDate.slice(6, 8)}`
+        : detailDueDate;
+      if (normalizedDue) updates.dueDate = normalizedDue;
 
       await updatePost(post.id, updates);
 
       // 캘린더 등록 (dueDate 있고 체크 시)
-      if (detailAddToCalendar && detailDueDate) {
+      if (detailAddToCalendar && normalizedDue) {
         const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase');
         const { useAuthStore } = await import('@/store/authStore');
@@ -224,8 +227,8 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             : (detailVisibility === 'all' ? '#3B6D11' : detailVisibility === 'me' ? '#185FA5' : '#854F0B');
           await addDoc(collection(db, 'calendarEvents'), {
             title: detailTitle.trim(),
-            startDate: detailDueDate,
-            endDate: detailDueDate,
+            startDate: normalizedDue,
+            endDate: normalizedDue,
             authorId: user.uid,
             authorName: user.displayName || user.email,
             color,
@@ -341,9 +344,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   const renderContent = () => {
     if (post.attachment?.type === 'image') return (
-      <img src={post.attachment.url} alt="할일 이미지"
-        style={{ maxWidth: '100%', height: 'auto', display: 'block', opacity: justChecked ? 0.5 : 1 }}
-        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+      <>
+        <div style={{ fontSize: 13, lineHeight: 1.5, color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginBottom: 6 }}>{post.content}</div>
+        <img src={post.attachment.url} alt="할일 이미지"
+          style={{ maxWidth: '100%', height: 'auto', display: 'block', opacity: justChecked ? 0.5 : 1 }}
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+      </>
     );
     if (post.attachment?.type === 'file') return (
       <a href={post.attachment.url} target="_blank" rel="noopener noreferrer"
@@ -362,9 +368,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     return post.content;
   };
 
+  const normalizeDueDate = (s: string) =>
+    s.length === 8 ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : s;
+
   // dueDate 공통 렌더
   const renderDueTag = (dueDateStr: string) => {
-    const due = new Date(dueDateStr + 'T00:00:00');
+    const due = new Date(normalizeDueDate(dueDateStr) + 'T00:00:00');
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const isUrgent = diffDays <= 3;
