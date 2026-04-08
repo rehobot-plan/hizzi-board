@@ -51,7 +51,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [isCompleting, setIsCompleting] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // Detail modal state
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [detailTitle, setDetailTitle] = useState(post.content);
   const [detailContent, setDetailContent] = useState(post.content);
@@ -70,7 +69,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [detailRemoveAttachment, setDetailRemoveAttachment] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Edit modal state (기존 isEditOpen - 미사용이지만 구조 유지)
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(
@@ -173,6 +171,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     setShowDetailModal(true);
   };
 
+  const handleItemClick = () => {
+    if (!canEdit || justChecked) return;
+    if (post.requestId) setShowOrderModal(true);
+    else openDetailModal();
+  };
+
   const handleDetailSave = async () => {
     if (!detailTitle.trim()) return;
     setIsSaving(true);
@@ -215,7 +219,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
       await updatePost(post.id, updates);
 
-      // 캘린더 등록 (dueDate 있고 체크 시)
       if (detailAddToCalendar && normalizedDue) {
         const { addDoc, collection, getDocs, query, where, serverTimestamp } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase');
@@ -262,7 +265,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     }
   };
 
-  // Edit modal save (기존 isEditOpen용)
   const handleEditSave = async () => {
     if (!editContent.trim()) return;
     setIsUpdating(true);
@@ -294,7 +296,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     }
   };
 
-  // -- 스타일 토큰 (P8) --------------------------------------
   const tableRow = (isAlt: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'flex-start',
     padding: '10px 20px',
@@ -360,14 +361,23 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     if (post.attachment?.type === 'image') return (
       <>
         <div style={{ fontSize: 13, lineHeight: 1.5, color: justChecked ? '#9E8880' : '#2C1810', whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginBottom: 6 }}>{post.content}</div>
-        <img src={post.attachment.url} alt="할일 이미지"
+        <img
+          src={post.attachment.url}
+          alt="할일 이미지"
           style={{ maxWidth: '100%', height: 'auto', display: 'block', opacity: justChecked ? 0.5 : 1 }}
-          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          onClick={e => e.stopPropagation()}
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
       </>
     );
     if (post.attachment?.type === 'file') return (
-      <a href={post.attachment.url} target="_blank" rel="noopener noreferrer"
-        style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 4 }}>
+      <a
+        href={post.attachment.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={e => e.stopPropagation()}
+        style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 4 }}
+      >
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
           <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/>
           <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/>
@@ -376,8 +386,15 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       </a>
     );
     if (post.attachment?.type === 'link') return (
-      <a href={post.attachment.url} target="_blank" rel="noopener noreferrer"
-        style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>{post.attachment.url}</a>
+      <a
+        href={post.attachment.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={e => e.stopPropagation()}
+        style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}
+      >
+        {post.attachment.url}
+      </a>
     );
     return post.content;
   };
@@ -385,7 +402,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const normalizeDueDate = (s: string) =>
     s.length === 8 ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : s;
 
-  // dueDate 공통 렌더
   const renderDueTag = (dueDateStr: string) => {
     const due = new Date(normalizeDueDate(dueDateStr) + 'T00:00:00');
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -405,12 +421,13 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   return (
     <>
-      {/* -- 아이템 -- */}
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handleItemClick}
         style={{
-          cursor: 'default', display: 'flex', alignItems: 'flex-start', gap: 8,
+          cursor: canEdit && !justChecked ? 'pointer' : 'default',
+          display: 'flex', alignItems: 'flex-start', gap: 8,
           padding: '10px 20px 10px 28px', margin: '0 -20px',
           borderBottom: '1px solid #EDE5DC', position: 'relative',
           opacity: justChecked ? 0.4 : 1,
@@ -420,13 +437,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         }}
       >
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: post.requestFrom ? '#993556' : post.taskType === 'personal' ? '#7B5EA7' : '#C17B6B', pointerEvents: 'none' }} />
-
-        {canEdit && !justChecked && (
-          <div onClick={() => {
-            if (post.requestId) setShowOrderModal(true);
-            else openDetailModal();
-          }} style={{ position: 'absolute', left: 66, top: 0, right: 0, bottom: 0, zIndex: 1, cursor: 'pointer' }} />
-        )}
 
         {canEdit && (
           <button onClick={e => { e.stopPropagation(); handleCheck(); }} disabled={checking || justChecked}
@@ -530,14 +540,11 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         </div>
       </div>
 
-      {/* -- 일반 할일 상세 팝업 (P8 키-값 테이블형) -- */}
       {showDetailModal && !post.requestId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setShowDetailModal(false)}>
           <div style={{ background: '#fff', border: '1px solid #EDE5DC', borderRadius: 6, width: '100%', maxWidth: 480, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
             onClick={e => e.stopPropagation()}>
-
-            {/* 헤더 */}
             <div style={{ background: '#5C1F1F', padding: '14px 20px 12px', flexShrink: 0 }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', color: 'rgba(253,248,244,0.45)', textTransform: 'uppercase', marginBottom: 6 }}>할일</div>
               {isEditingTitle ? (
@@ -569,8 +576,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 {formatDate(post.createdAt)}
               </div>
             </div>
-
-            {/* 상태바 */}
             <div style={{ background: '#FDF8F4', borderBottom: '1px solid #EDE5DC', padding: '7px 20px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#9E8880', paddingRight: 10, borderRight: '1px solid #D5C9C0', marginRight: 10 }}>할일</span>
               <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: detailTaskType === 'personal' ? '#F0ECF5' : '#FFF5F2', color: detailTaskType === 'personal' ? '#7B5EA7' : '#C17B6B', border: `1px solid ${detailTaskType === 'personal' ? '#7B5EA7' : '#C17B6B'}`, marginRight: 4 }}>
@@ -580,31 +585,18 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 {detailVisibility === 'all' ? '전체' : detailVisibility === 'me' ? '나만' : '특정'}
               </span>
             </div>
-
-            {/* 바디 -- 키-값 테이블형 */}
             <div style={{ flex: 1, overflowY: 'auto' }}>
-
-              {/* 행 1: 내용 */}
               <div style={tableRow(false)}>
                 <div style={labelStyle}>내용</div>
                 <textarea value={detailContent} onChange={e => setDetailContent(e.target.value)} rows={3}
                   style={{ flex: 1, border: 'none', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit', lineHeight: 1.6 }} />
               </div>
-
-              {/* 행 2: 기한 */}
               <div style={tableRow(true)}>
                 <div style={labelStyle}>기한</div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="text" maxLength={8} placeholder="YYYYMMDD"
-                    value={detailDueDate}
-                    onChange={e => {
-                      const v = e.target.value.replace(/\D/g, '').slice(0, 8);
-                      setDetailDueDate(v);
-                      if (v.length < 8) setDetailAddToCalendar(false);
-                    }}
-                    style={{ width: 100, border: 'none', borderBottom: '1px solid #EDE5DC', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit', padding: '2px 0' }}
-                  />
+                  <input type="text" maxLength={8} placeholder="YYYYMMDD" value={detailDueDate}
+                    onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 8); setDetailDueDate(v); if (v.length < 8) setDetailAddToCalendar(false); }}
+                    style={{ width: 100, border: 'none', borderBottom: '1px solid #EDE5DC', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit', padding: '2px 0' }} />
                   <span style={{ color: '#C4B8B0', display: 'flex', alignItems: 'center', transition: 'color 0.15s ease', cursor: detailDueDate.length === 8 ? 'pointer' : 'default' }}
                     onMouseEnter={e => { if (detailDueDate.length === 8) (e.currentTarget as HTMLElement).style.color = '#C17B6B'; }}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#C4B8B0'}>
@@ -614,48 +606,35 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                     </svg>
                   </span>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: detailDueDate.length === 8 ? '#9E8880' : '#C4B8B0', cursor: detailDueDate.length === 8 ? 'pointer' : 'not-allowed' }}>
-                    <input type="checkbox" checked={detailAddToCalendar}
-                      disabled={detailDueDate.length < 8}
+                    <input type="checkbox" checked={detailAddToCalendar} disabled={detailDueDate.length < 8}
                       onChange={e => setDetailAddToCalendar(e.target.checked)}
                       style={{ accentColor: '#C17B6B', cursor: detailDueDate.length === 8 ? 'pointer' : 'not-allowed' }} />
                     캘린더 등록
                   </label>
                 </div>
               </div>
-
-              {/* 행 3: 첨부 */}
               <div style={tableRow(false)}>
                 <div style={labelStyle}>첨부</div>
-                <div style={{ flex: 1 }}>
-                  {renderDetailAttachment()}
-                </div>
+                <div style={{ flex: 1 }}>{renderDetailAttachment()}</div>
                 <input ref={detailFileInputRef} type="file" accept="*/*"
                   onClick={e => { (e.target as HTMLInputElement).value = ''; }}
                   onChange={e => { const f = e.target.files?.[0]; if (f) { setDetailNewFile(f); setDetailRemoveAttachment(false); } }}
                   style={{ display: 'none' }} />
               </div>
-
-              {/* 행 4: 구분 */}
               <div style={tableRow(true)}>
                 <div style={labelStyle}>구분</div>
                 <div style={{ display: 'flex', gap: 5 }}>
                   {(['work', 'personal'] as const).map(t => (
-                    <div key={t} onClick={() => setDetailTaskType(t)} style={taskBtnStyle(t)}>
-                      {t === 'work' ? '업무' : '개인'}
-                    </div>
+                    <div key={t} onClick={() => setDetailTaskType(t)} style={taskBtnStyle(t)}>{t === 'work' ? '업무' : '개인'}</div>
                   ))}
                 </div>
               </div>
-
-              {/* 행 5: 범위 */}
               <div style={{ ...tableRow(false), flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
                   <div style={labelStyle}>범위</div>
                   <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                     {(['all', 'me', 'specific'] as const).map(v => (
-                      <div key={v} onClick={() => setDetailVisibility(v)} style={visBtnStyle(v)}>
-                        {v === 'all' ? '전체' : v === 'me' ? '나만' : '특정'}
-                      </div>
+                      <div key={v} onClick={() => setDetailVisibility(v)} style={visBtnStyle(v)}>{v === 'all' ? '전체' : v === 'me' ? '나만' : '특정'}</div>
                     ))}
                   </div>
                 </div>
@@ -675,8 +654,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 )}
               </div>
             </div>
-
-            {/* 푸터 */}
             <div style={{ background: '#FDF8F4', borderTop: '1px solid #EDE5DC', padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <span onClick={() => setShowDetailModal(false)} style={{ fontSize: 12, color: '#9E8880', cursor: 'pointer', padding: '5px 2px' }}>닫기</span>
@@ -692,13 +669,11 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         </div>
       )}
 
-      {/* -- 요청 할일 업무상세 팝업 (P9 2단 레이아웃) -- */}
       {showOrderModal && post.requestId && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setShowOrderModal(false)}>
           <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 860, zIndex: 1001, display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}
             onClick={e => e.stopPropagation()}>
-
             <div style={{ background: '#5C1F1F', padding: '20px 28px', flexShrink: 0 }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4, marginBottom: 12 }}>{post.content}</div>
               <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -723,12 +698,10 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 })()}
               </div>
             </div>
-
             <div style={{ background: '#FCEEE9', padding: '8px 28px', borderBottom: '1px solid #EDE5DC', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#993556', display: 'inline-block' }} />
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#993556' }}>진행중</span>
             </div>
-
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 360 }}>
               <div style={{ width: 260, flexShrink: 0, borderRight: '1px solid #EDE5DC', padding: 20, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
                 {post.requestContent && (
@@ -768,7 +741,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                   )}
                 </div>
               </div>
-
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div style={{ textAlign: 'center', fontSize: 10, color: '#C4B8B0' }}>댓글 기능은 준비 중입니다</div>
@@ -780,7 +752,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 </div>
               </div>
             </div>
-
             <div style={{ padding: '12px 28px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <button onClick={() => setShowOrderModal(false)} style={{ fontSize: 11, letterSpacing: '0.04em', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
               <button onClick={handleComplete} disabled={isCompleting}
@@ -792,7 +763,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         </div>
       )}
 
-      {/* -- 기존 isEditOpen (미사용, 구조 유지) -- */}
       {isEditOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 480, zIndex: 1001 }}>
