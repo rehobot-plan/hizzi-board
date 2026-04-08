@@ -50,6 +50,25 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isImageOpen, setIsImageOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom(prev => Math.min(5, Math.max(0.5, prev - e.deltaY * 0.001)));
+  };
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - dragPos.x, y: e.clientY - dragPos.y });
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setDragPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  };
+  const handleMouseUp = () => setIsDragging(false);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [detailTitle, setDetailTitle] = useState(post.content);
@@ -365,7 +384,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           src={post.attachment.url}
           alt="할일 이미지"
           style={{ maxWidth: '100%', height: 'auto', display: 'block', opacity: justChecked ? 0.5 : 1 }}
-          onClick={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); setIsImageOpen(true); }}
           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
       </>
@@ -759,6 +778,32 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 {isCompleting ? '처리 중...' : '완료 처리'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isImageOpen && post.attachment?.type === 'image' && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => { setIsImageOpen(false); setZoom(1); setDragPos({ x: 0, y: 0 }); }}
+        >
+          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{Math.round(zoom * 100)}%</span>
+            <span onClick={e => { e.stopPropagation(); setZoom(1); setDragPos({ x: 0, y: 0 }); }} style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', border: 'none', padding: '4px 8px', fontSize: 11, cursor: 'pointer' }}>
+              초기화
+            </span>
+          </div>
+          <div style={{ overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh' }} onWheel={handleWheel} onClick={e => e.stopPropagation()}>
+            <img
+              src={post.attachment.url}
+              alt="확대 이미지"
+              style={{ transform: `scale(${zoom}) translate(${dragPos.x / zoom}px, ${dragPos.y / zoom}px)`, transition: isDragging ? 'none' : 'transform 0.1s', cursor: isDragging ? 'grabbing' : 'grab', display: 'block', maxWidth: '90vw', maxHeight: '90vh' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              draggable={false}
+            />
           </div>
         </div>
       )}
