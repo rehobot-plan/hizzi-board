@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useEscClose } from '@/hooks/useEscClose';
+import { useState, useEffect } from 'react';
 
 interface ImageViewerProps {
   url: string;
@@ -14,7 +13,11 @@ export default function ImageViewer({ url, onClose }: ImageViewerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  useEscClose(onClose, true);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();

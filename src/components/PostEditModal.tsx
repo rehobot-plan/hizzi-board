@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { doc, updateDoc, deleteField } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Post, usePostStore } from '@/store/postStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { db, storage } from '@/lib/firebase';
-import { useEscClose } from '@/hooks/useEscClose';
 import { useToastStore } from '@/store/toastStore';
 
 interface PostEditModalProps {
@@ -47,7 +46,11 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEscClose(onClose, true);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   const formatDate = (date: Date) => {
     if (!date) return '';

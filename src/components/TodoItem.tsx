@@ -7,7 +7,6 @@ import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { useUserStore } from '@/store/userStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
-import { useEscClose } from '@/hooks/useEscClose';
 import ImageViewer from '@/components/common/ImageViewer';
 
 interface TodoItemProps {
@@ -101,9 +100,17 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const detailFileInputRef = useRef<HTMLInputElement>(null);
 
-  useEscClose(() => setIsEditOpen(false), isEditOpen);
-  useEscClose(() => setShowOrderModal(false), showOrderModal);
-  useEscClose(() => setShowDetailModal(false), showDetailModal);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (isImageOpen) { setIsImageOpen(false); return; }
+      if (showDetailModal) { setShowDetailModal(false); return; }
+      if (showOrderModal) { setShowOrderModal(false); return; }
+      if (isEditOpen) { setIsEditOpen(false); return; }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isImageOpen, showDetailModal, showOrderModal, isEditOpen]);
 
   const isWork = post.taskType === 'work';
   const tagLabel = isWork ? '업무' : '개인';
