@@ -299,15 +299,10 @@ export default function PostItem({ post }: PostItemProps) {
     if (post.attachment && !newFile) {
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <rect x="2" y="1" width="8" height="10" rx="1" stroke="#9E8880" strokeWidth="1" />
-            <path d="M4 4h4M4 6.5h4M4 9h2" stroke="#9E8880" strokeWidth="0.8" strokeLinecap="round" />
-          </svg>
-          <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{post.attachment.name || '첨부파일'}</span>
-          <span onClick={() => fileInputRef.current?.click()} style={{ fontSize: 10, color: '#3B6D11', border: '1px solid #639922', padding: '1px 7px', borderRadius: 2, cursor: 'pointer' }}>
-            교체
-          </span>
-          <span onClick={() => setRemoveAttachment(true)} style={{ fontSize: 10, color: '#C17B6B', border: '1px solid #C17B6B', padding: '1px 7px', borderRadius: 2, cursor: 'pointer' }}>
+          <span style={{ flex: 1, fontSize: 12, color: '#2C1810', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.attachment.name || '첨부파일'}</span>
+          <a href={post.attachment.url} target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 10, color: '#185FA5', border: '1px solid #378ADD', padding: '1px 7px', borderRadius: 2, cursor: 'pointer', textDecoration: 'none', flexShrink: 0 }}>열기</a>
+          <span onClick={() => setRemoveAttachment(true)} style={{ fontSize: 10, color: '#C17B6B', border: '1px solid #C17B6B', padding: '1px 7px', borderRadius: 2, cursor: 'pointer', flexShrink: 0 }}>
             삭제
           </span>
         </div>
