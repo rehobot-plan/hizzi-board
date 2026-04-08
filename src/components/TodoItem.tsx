@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Post, usePostStore } from '@/store/postStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
