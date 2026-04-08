@@ -15,16 +15,7 @@ export default function ImageViewer({ url, onClose }: ImageViewerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopImmediatePropagation();
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [onClose]);
+  useEscClose(onClose, true);
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
