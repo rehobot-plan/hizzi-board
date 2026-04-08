@@ -470,7 +470,10 @@ export default function PostItem({ post }: PostItemProps) {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept={post.attachment?.type === 'image' ? 'image/*' : '*'}
+                  accept="*/*"
+                  onClick={e => {
+                    (e.target as HTMLInputElement).value = '';
+                  }}
                   onChange={e => {
                     const file = e.target.files?.[0];
                     if (file) {
