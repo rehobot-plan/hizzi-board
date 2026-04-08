@@ -88,7 +88,7 @@ export default function PostItem({ post }: PostItemProps) {
 
     if (type === 'image') {
       return (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 8, position: 'relative', zIndex: 2 }}>
           <img
             src={url}
             alt="첨부 이미지"
@@ -101,7 +101,7 @@ export default function PostItem({ post }: PostItemProps) {
 
     if (type === 'file') {
       return (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 8, position: 'relative', zIndex: 2 }}>
           <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2" />
@@ -115,7 +115,7 @@ export default function PostItem({ post }: PostItemProps) {
 
     if (type === 'link') {
       return (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 8, position: 'relative', zIndex: 2 }}>
           <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>
             {url}
           </a>
