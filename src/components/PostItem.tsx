@@ -5,6 +5,7 @@ import { Post, usePostStore } from '@/store/postStore';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import PostEditModal from '@/components/PostEditModal';
+import ImageViewer from '@/components/common/ImageViewer';
 
 interface PostItemProps {
   post: Post;
@@ -19,11 +20,7 @@ export default function PostItem({ post }: PostItemProps) {
 
   const [isHovered, setIsHovered] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isImageOpen, setIsImageOpen] = useState(false);
 
   const getLeftBorderColor = () => {
     if (post.taskType === 'personal') return '#7B5EA7';
@@ -59,23 +56,6 @@ export default function PostItem({ post }: PostItemProps) {
     }
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    setZoom(prev => Math.min(5, Math.max(0.5, prev - e.deltaY * 0.001)));
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - dragPos.x, y: e.clientY - dragPos.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setDragPos({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-  };
-
-  const handleMouseUp = () => setIsDragging(false);
-
   const visLabel = !post.visibleTo || post.visibleTo.length === 0 ? '전체'
     : post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? '나만' : '특정';
   const visColor = visLabel === '전체' ? '#639922' : visLabel === '나만' ? '#378ADD' : '#BA7517';
@@ -91,7 +71,7 @@ export default function PostItem({ post }: PostItemProps) {
             src={url}
             alt="첨부 이미지"
             style={{ maxWidth: '100%', height: 'auto', cursor: 'pointer', display: 'block' }}
-            onClick={e => { e.stopPropagation(); setIsModalOpen(true); }}
+            onClick={e => { e.stopPropagation(); setIsImageOpen(true); }}
           />
         </div>
       );
@@ -209,30 +189,11 @@ export default function PostItem({ post }: PostItemProps) {
         />
       )}
 
-      {isModalOpen && post.attachment?.type === 'image' && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => { setIsModalOpen(false); setZoom(1); setDragPos({ x: 0, y: 0 }); }}
-        >
-          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{Math.round(zoom * 100)}%</span>
-            <span onClick={e => { e.stopPropagation(); setZoom(1); setDragPos({ x: 0, y: 0 }); }} style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', border: 'none', padding: '4px 8px', fontSize: 11, cursor: 'pointer' }}>
-              초기화
-            </span>
-          </div>
-          <div style={{ overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh' }} onWheel={handleWheel} onClick={e => e.stopPropagation()}>
-            <img
-              src={post.attachment.url}
-              alt="확대 이미지"
-              style={{ transform: `scale(${zoom}) translate(${dragPos.x / zoom}px, ${dragPos.y / zoom}px)`, transition: isDragging ? 'none' : 'transform 0.1s', cursor: isDragging ? 'grabbing' : 'grab', display: 'block', maxWidth: '90vw', maxHeight: '90vh' }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              draggable={false}
-            />
-          </div>
-        </div>
+      {isImageOpen && post.attachment?.type === 'image' && (
+        <ImageViewer
+          url={post.attachment.url}
+          onClose={() => setIsImageOpen(false)}
+        />
       )}
     </>
   );
