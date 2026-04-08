@@ -93,7 +93,7 @@ export default function PostItem({ post }: PostItemProps) {
             src={url}
             alt="첨부 이미지"
             style={{ maxWidth: '100%', height: 'auto', cursor: 'pointer', display: 'block' }}
-            onClick={() => setIsModalOpen(true)}
+            onClick={e => { e.stopPropagation(); setIsModalOpen(true); }}
           />
         </div>
       );

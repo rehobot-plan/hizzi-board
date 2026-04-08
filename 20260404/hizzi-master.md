@@ -82,6 +82,13 @@ Claude.ai 작업 순서:
 | 2026.04.08 | TodoItem: 첨부파일 열기/삭제 UI 통일 |
 | 2026.04.08 | page.tsx: 한글 인코딩 전면 복원 |
 | 2026.04.08 | users 컬렉션 6명 + 관리자 Firestore 재삽입 |
+| 2026.04.08 | panelStore: initPanelListener 패턴 전환 + addToast 통일 + swapPanels 낙관적 업데이트/롤백 |
+| 2026.04.08 | userStore: initUserListener 패턴 전환 + addToast 통일 + deleteUser 낙관적 업데이트/롤백 |
+| 2026.04.08 | leaveStore: initLeaveListener 패턴 전환 + addToast 통일 + stripUndefined 적용 |
+| 2026.04.08 | 로그인 직후 stale 렌더 구조적 해결 (Panel 1/2/3 / From admin 표시 버그) |
+| 2026.04.08 | 연차 페이지 새로고침 Loading 멈춤 해결 |
+| 2026.04.08 | LeaveManager leaveLoading 게이트 추가 (입사일 공란 / 설정저장 무반응 버그) |
+| 2026.04.08 | page.tsx: initLeaveListener 추가 — 관리자 모드 연차 관리 탭 연동 |
 
 ### 🔴 진행 중 (다음 세션)
 ```
@@ -148,8 +155,8 @@ serviceAccount:    D:\Dropbox\Dropbox\serviceAccount.json
 ```
 src/
 ├── app/
-│   ├── page.tsx                ✅ 한글 인코딩 복원
-│   ├── leave/page.tsx
+│   ├── page.tsx                ✅ initLeaveListener 추가
+│   ├── leave/page.tsx          ✅ initUserListener + initLeaveListener
 │   ├── login/page.tsx
 │   └── signup/page.tsx
 ├── components/
@@ -170,10 +177,10 @@ src/
 │   └── useVisibilityTooltip.ts
 ├── store/
 │   ├── authStore.ts
-│   ├── postStore.ts
-│   ├── panelStore.ts
-│   ├── userStore.ts
-│   ├── leaveStore.ts
+│   ├── postStore.ts            ✅ initPostListener 패턴
+│   ├── panelStore.ts           ✅ initPanelListener 패턴
+│   ├── userStore.ts            ✅ initUserListener 패턴
+│   ├── leaveStore.ts           ✅ initLeaveListener 패턴
 │   ├── toastStore.ts
 │   └── todoRequestStore.ts
 └── lib/
@@ -204,6 +211,13 @@ Calendar.tsx → todoRequestStore.ts / leaveStore.ts
 CreatePost.tsx → todoRequestStore.ts / Calendar.tsx
 
 새 모달 → useEscClose 훅 필수
+
+page.tsx listener 목록:
+  initPostListener / initRequestListener / initPanelListener
+  initUserListener / initLeaveListener
+
+leave/page.tsx listener 목록:
+  initUserListener / initLeaveListener
 ```
 
 ---
@@ -360,6 +374,10 @@ npx firebase-tools deploy --only firestore:rules --project hizzi-board
 | dueDate Invalid Date | YYYYMMDD 형식 그대로 파싱 | YYYY-MM-DD 변환 후 파싱 |
 | 이미지 할일 제목 안 보임 | renderContent가 img만 반환 | 제목+이미지 함께 반환 |
 | page.tsx 한글 깨짐 | PowerShell Set-Content 인코딩 오류 | 전체 교체 + UTF8 명시 |
+| 로그인 직후 Panel 1/2/3 표시 | panelStore 모듈 최상위 즉시실행 → auth 전 fallback | initPanelListener 패턴 전환 |
+| 로그인 직후 From admin 표시 | userStore 동일 원인 | initUserListener 패턴 전환 |
+| 연차 페이지 새로고침 Loading 멈춤 | leaveStore 동일 원인 + leaveLoading 전체 게이트 | initLeaveListener + 컴포넌트 게이트로 전환 |
+| 연차 입사일 공란 / 설정저장 무반응 | page.tsx에 initLeaveListener 누락 | page.tsx useEffect에 cleanup5 추가 |
 
 ---
 
@@ -379,4 +397,4 @@ Rehobot 요금제:
 
 ---
 
-*Updated: 2026.04.08 (P8 팝업 통일 완료 / 첨부파일 UI 정비 / 인코딩 복원 / users 재삽입)*
+*Updated: 2026.04.08 (initListener 패턴 전환 완료 / stale 렌더 구조적 해결 / 연차 버그 수정)*

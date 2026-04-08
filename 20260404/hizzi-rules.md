@@ -27,6 +27,10 @@ Firestore
 □ onSnapshot에서 createdAt null 문서를 필터링하는가?
 □ 필드 삭제 시 deleteField() + updateDoc() 직접 호출하는가?
 
+Store Listener (S9)
+□ 새 store 추가 시 initXxxListener() 패턴으로 작성했는가?
+□ 새 페이지 추가 시 필요한 listener를 useEffect([user?.email])에 등록했는가?
+
 명령 블록
 □ 안전 규칙 맨 앞?
 □ 진행 여부 맨 끝?
@@ -342,6 +346,71 @@ useEscClose(() => {
 
 ---
 
+## S9. Store Listener 초기화 원칙
+
+### 반복 버그의 근본 원인
+모듈 최상위에서 `onSnapshot`을 즉시 실행하면 auth 확정 전에 Firestore 연결을
+시도한다. 에러 발생 시 fallback 데이터로 `loading: false`가 세팅되어 stale 렌더가
+발생한다. 새로고침 시에만 나타나서 발견이 늦고, 다른 페이지에서도 동일하게 재현된다.
+
+**R9.1 — 모든 Firestore onSnapshot은 initXxxListener() 함수로 분리한다**
+```typescript
+// ❌ 모듈 최상위 즉시 실행
+onSnapshot(collection(db, 'panels'), ...)
+
+// ✅ 함수로 분리
+export const initPanelListener = () => {
+  const unsubscribe = onSnapshot(collection(db, 'panels'), ...)
+  return unsubscribe
+}
+```
+
+**R9.2 — initXxxListener()는 반드시 user?.email 확정 후 호출한다**
+```typescript
+// page.tsx
+useEffect(() => {
+  if (!user?.email) return;
+  const cleanup1 = initPostListener();
+  const cleanup2 = initPanelListener();
+  const cleanup3 = initUserListener();
+  const cleanup4 = initLeaveListener();
+  return () => { cleanup1(); cleanup2(); cleanup3(); cleanup4(); };
+}, [user?.email]);
+```
+
+**R9.3 — 동일 데이터를 사용하는 모든 페이지에 listener를 주입한다**
+```
+page.tsx:       initPostListener / initRequestListener / initPanelListener
+                initUserListener / initLeaveListener
+leave/page.tsx: initUserListener / initLeaveListener
+
+새 페이지 추가 시 → 그 페이지에서 사용하는 store 목록 확인 후 listener 등록 필수
+page.tsx에만 있고 다른 페이지에 없으면 새로고침 시 stale 발생
+```
+
+**R9.4 — listener 에러 핸들러에 반드시 addToast를 포함한다**
+```typescript
+(error) => {
+  console.error('Listener error:', error);
+  useToastStore.getState().addToast({ message: '데이터를 불러오지 못했습니다.', type: 'error' });
+  useXxxStore.setState({ loading: false });
+}
+```
+
+**R9.5 — store loading은 페이지 전체 게이트가 아닌 해당 컴포넌트 렌더 조건으로만 사용한다**
+```typescript
+// ❌ 전체 게이트 — listener 초기화 전 무한 로딩 발생
+if (authLoading || leaveLoading) return <Loading />
+
+// ✅ 컴포넌트 조건 게이트
+{adminTab === 'leave'
+  ? leaveLoading ? <p>불러오는 중...</p> : <LeaveManager />
+  : null
+}
+```
+
+---
+
 ## 별첨. 공통 훅 목록
 
 ```
@@ -357,4 +426,4 @@ useMultiSelect(items)                   — 예정: 체크박스 다중 선택
 
 ---
 
-*Updated: 2026.04.07 (전체 한글화 / 중요도 순 재배열 / 마스터 체크리스트 최상단 / 단일 책임 구조)*
+*Updated: 2026.04.08 (S9 신규 추가 — Store Listener 초기화 원칙 / 마스터 체크리스트 listener 항목 추가)*
