@@ -1,8 +1,12 @@
+
 import { useEffect, useRef } from 'react';
 
 const escStack: Array<() => void> = [];
+let listenerRegistered = false;
 
-if (typeof window !== 'undefined') {
+function ensureListener() {
+  if (listenerRegistered) return;
+  listenerRegistered = true;
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key !== 'Escape') return;
     if (escStack.length === 0) return;
@@ -14,6 +18,10 @@ if (typeof window !== 'undefined') {
 export function useEscClose(onClose: () => void, isOpen: boolean) {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+
+  useEffect(() => {
+    ensureListener();
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
