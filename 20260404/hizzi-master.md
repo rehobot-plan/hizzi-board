@@ -1,77 +1,176 @@
-# Hizzi Board — Master Document
+# 히찌보드 — 마스터 문서
 
-> **How to start a new session:**
-> Attach these 4 files together: `hizzi-master.md` + `hizzi-rules.md` + `hizzi-flows.md` + `hizzi-uxui.md` + `hizzi-session.md`
-> Then state today's task. Claude reads all 5 before responding.
+> **새 세션 시작 방법:**
+> hizzi-session.md의 "새 세션 시작 방법" 섹션 참조.
+> 7개 MD 첨부 후 세션 프롬프트 붙여넣기.
 
 ---
 
-## 1. Project Overview
+## 1. 프로젝트 개요
 
-| Item | Detail |
-|------|--------|
-| **Project** | Hizzi Board |
+| 항목 | 내용 |
+|------|------|
+| **프로젝트** | Hizzi Board |
 | **URL** | https://hizzi-board.vercel.app |
-| **Purpose** | 히찌 패션 브랜드 사내 협업 플랫폼 (게시판 · 달력 · 할일 · 연차 · 업무요청) |
-| **Brand direction** | ZARA / COS — minimal, editorial, premium fashion intranet |
-| **Team** | 6명 실사용 중 |
-| **Core principle** | Accuracy over speed. Never ship without flow analysis. |
+| **목적** | 히찌 패션 브랜드 사내 협업 플랫폼 (게시판·달력·할일·연차·업무요청) |
+| **브랜드** | ZARA / COS — 미니멀, 에디토리얼, 프리미엄 패션 인트라넷 |
+| **팀** | 6명 실사용 중 |
+| **핵심 원칙** | 속도보다 정확성. 흐름 분석 없이 배포하지 않는다. |
 
 ---
 
-## 2. Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS + inline styles |
-| State | Zustand |
-| Database | Firebase Firestore |
-| Auth | Firebase Auth |
-| Storage | Firebase Storage |
-| Deploy | Vercel |
-
----
-
-## 3. Paths
+## 2. 협업 워크플로우
 
 ```
-Project root:     D:\Dropbox\Dropbox\hizzi-board
-Firebase project: hizzi-board
-serviceAccount:   D:\Dropbox\Dropbox\serviceAccount.json
+오너 (방향 결정) → Claude.ai (설계·제안·실행) → Claude Code (코드 적용) → 오너 (확인)
+
+Claude.ai 작업 순서:
+  1. hizzi-rules.md 마스터 체크리스트 확인
+  2. hizzi-flows.md 영향 범위 파악
+  3. UI 관련 시 hizzi-patterns.md + hizzi-ux-principles.md 확인
+  4. 설계 → 명령 블록 작성
+  5. Claude Code 실행 → 결과 보고
+
+명령 블록 실행:
+  빌드 에러 시만 중단 + 보고
+  정상 빌드 → commit + deploy 자동 진행
 ```
 
 ---
 
-## 4. File Structure
+## 3. 기술 부채 트래커
+
+### ✅ 해결됨
+| 날짜 | 항목 |
+|------|------|
+| 2026.04.03 | useEscClose — 전체 모달 ESC 핸들러 |
+| 2026.04.05 | Panel.tsx 분리 → TodoList / CompletedTodo / PostList |
+| 2026.04.05 | deletePost 낙관적 업데이트 (ghost 재렌더 수정) |
+| 2026.04.05 | PostItem / TodoItem editVisibility: author 확인 + specific 옵션 |
+| 2026.04.05 | CreatePost: specific visibleTo에 author 포함 |
+| 2026.04.05 | 에러 처리: 모든 catch → addToast 통일 |
+| 2026.04.05 | any 제거: PostUpdates / NewTodoRequestDoc 등 전체 |
+| 2026.04.05 | toastStore: { message, type } 객체 수신 확장 |
+| 2026.04.05 | useVisibilityTooltip 훅: PostItem / TodoItem |
+| 2026.04.05 | postStore addPost 낙관적 업데이트 + pending 문서 방어 |
+| 2026.04.05 | 메모 soft delete + 삭제된 메모 섹션 |
+| 2026.04.05 | PostItem 태그 표시 (업무/개인, 전체/나만/특정인) |
+| 2026.04.06 | CreatePost 3탭 재설계 (할일/메모/요청 고정) |
+| 2026.04.06 | 할일 title/content 분리 (Phase 3 선행) + 하위호환 |
+| 2026.04.06 | Post 타입 dueDate/title 필드 추가 |
+| 2026.04.06 | CreatePost 헤더 실시간 제목 반영 |
+| 2026.04.06 | 기한 yyyymmdd + 달력 아이콘 (할일/요청) |
+| 2026.04.06 | 캘린더 등록 체크박스 (할일 탭) |
+| 2026.04.06 | 요청 범위 3종 (요청자+수신자/전체공개/특정) |
+| 2026.04.06 | TodoList activeFilter 필터링 수정 |
+| 2026.04.06 | 할일 정렬 기준 적용 |
+| 2026.04.06 | PostItem 메모 아이템 할일 패턴 통일 |
+| 2026.04.06 | 삭제된 메모 복구 버튼 (PostList) |
+| 2026.04.07 | TodoItem 일반 할일 팝업 기한 + 캘린더 등록 추가 |
+| 2026.04.07 | TodoItem 요청 할일 팝업 삭제 버튼 (cascade) |
+| 2026.04.07 | (post as any).dueDate → post.dueDate 타입 정리 |
+| 2026.04.07 | CreatePost 캘린더 아이콘 hover 색상 활성화 |
+| 2026.04.07 | MD 전면 재작업 — 한글화 / 7파일 체계 확립 |
+| 2026.04.08 | PostItem: P8 키-값 테이블형 팝업 교체 |
+| 2026.04.08 | PostItem: editContent 저장 버그 수정 |
+| 2026.04.08 | PostItem: 첨부파일 deleteField 처리 + 신규 추가 분기 |
+| 2026.04.08 | PostItem: 첨부파일 UI 열기/삭제 통일 (교체 제거) |
+| 2026.04.08 | TodoItem: P8 일반 할일 팝업 키-값 테이블형 교체 |
+| 2026.04.08 | TodoItem: dueDate YYYYMMDD → YYYY-MM-DD 변환 |
+| 2026.04.08 | TodoItem: 이미지 할일 제목+이미지 함께 표시 |
+| 2026.04.08 | TodoItem: 캘린더 등록 체크박스 항상 표시 + 중복 확인 |
+| 2026.04.08 | TodoItem: 첨부파일 열기/삭제 UI 통일 |
+| 2026.04.08 | page.tsx: 한글 인코딩 전면 복원 |
+| 2026.04.08 | users 컬렉션 6명 + 관리자 Firestore 재삽입 |
+
+### 🔴 진행 중 (다음 세션)
+```
+1. PostItem.tsx — 분리 (PostEditModal.tsx)
+2. TodoItem.tsx — 분리 (TodoEditModal.tsx)
+3. 첨부파일 다중 업로드 + UI 재편
+   - post.attachment → post.attachments 배열로 스키마 확장
+   - 하위 호환: 기존 단일 attachment 처리 유지
+   - 버튼: 저장(download) / 추가 / 삭제
+   - 링크 타입: 저장 버튼 → 새탭 열기
+   - 영향 파일: postStore.ts / Post 타입 / TodoItem / PostItem / CreatePost
+   - 세션 시작 전 postStore.ts + Post 타입 파일 첨부 필요
+4. 캘린더 자동 등록 연동 검증
+5. TodoRequestModal 섹션 구조 재편
+6. 댓글 기능 (todoRequests/{id}/comments)
+7. 완료 알림 토스트
+```
+
+### 🟡 성장 준비
+```
+- 공통 Firestore save helper (stripUndefined 자동화)
+- 언마운트 시 realtime listener 정리 확인
+- 공통 훅 추가: useFileUpload / useIsMobile / useCanEdit
+```
+
+### 🟢 장기 (Rehobot 전)
+```
+- 전체 색상 토큰 CSS custom properties로 전환
+- TypeScript strict mode (any 제거 완료 후)
+- Calendar "편집" → "수정" 텍스트
+- 특정인 hover tooltip 미작동 버그
+- 멀티데이 이벤트 수정/전체삭제
+```
+
+---
+
+## 4. 기술 스택
+
+| 레이어 | 기술 |
+|--------|------|
+| 프레임워크 | Next.js 14 (App Router) |
+| 언어 | TypeScript |
+| 스타일링 | Tailwind CSS + inline styles |
+| 상태관리 | Zustand |
+| 데이터베이스 | Firebase Firestore |
+| 인증 | Firebase Auth |
+| 스토리지 | Firebase Storage |
+| 배포 | Vercel |
+
+---
+
+## 5. 경로
+
+```
+프로젝트 루트:     D:\Dropbox\Dropbox\hizzi-board
+Firebase 프로젝트: hizzi-board
+serviceAccount:    D:\Dropbox\Dropbox\serviceAccount.json
+```
+
+---
+
+## 6. 파일 구조
 
 ```
 src/
 ├── app/
-│   ├── page.tsx
+│   ├── page.tsx                ✅ 한글 인코딩 복원
 │   ├── leave/page.tsx
 │   ├── login/page.tsx
 │   └── signup/page.tsx
 ├── components/
-│   ├── Panel.tsx              # Panel skeleton (tabs / layout) ✅ refactored
-│   ├── TodoList.tsx           # Active todos + sort ✅
-│   ├── CompletedTodo.tsx      # Completed todos + bulk delete + date grouping ✅
-│   ├── PostList.tsx           # Memo/post list + load more + 삭제된 메모 섹션 ✅
-│   ├── PostItem.tsx           # Memo item (태그/날짜 표시, specific visibility)
-│   ├── TodoItem.tsx           # Todo item + work-order modal
-│   ├── CreatePost.tsx         # Post/todo/request creation modal
-│   ├── Calendar.tsx           # Calendar + color-meaning system
+│   ├── Panel.tsx
+│   ├── TodoList.tsx
+│   ├── CompletedTodo.tsx
+│   ├── PostList.tsx
+│   ├── PostItem.tsx            ✅ P8 팝업 완료 — 분리 예정 (PostEditModal)
+│   ├── TodoItem.tsx            ✅ P8 팝업 완료 — 분리 예정 (TodoEditModal)
+│   ├── CreatePost.tsx
+│   ├── Calendar.tsx
 │   ├── NoticeArea.tsx
 │   ├── LeaveManager.tsx
 │   ├── TodoRequestBadge.tsx
 │   └── TodoRequestModal.tsx
 ├── hooks/
-│   ├── useEscClose.ts         # Global hook — ESC to close any modal
-│   └── useVisibilityTooltip.ts # 특정인 tooltip
+│   ├── useEscClose.ts
+│   └── useVisibilityTooltip.ts
 ├── store/
 │   ├── authStore.ts
-│   ├── postStore.ts           # soft delete (deleted/deletedAt) + hardDeletePost
+│   ├── postStore.ts
 │   ├── panelStore.ts
 │   ├── userStore.ts
 │   ├── leaveStore.ts
@@ -83,47 +182,33 @@ src/
 
 ---
 
-## 5. File Dependency Map
-> Always check this before editing. A change in one file ripples to others.
+## 7. 파일 의존성 맵
 
 ```
 Panel.tsx
-  → TodoList.tsx (canEdit prop)
-  → PostList.tsx (filteredPosts, activeCategory, panelId, canEdit, selectMode, selectedIds, onSelectChange props)
+  → TodoList.tsx
+  → PostList.tsx
 
 TodoList.tsx
-  → TodoItem.tsx (post, canEdit props)
-  → CompletedTodo.tsx (completedTodos, canEdit props)
-  → postStore.ts (posts filtering)
-
-CompletedTodo.tsx
-  → todoRequestStore.ts (reactivateRequest)
-  → postStore.ts (updatePost, deletePost)
+  → TodoItem.tsx
+  → CompletedTodo.tsx
+  → postStore.ts
 
 PostList.tsx
   → PostItem.tsx
-  → postStore.ts (hardDeletePost — 삭제된 메모 최종 삭제)
+  → postStore.ts
 
-TodoItem.tsx → todoRequestStore.ts (completeRequest, reactivateRequest)
+TodoItem.tsx → todoRequestStore.ts
+TodoRequestModal.tsx → todoRequestStore.ts / TodoRequestBadge.tsx
+Calendar.tsx → todoRequestStore.ts / leaveStore.ts
+CreatePost.tsx → todoRequestStore.ts / Calendar.tsx
 
-TodoRequestModal.tsx
-  → todoRequestStore.ts (status filtering)
-  → TodoRequestBadge.tsx (panelOwnerEmail)
-
-Calendar.tsx
-  → todoRequestStore.ts (acceptRequest → calendarEvents)
-  → leaveStore.ts (leave events)
-
-CreatePost.tsx (request tab)
-  → todoRequestStore.ts (addRequest)
-  → Calendar.tsx (dueDate → auto calendar entry)
-
-Any new modal → useEscClose hook required
+새 모달 → useEscClose 훅 필수
 ```
 
 ---
 
-## 6. Firestore Data Schema
+## 8. Firestore 데이터 스키마
 
 ### `posts`
 ```typescript
@@ -131,10 +216,12 @@ Any new modal → useEscClose hook required
   id: string
   panelId: string
   content: string
+  title?: string
+  dueDate?: string           // YYYY-MM-DD 형식 (저장 시 반드시 변환)
   attachment?: { type: 'image' | 'file' | 'link'; url: string; name?: string }
   author: string
   category: string
-  visibleTo: string[]          // [] = all | [author] = me only | [author, ...others] = specific
+  visibleTo: string[]
   taskType?: 'work' | 'personal'
   starred?: boolean
   starredAt?: Date | null
@@ -146,8 +233,8 @@ Any new modal → useEscClose hook required
   requestTitle?: string
   requestContent?: string
   requestDueDate?: string | null
-  deleted?: boolean            // soft delete
-  deletedAt?: Date | null      // soft delete 시각
+  deleted?: boolean
+  deletedAt?: Date | null
   createdAt: Date
   updatedAt: Date
 }
@@ -179,7 +266,7 @@ Any new modal → useEscClose hook required
 {
   id: string
   title: string
-  startDate: string
+  startDate: string          // YYYY-MM-DD 형식
   endDate: string
   authorId: string
   authorName: string
@@ -198,7 +285,7 @@ Any new modal → useEscClose hook required
 
 ---
 
-## 7. Panel Configuration
+## 9. 패널 설정
 
 ```
 panel-1: 유미정  alwjd7175@gmail.com
@@ -212,151 +299,84 @@ admin:   admin@company.com / admin1234!
 
 ---
 
-## 8. Firestore Rules (summary)
+## 10. Firestore Rules 요약
 
 ```
 posts / panels / calendarEvents / leaveSettings / leaveEvents / todoRequests:
-  read/create/update/delete → request.auth != null
+  읽기/생성/수정/삭제 → request.auth != null
 users:
-  read → request.auth != null
-  write → self or admin only
+  읽기 → request.auth != null
+  쓰기 → 본인 또는 admin만
 ```
 
 ---
 
-## 9. Technical Debt Tracker
-
-### ✅ Resolved
-| Date | Item |
-|------|------|
-| 2026.04.03 | useEscClose — global ESC handler for all modals |
-| 2026.04.05 | Panel.tsx split → TodoList / CompletedTodo / PostList |
-| 2026.04.05 | deletePost optimistic update (fixes ghost re-render) |
-| 2026.04.05 | PostItem / TodoItem editVisibility: author identity check + specific option |
-| 2026.04.05 | CreatePost: specific visibleTo includes author |
-| 2026.04.05 | Error handling: TodoItem / todoRequestStore / CreatePost / LeaveManager / Calendar catch → addToast |
-| 2026.04.05 | any removal: PostUpdates / NewTodoRequestDoc / AddPostData / PostData / RequestData / CalendarEvent\|LeaveEvent |
-| 2026.04.05 | toastStore: extended to accept { message, type } object |
-| 2026.04.05 | useVisibilityTooltip hook: PostItem / TodoItem |
-| 2026.04.05 | postStore addPost 낙관적 업데이트 + serverTimestamp pending 방어 |
-| 2026.04.05 | 메모 soft delete (deleted/deletedAt) + 삭제된 메모 섹션 |
-| 2026.04.05 | PostItem 태그 표시 (업무/개인, 전체/나만/특정인) |
-
-### 🔴 Active (next session)
-```
-1. 메모 선택 삭제 마무리
-   - 선행: git checkout src/components/CompletedTodo.tsx (잘못된 수정 롤백)
-   - Panel.tsx: memoSelectedIds state + 선택 버튼 추가
-   - PostList.tsx: selectMode/selectedIds/onSelectChange props 수신 + 체크박스
-
-2. 버그: 특정인 hover tooltip 미작동
-   - 원인: title 속성이 2px 선 div에만 적용돼 hover 영역 너무 좁음
-   - 개선: 아이템 전체 영역에 tooltip 적용
-   - 파일: PostItem.tsx, TodoItem.tsx
-```
-
-### 🟡 Growth prep
-```
-3. Shared Firestore save helper (strip undefined automatically)
-4. Verify realtime listener cleanup on unmount
-5. Add common hooks: useFileUpload / useIsMobile / useCanEdit
-```
-
-### 🟢 Long-term (before Rehobot)
-```
-6. CSS custom properties for all color tokens
-7. TypeScript strict mode (after any removal complete)
-```
-
----
-
-## 10. 파일 분리 기준
+## 11. 컴포넌트 파일 분리 기준
 
 ```
-컴포넌트 파일이 아래 중 하나에 해당하면 분리 검토:
+아래 중 하나에 해당하면 분리 검토:
   □ 300줄 초과
-  □ 역할이 2개 이상 (렌더링 + 상태관리 + 데이터필터 혼재)
+  □ 역할이 2개 이상
   □ 같은 로직이 2개 컴포넌트에 중복 등장
 
 분리 전 오너에게 경우의 수 제시 후 승인 받아 진행
-(Panel.tsx → TodoList / CompletedTodo / PostList 분리 사례 참고)
 ```
 
 ---
 
-## 11. CLI Commands
+## 12. CLI 명령어
 
 ```powershell
-# Clean build
+# 빌드 (.next 삭제 없이 — 컴포넌트 변경 시 기본)
+npm run build
+
+# 클린 빌드 (타입/환경변수/store 구조 변경 시만)
 Remove-Item -Recurse -Force .next; npm run build
 
-# Build with extended memory
-$env:NODE_OPTIONS="--max-old-space-size=4096"; npm run build
-
-# Deploy
+# 배포
 git add . && git commit -m "message" && npx vercel --prod
 
-# Deploy Firestore rules only
+# Firestore rules만 배포
 npx firebase-tools deploy --only firestore:rules --project hizzi-board
 ```
 
 ---
 
-## 12. Known Bug History
+## 13. 알려진 버그 이력
 
-| Bug | Root cause | Fix |
-|-----|-----------|-----|
-| Todo complete not reflected in request tab | todoRequests status not updated | Added completeRequest() |
-| Undo complete not reflected | reactivateRequest missing | Added reactivateRequest() |
-| Calendar click opened add-event popup | onMouseUp stopPropagation ignored | data-event="true" + closest() check |
-| Team request duplicated on calendar | Each recipient called acceptRequest | teamRequestId dedup check |
-| undefined saved to Firestore | Optional fields stored as-is | Strip undefined via Object.keys |
-| Dropdown clipped by overflow | overflow:auto parent chain | createPortal + position:fixed |
-| Deleted post reappeared | onSnapshot timing race | Optimistic update in deletePost |
-| Memo tab layout broken | PostItem hover margin:0 -20px | Removed margin, use inset:0 only |
-| Specific visibility shown as "me only" | PostItem editVisibility used length===1 for all non-empty arrays | Fixed: length===1 && [0]===author → me; else → specific |
-| 메모 작성 후 빈 화면 / 쓰레기 데이터 | addPost 낙관적 업데이트 없음 + serverTimestamp pending 문서 store 오염 | addPost 낙관적 업데이트 + onSnapshot null 필터 |
-| CompletedTodo.tsx 잘못 수정 | Claude Code가 대상 코드 못 찾자 유사한 다른 파일에 임의 적용 | 명령 블록에 "못 찾으면 중단" 규칙 추가 |
-
----
-
-## 13. Collaboration Workflow
-
-```
-Owner (direction)  →  Claude.ai (Architect Agent)  →  Claude Code (Executor)
-                         ↓
-                    Reads all 5 MDs before any response
-                    1. Check hizzi-rules.md (constraints)
-                    2. Map flow in hizzi-flows.md (impact scope)
-                    3. Design → write commands
-                    4. Claude Code executes → reports result
-```
-
-### Session rules
-- Error-check tasks (build / deploy / Firestore) → one at a time, confirm result before next
-- File read / analysis / code write → batch together
-- Claude Code commands → always bundled into one executable block
-- File review → attach via 📎 (alphabetical, 2–3 at a time)
-- Patch fails 3× → rewrite the file from scratch
-- Session wrap-up → owner proposes (Claude never initiates)
-- Claude always drives work forward, never waits passively
+| 버그 | 근본 원인 | 수정 방법 |
+|------|-----------|-----------|
+| 할일 완료가 요청 탭에 미반영 | todoRequests status 미업데이트 | completeRequest() 추가 |
+| 완료 취소 미반영 | reactivateRequest 누락 | reactivateRequest() 추가 |
+| 캘린더 클릭 시 추가 팝업 열림 | stopPropagation 무시 | data-event="true" + closest() |
+| 팀 요청 캘린더 중복 생성 | 수신자마다 acceptRequest 호출 | teamRequestId 중복 방지 |
+| undefined Firestore 저장 | 선택 필드 그대로 저장 | stripUndefined 처리 |
+| 드롭다운 overflow 클리핑 | overflow:auto 부모 체인 | createPortal + position:fixed |
+| 삭제된 post 재표시 | onSnapshot 경쟁 조건 | deletePost 낙관적 업데이트 |
+| 메모 탭 레이아웃 깨짐 | PostItem hover margin:0 -20px | margin 제거, inset:0 사용 |
+| 특정인이 나만으로 표시 | length===1 조건 오류 | length===1 && [0]===author → 나만 |
+| editContent 저장 안 됨 | handleEditSave에서 editTitle만 저장 | content: editContent로 수정 |
+| 첨부파일 신규 추가 저장 안 됨 | !post.attachment 분기 누락 | 신규 추가 분기 추가 |
+| dueDate Invalid Date | YYYYMMDD 형식 그대로 파싱 | YYYY-MM-DD 변환 후 파싱 |
+| 이미지 할일 제목 안 보임 | renderContent가 img만 반환 | 제목+이미지 함께 반환 |
+| page.tsx 한글 깨짐 | PowerShell Set-Content 인코딩 오류 | 전체 교체 + UTF8 명시 |
 
 ---
 
-## 14. Roadmap
+## 14. 로드맵
 
 ```
-Phase 1 (now)   : Hizzi Board stabilization
-Phase 2         : AI chat panel integration
-Phase 3         : Rehobot UI/UX rebuild + commercialization
-Phase 4         : Personal / company dual-channel
+Phase 1 (현재): Hizzi Board 안정화
+Phase 2:        AI 채팅 패널 연동
+Phase 3:        Rehobot UI/UX 재구축 + 상용화
+Phase 4:        개인/기업 듀얼 채널
 
-Rehobot pricing:
-  Free    ₩0      30 uses/month
-  Pro     ₩9,900/month
-  Premium ₩19,900/month
+Rehobot 요금제:
+  Free    ₩0        30회/월
+  Pro     ₩9,900/월
+  Premium ₩19,900/월
 ```
 
 ---
 
-*Updated: 2026.04.05 (Memo UX Session)*
+*Updated: 2026.04.08 (P8 팝업 통일 완료 / 첨부파일 UI 정비 / 인코딩 복원 / users 재삽입)*
