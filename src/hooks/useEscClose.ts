@@ -1,18 +1,30 @@
 
+
 import { useEffect, useRef } from 'react';
 
-const escStack: Array<() => void> = [];
-let listenerRegistered = false;
+declare global {
+  interface Window {
+    __escStack: Array<() => void>;
+    __escListenerRegistered: boolean;
+  }
+}
+
+function getStack(): Array<() => void> {
+  if (typeof window === 'undefined') return [];
+  if (!window.__escStack) window.__escStack = [];
+  return window.__escStack;
+}
 
 function ensureListener() {
-  if (listenerRegistered) return;
-  listenerRegistered = true;
+  if (typeof window === 'undefined') return;
+  if (window.__escListenerRegistered) return;
+  window.__escListenerRegistered = true;
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key !== 'Escape') return;
-    console.log('ESC 스택 크기:', escStack.length);
-    if (escStack.length === 0) return;
+    const stack = getStack();
+    if (stack.length === 0) return;
     e.stopImmediatePropagation();
-    escStack[escStack.length - 1]();
+    stack[stack.length - 1]();
   }, true);
 }
 
@@ -20,22 +32,18 @@ export function useEscClose(onClose: () => void, isOpen: boolean) {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
-
   useEffect(() => {
     ensureListener();
   }, []);
 
   useEffect(() => {
     if (!isOpen) return;
-    console.log('useEscClose push, isOpen:', isOpen);
+    const stack = getStack();
     const handler = () => onCloseRef.current();
-    escStack.push(handler);
-    console.log('스택 크기 after push:', escStack.length);
-
+    stack.push(handler);
     return () => {
-      const idx = escStack.lastIndexOf(handler);
-      if (idx !== -1) escStack.splice(idx, 1);
-      console.log('스택 크기 after pop:', escStack.length);
+      const idx = stack.lastIndexOf(handler);
+      if (idx !== -1) stack.splice(idx, 1);
     };
   }, [isOpen]);
 }
