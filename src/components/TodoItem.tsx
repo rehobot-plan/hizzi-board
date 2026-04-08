@@ -217,25 +217,38 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
       // 캘린더 등록 (dueDate 있고 체크 시)
       if (detailAddToCalendar && normalizedDue) {
-        const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+        const { addDoc, collection, getDocs, query, where, serverTimestamp } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase');
         const { useAuthStore } = await import('@/store/authStore');
+        const { useToastStore } = await import('@/store/toastStore');
         const { user } = useAuthStore.getState();
         if (user) {
-          const color = detailTaskType === 'personal'
-            ? (detailVisibility === 'all' ? 'rgba(99,153,34,0.15)' : detailVisibility === 'me' ? 'rgba(55,138,221,0.15)' : 'rgba(186,117,23,0.15)')
-            : (detailVisibility === 'all' ? '#3B6D11' : detailVisibility === 'me' ? '#185FA5' : '#854F0B');
-          await addDoc(collection(db, 'calendarEvents'), {
-            title: detailTitle.trim(),
-            startDate: normalizedDue,
-            endDate: normalizedDue,
-            authorId: user.uid,
-            authorName: user.displayName || user.email,
-            color,
-            taskType: detailTaskType,
-            visibility: detailVisibility,
-            createdAt: serverTimestamp(),
-          });
+          const dupQuery = query(
+            collection(db, 'calendarEvents'),
+            where('authorId', '==', user.uid),
+            where('startDate', '==', normalizedDue),
+            where('title', '==', detailTitle.trim())
+          );
+          const dupSnap = await getDocs(dupQuery);
+          if (!dupSnap.empty) {
+            useToastStore.getState().addToast({ message: '동일한 일정이 캘린더에 이미 등록되어 있습니다.', type: 'error' });
+          } else {
+            const color = detailTaskType === 'personal'
+              ? (detailVisibility === 'all' ? 'rgba(99,153,34,0.15)' : detailVisibility === 'me' ? 'rgba(55,138,221,0.15)' : 'rgba(186,117,23,0.15)')
+              : (detailVisibility === 'all' ? '#3B6D11' : detailVisibility === 'me' ? '#185FA5' : '#854F0B');
+            await addDoc(collection(db, 'calendarEvents'), {
+              title: detailTitle.trim(),
+              startDate: normalizedDue,
+              endDate: normalizedDue,
+              authorId: user.uid,
+              authorName: user.displayName || user.email,
+              color,
+              taskType: detailTaskType,
+              visibility: detailVisibility,
+              createdAt: serverTimestamp(),
+            });
+            useToastStore.getState().addToast({ message: '캘린더에 등록되었습니다.', type: 'success' });
+          }
         }
       }
 
@@ -599,13 +612,13 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                       <path d="M1 5h10M4 1v2M8 1v2" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                     </svg>
                   </span>
-                  {detailDueDate.length === 8 && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9E8880', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={detailAddToCalendar} onChange={e => setDetailAddToCalendar(e.target.checked)}
-                        style={{ accentColor: '#C17B6B', cursor: 'pointer' }} />
-                      캘린더 등록
-                    </label>
-                  )}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: detailDueDate.length === 8 ? '#9E8880' : '#C4B8B0', cursor: detailDueDate.length === 8 ? 'pointer' : 'not-allowed' }}>
+                    <input type="checkbox" checked={detailAddToCalendar}
+                      disabled={detailDueDate.length < 8}
+                      onChange={e => setDetailAddToCalendar(e.target.checked)}
+                      style={{ accentColor: '#C17B6B', cursor: detailDueDate.length === 8 ? 'pointer' : 'not-allowed' }} />
+                    캘린더 등록
+                  </label>
                 </div>
               </div>
 
