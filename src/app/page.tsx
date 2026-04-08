@@ -7,6 +7,7 @@ import { usePanelStore } from '@/store/panelStore';
 import { useUserStore } from '@/store/userStore';
 import { useToastStore } from '@/store/toastStore';
 import { initPostListener } from '@/store/postStore';
+import { initRequestListener } from '@/store/todoRequestStore';
 import Panel from '@/components/Panel';
 import Calendar from '@/components/Calendar';
 import NoticeArea from '@/components/NoticeArea';
@@ -51,9 +52,11 @@ export default function Home() {
   const unassignedCount = users.filter((u) => isUnassignedUser(u)).length;
 
   useEffect(() => {
-    const cleanup = initPostListener();
-    return cleanup;
-  }, []);
+    if (!user?.email) return;
+    const cleanup1 = initPostListener();
+    const cleanup2 = initRequestListener(user.email);
+    return () => { cleanup1(); cleanup2(); };
+  }, [user?.email]);
 
   useEffect(() => {
     if (!authLoading && !user) {
