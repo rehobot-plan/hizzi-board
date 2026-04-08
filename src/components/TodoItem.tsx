@@ -336,9 +336,11 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     );
     if (post.attachment && !detailNewFile) return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{post.attachment.name || '첨부파일'}</span>
-        <span onClick={() => detailFileInputRef.current?.click()} style={{ fontSize: 10, color: '#3B6D11', border: '1px solid #639922', padding: '1px 7px', borderRadius: 2, cursor: 'pointer' }}>교체</span>
-        <span onClick={() => setDetailRemoveAttachment(true)} style={{ fontSize: 10, color: '#C17B6B', border: '1px solid #C17B6B', padding: '1px 7px', borderRadius: 2, cursor: 'pointer' }}>삭제</span>
+        <span style={{ flex: 1, fontSize: 12, color: '#2C1810', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.attachment.name || '첨부파일'}</span>
+        <a href={post.attachment.url} target="_blank" rel="noopener noreferrer" download={post.attachment.name || true}
+          style={{ fontSize: 10, color: '#185FA5', border: '1px solid #378ADD', padding: '1px 7px', borderRadius: 2, cursor: 'pointer', textDecoration: 'none', flexShrink: 0 }}>열기</a>
+        <span onClick={() => detailFileInputRef.current?.click()} style={{ fontSize: 10, color: '#3B6D11', border: '1px solid #639922', padding: '1px 7px', borderRadius: 2, cursor: 'pointer', flexShrink: 0 }}>교체</span>
+        <span onClick={() => setDetailRemoveAttachment(true)} style={{ fontSize: 10, color: '#C17B6B', border: '1px solid #C17B6B', padding: '1px 7px', borderRadius: 2, cursor: 'pointer', flexShrink: 0 }}>삭제</span>
       </div>
     );
     if (detailNewFile) return (
