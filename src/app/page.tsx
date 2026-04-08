@@ -8,6 +8,7 @@ import { useUserStore, initUserListener, type AppUser } from '@/store/userStore'
 import { useToastStore } from '@/store/toastStore';
 import { initPostListener } from '@/store/postStore';
 import { initRequestListener } from '@/store/todoRequestStore';
+import { useLeaveStore, initLeaveListener } from '@/store/leaveStore';
 import Panel from '@/components/Panel';
 import Calendar from '@/components/Calendar';
 import NoticeArea from '@/components/NoticeArea';
@@ -17,6 +18,7 @@ export default function Home() {
   const { user, loading: authLoading, signOut, recoveryOrphanAccount } = useAuthStore();
   const { panels, updatePanel, addPanel, swapPanels } = usePanelStore();
   const { users, loading: userLoading, deleteUser, updateUserPanel, updateUserName, updateLeaveViewPermission } = useUserStore();
+  const { loading: leaveLoading } = useLeaveStore();
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
   const [adminTab, setAdminTab] = useState<'users' | 'leave' | 'recovery'>('users');
@@ -57,7 +59,8 @@ export default function Home() {
     const cleanup2 = initRequestListener(user.email);
     const cleanup3 = initPanelListener();
     const cleanup4 = initUserListener();
-    return () => { cleanup1(); cleanup2(); cleanup3(); cleanup4(); };
+    const cleanup5 = initLeaveListener();
+    return () => { cleanup1(); cleanup2(); cleanup3(); cleanup4(); cleanup5(); };
   }, [user?.email]);
 
   useEffect(() => {
@@ -314,7 +317,9 @@ export default function Home() {
                   )}
                 </>
               ) : adminTab === 'leave' ? (
-                <LeaveManager />
+                leaveLoading
+                  ? <p className="text-xs text-[#9E8880]">불러오는 중...</p>
+                  : <LeaveManager />
               ) : (
                 <div>
                   <h2 className="text-base font-semibold text-[#2C1810] mb-4">관리자 - 계정 복구</h2>
