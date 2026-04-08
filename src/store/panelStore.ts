@@ -1,6 +1,7 @@
-import { create } from 'zustand';
-import { addDoc, collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+﻿import { create } from "zustand";
+import { addDoc, collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useToastStore } from "@/store/toastStore";
 
 interface Panel {
   id: string;
@@ -8,30 +9,32 @@ interface Panel {
   ownerEmail?: string | null;
   position?: number;
   categories?: string[];
-  // color 필드 제거
 }
 
 interface PanelState {
   panels: Panel[];
   loading: boolean;
-  updatePanel: (panelId: string, updates: Partial<Omit<Panel, 'id'>>) => Promise<void>;
+  updatePanel: (panelId: string, updates: Partial<Omit<Panel, "id">>) => Promise<void>;
   swapPanels: (panelAId: string, panelBId: string) => Promise<void>;
   addPanel: (name: string) => Promise<void>;
 }
 
+const DEFAULT_CATEGORIES = ["공지", "메모", "첨부파일"];
+const migratedPanels = new Set<string>();
+
 export const usePanelStore = create<PanelState>((set) => ({
   panels: [],
   loading: true,
+
   updatePanel: async (panelId, updates) => {
     try {
-      await updateDoc(doc(db, 'panels', panelId), updates);
+      await updateDoc(doc(db, "panels", panelId), updates);
     } catch (error) {
-      console.error('Error updating panel:', error);
-      set((state) => ({
-        panels: state.panels.map((panel) => (panel.id === panelId ? { ...panel, ...updates } : panel)),
-      }));
+      console.error("Error updating panel:", error);
+      useToastStore.getState().addToast({ message: "패널 업데이트에 실패했습니다. 다시 시도해주세요.", type: "error" });
     }
   },
+
   swapPanels: async (panelAId, panelBId) => {
     const state = usePanelStore.getState();
     const panelA = state.panels.find((p) => p.id === panelAId);
@@ -40,98 +43,99 @@ export const usePanelStore = create<PanelState>((set) => ({
     const posA = panelA.position ?? 0;
     const posB = panelB.position ?? 0;
 
+    // 1. 낙관적 업데이트
+    set((state) => ({
+      panels: state.panels.map((panel) => {
+        if (panel.id === panelAId) return { ...panel, position: posB };
+        if (panel.id === panelBId) return { ...panel, position: posA };
+        return panel;
+      }),
+    }));
+
     try {
-      await updateDoc(doc(db, 'panels', panelAId), { position: posB });
-      await updateDoc(doc(db, 'panels', panelBId), { position: posA });
-      set((state) => ({
-        panels: state.panels.map((panel) => {
-          if (panel.id === panelAId) return { ...panel, position: posB };
-          if (panel.id === panelBId) return { ...panel, position: posA };
-          return panel;
-        }),
-      }));
+      // 2. Firestore 반영
+      await updateDoc(doc(db, "panels", panelAId), { position: posB });
+      await updateDoc(doc(db, "panels", panelBId), { position: posA });
     } catch (error) {
-      console.error('Error swapping panels:', error);
+      console.error("Error swapping panels:", error);
+      useToastStore.getState().addToast({ message: "패널 순서 변경에 실패했습니다. 다시 시도해주세요.", type: "error" });
+      // 3. 롤백
       set((state) => ({
         panels: state.panels.map((panel) => {
-          if (panel.id === panelAId) return { ...panel, position: posB };
-          if (panel.id === panelBId) return { ...panel, position: posA };
+          if (panel.id === panelAId) return { ...panel, position: posA };
+          if (panel.id === panelBId) return { ...panel, position: posB };
           return panel;
         }),
       }));
     }
   },
+
   addPanel: async (name) => {
     const state = usePanelStore.getState();
-    const nextPosition = state.panels.reduce((max, panel) => Math.max(max, panel.position ?? 0), -1) + 1;
-
+    const nextPosition =
+      state.panels.reduce((max, panel) => Math.max(max, panel.position ?? 0), -1) + 1;
     try {
-      await addDoc(collection(db, 'panels'), {
+      const newPanel: Omit<Panel, "id"> = {
         name,
-        ownerEmail: null,
+        ownerEmail: null, // null은 의도적 저장 (ownerEmail 미배정 표시)
         position: nextPosition,
         categories: DEFAULT_CATEGORIES,
-      });
+      };
+      await addDoc(collection(db, "panels"), newPanel);
     } catch (error) {
-      console.error('Error adding panel:', error);
+      console.error("Error adding panel:", error);
+      useToastStore.getState().addToast({ message: "패널 추가에 실패했습니다. 다시 시도해주세요.", type: "error" });
     }
   },
 }));
 
-// Real-time listener for panels + categories 마이그레이션
-const DEFAULT_CATEGORIES = ['공지', '메모', '첨부파일'];
-let migratedPanels: Set<string> = new Set();
-try {
-  const unsubscribe = onSnapshot(collection(db, 'panels'), async (snapshot) => {
-    const panels = await Promise.all(snapshot.docs.map(async docSnap => {
-      const data = docSnap.data();
-      // color 필드 무시
-      const { color, ...rest } = data;
-      // categories 마이그레이션: 구버전이거나 '결재' 포함 시 업데이트
-      const needsMigration =
-        !rest.categories ||
-        !Array.isArray(rest.categories) ||
-        rest.categories.length < 3 ||
-        (Array.isArray(rest.categories) && rest.categories.includes('결재'));
-      if (needsMigration && !migratedPanels.has(docSnap.id)) {
-        try {
-          await updateDoc(doc(db, 'panels', docSnap.id), { categories: DEFAULT_CATEGORIES });
-          migratedPanels.add(docSnap.id);
-          rest.categories = DEFAULT_CATEGORIES;
-        } catch (e) {
-          // 무시
-        }
-      }
-      return { id: docSnap.id, ...rest };
-    })) as Panel[];
-    panels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-    usePanelStore.setState({ panels, loading: false });
-  }, (error) => {
-    console.error('Firestore error:', error);
-    // Fallback to local data
-    usePanelStore.setState({
-      panels: [
-        { id: 'panel-1', name: 'Panel 1' },
-        { id: 'panel-2', name: 'Panel 2' },
-        { id: 'panel-3', name: 'Panel 3' },
-        { id: 'panel-4', name: 'Panel 4' },
-        { id: 'panel-5', name: 'Panel 5' },
-        { id: 'panel-6', name: 'Panel 6' }
-      ],
-      loading: false
-    });
-  });
-} catch (error) {
-  console.error('Panel store error:', error);
-  usePanelStore.setState({
-    panels: [
-      { id: 'panel-1', name: 'Panel 1' },
-      { id: 'panel-2', name: 'Panel 2' },
-      { id: 'panel-3', name: 'Panel 3' },
-      { id: 'panel-4', name: 'Panel 4' },
-      { id: 'panel-5', name: 'Panel 5' },
-      { id: 'panel-6', name: 'Panel 6' }
-    ],
-    loading: false
-  });
-}
+let panelUnsubscribe: (() => void) | null = null;
+
+export const initPanelListener = () => {
+  if (panelUnsubscribe) {
+    panelUnsubscribe();
+    panelUnsubscribe = null;
+  }
+
+  panelUnsubscribe = onSnapshot(
+    collection(db, "panels"),
+    async (snapshot) => {
+      const panels = await Promise.all(
+        snapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          // Firestore DocumentData는 any 반환 — 구조 분해를 위해 Record 캐스팅 (SDK 타입 한계)
+          const { color, ...rest } = data as Record<string, unknown>;
+          void color;
+          const categories = Array.isArray(rest.categories) ? (rest.categories as string[]) : [];
+          const needsMigration = categories.length < 3 || categories.includes("결재");
+          if (needsMigration && !migratedPanels.has(docSnap.id)) {
+            try {
+              await updateDoc(doc(db, "panels", docSnap.id), {
+                categories: DEFAULT_CATEGORIES,
+              });
+              migratedPanels.add(docSnap.id);
+              rest.categories = DEFAULT_CATEGORIES;
+            } catch {
+              // 마이그레이션 실패 시 무시 — 다음 스냅샷에서 재시도
+            }
+          }
+          return { id: docSnap.id, ...rest } as Panel;
+        })
+      );
+      panels.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+      usePanelStore.setState({ panels, loading: false });
+    },
+    (error) => {
+      console.error("Panel listener error:", error);
+      useToastStore.getState().addToast({ message: "패널 데이터를 불러오지 못했습니다.", type: "error" });
+      usePanelStore.setState({ loading: false });
+    }
+  );
+
+  return () => {
+    if (panelUnsubscribe) {
+      panelUnsubscribe();
+      panelUnsubscribe = null;
+    }
+  };
+};

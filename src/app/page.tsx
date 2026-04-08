@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { usePanelStore } from '@/store/panelStore';
-import { useUserStore } from '@/store/userStore';
+import { usePanelStore, initPanelListener } from '@/store/panelStore';
+import { useUserStore, initUserListener, type AppUser } from '@/store/userStore';
 import { useToastStore } from '@/store/toastStore';
 import { initPostListener } from '@/store/postStore';
 import { initRequestListener } from '@/store/todoRequestStore';
@@ -15,7 +15,7 @@ import LeaveManager from '@/components/LeaveManager';
 
 export default function Home() {
   const { user, loading: authLoading, signOut, recoveryOrphanAccount } = useAuthStore();
-  const { panels, loading: panelLoading, updatePanel, addPanel } = usePanelStore();
+  const { panels, updatePanel, addPanel, swapPanels } = usePanelStore();
   const { users, loading: userLoading, deleteUser, updateUserPanel, updateUserName, updateLeaveViewPermission } = useUserStore();
   const { toasts } = useToastStore();
   const [adminMode, setAdminMode] = useState(false);
@@ -55,7 +55,9 @@ export default function Home() {
     if (!user?.email) return;
     const cleanup1 = initPostListener();
     const cleanup2 = initRequestListener(user.email);
-    return () => { cleanup1(); cleanup2(); };
+    const cleanup3 = initPanelListener();
+    const cleanup4 = initUserListener();
+    return () => { cleanup1(); cleanup2(); cleanup3(); cleanup4(); };
   }, [user?.email]);
 
   useEffect(() => {
@@ -91,6 +93,7 @@ export default function Home() {
     } catch (err) {
       console.error(err);
       setDeleteError('패널 배정 중 오류가 발생했습니다.');
+      useToastStore.getState().addToast({ message: '패널 배정 중 오류가 발생했습니다. 다시 시도해주세요.', type: 'error' });
     }
   };
 
@@ -106,11 +109,7 @@ export default function Home() {
   const handlePanelDrop = async (e: React.DragEvent<HTMLDivElement>, targetPanelId: string) => {
     e.preventDefault();
     if (!draggedPanelId || draggedPanelId === targetPanelId) return;
-    const draggedPanel = panels.find(p => p.id === draggedPanelId);
-    const targetPanel = panels.find(p => p.id === targetPanelId);
-    if (!draggedPanel || !targetPanel) return;
-    await updatePanel(draggedPanel.id, { position: targetPanel.position });
-    await updatePanel(targetPanel.id, { position: draggedPanel.position });
+    await swapPanels(draggedPanelId, targetPanelId);
     setDraggedPanelId(null);
   };
 
@@ -124,7 +123,7 @@ export default function Home() {
 
   const [mobilePanelId, setMobilePanelId] = useState<string | null>(null);
 
-  if (authLoading || panelLoading || userLoading) {
+  if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-[#FDF8F4]">Loading...</div>;
   }
   if (!user) return null;
@@ -273,11 +272,12 @@ export default function Home() {
                                 <>
                                   <select
                                     value={u.leaveViewPermission || 'none'}
-                                    onChange={(e) => updateLeaveViewPermission(u.id, e.target.value as 'none' | 'self' | 'all')}
+                                    onChange={(e) => updateLeaveViewPermission(u.id, e.target.value as AppUser['leaveViewPermission'])}
                                     className="border border-[#EDE5DC] px-2 py-1 text-xs bg-white min-w-[100px]">
                                     <option value="none">연차보기 없음</option>
                                     <option value="self">본인만</option>
                                     <option value="all">전체</option>
+                                    {/* 'me' 옵션은 의도적으로 제외 — UI상 'self'와 동일하게 처리 */}
                                   </select>
                                   <select
                                     value={userPanel?.id || ''}
@@ -478,6 +478,7 @@ export default function Home() {
                     } catch (err: unknown) {
                       console.error(err);
                       setDeleteError('삭제 중 오류가 발생했습니다.');
+                      useToastStore.getState().addToast({ message: '사용자 삭제 중 오류가 발생했습니다. 다시 시도해주세요.', type: 'error' });
                     }
                   }}
                   className="px-3 py-1 text-xs text-white"
