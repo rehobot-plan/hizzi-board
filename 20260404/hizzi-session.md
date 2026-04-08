@@ -38,7 +38,7 @@ hizzi-ux-principles.md
         └─ 리뷰방 (필요 시 — PASS 블록만 전달)
 
 흐름: 오너 지시 → Claude 제안 → 오너 승인 → Claude Code 실행
-오너는 Claude 없이 Claude Code · 리뷰방에 직접 명령 가능
+Claude → 오너에게 지시 절대금지
 
 스킵 조건:
   상태 변경 없는 작업  → hizzi-flows.md 스킵
@@ -59,6 +59,7 @@ hizzi-ux-principles.md
   동일 실수 2회 → 코드 전 구조적 원인 보고.
   리스크·충돌 발견 → 즉시 중단 + 보고.
 
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [3. 코드 규칙] 블록 작성 전 hizzi-rules.md 마스터 체크리스트 실행
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -76,31 +77,35 @@ Remaining Work: [아래 섹션에서 복사]
 
 ## Remaining Work
 
-### 진행 중
+### 🔴 진행 중 (최우선)
 ```
-- 로그인 직후 첫 화면 stale 데이터 (page.tsx 수정 배포 후 검증 필요)
-```
-
-### Phase 2 — 파일 분리 (최우선)
-```
-1. PostItem.tsx → PostEditModal.tsx 분리
-2. TodoItem.tsx → TodoEditModal.tsx 분리
-   세션 시작 전 PostItem.tsx + TodoItem.tsx 첨부 필요
+1. ESC 닫기 미작동
+   - 다음 세션 시작 시 먼저 확인:
+     console.log(window.__escStack, window.__escListenerRegistered)
+   - ❌ 이면: 번들에 미반영 → 원인 추적
+   - ✅ 이면: useEscClose 호출 여부 확인
 ```
 
 ### Phase 2 — 첨부파일 다중 업로드
 ```
-3. post.attachment → post.attachments 배열 스키마 확장
-   세션 시작 전 postStore.ts + Post 타입 파일 첨부 필요
+2. AttachmentManager 공통 컴포넌트 먼저 생성 (R8.6)
+   이후 PostEditModal / TodoEditModal / CreatePost 적용
+   세션 시작 전 해당 파일들 첨부 필요
 ```
 
 ### Phase 3 — 요청함 UX 재편
 ```
-4. TodoRequestModal 섹션 구조 재편
-5. 댓글 기능 (todoRequests/{id}/comments)
-6. 완료 알림 토스트
+3. TodoRequestModal 섹션 구조 재편
+4. 댓글 기능 (todoRequests/{id}/comments)
+5. 완료 알림 토스트
+```
+
+### 🟡 나중에
+```
+6. 완료된 할일 / 삭제된 할일 / 삭제된 메모 관리 UX 개선
+7. ImageViewer 공통 컴포넌트 — ESC 포함하여 구현 완료 후 전체 적용 확인
 ```
 
 ---
 
-*Updated: 2026.04.08 (세션 전면 개편 — 조직도 구조 / 프롬프트 경량화 / 이력·버그 log.md로 이관)*
+*Updated: 2026.04.08 (칭찬 원칙 추가 / ESC 디버그 우선순위 / Remaining Work 전면 업데이트)*

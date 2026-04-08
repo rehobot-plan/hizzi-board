@@ -82,33 +82,46 @@ Claude.ai 작업 순서:
 | 2026.04.08 | TodoItem: 첨부파일 열기/삭제 UI 통일 |
 | 2026.04.08 | page.tsx: 한글 인코딩 전면 복원 |
 | 2026.04.08 | users 컬렉션 6명 + 관리자 Firestore 재삽입 |
-| 2026.04.08 | panelStore: initPanelListener 패턴 전환 + addToast 통일 + swapPanels 낙관적 업데이트/롤백 |
-| 2026.04.08 | userStore: initUserListener 패턴 전환 + addToast 통일 + deleteUser 낙관적 업데이트/롤백 |
-| 2026.04.08 | leaveStore: initLeaveListener 패턴 전환 + addToast 통일 + stripUndefined 적용 |
-| 2026.04.08 | 로그인 직후 stale 렌더 구조적 해결 (Panel 1/2/3 / From admin 표시 버그) |
+| 2026.04.08 | panelStore: initPanelListener 패턴 전환 |
+| 2026.04.08 | userStore: initUserListener 패턴 전환 |
+| 2026.04.08 | leaveStore: initLeaveListener 패턴 전환 |
+| 2026.04.08 | 로그인 직후 stale 렌더 구조적 해결 |
 | 2026.04.08 | 연차 페이지 새로고침 Loading 멈춤 해결 |
-| 2026.04.08 | LeaveManager leaveLoading 게이트 추가 (입사일 공란 / 설정저장 무반응 버그) |
-| 2026.04.08 | page.tsx: initLeaveListener 추가 — 관리자 모드 연차 관리 탭 연동 |
+| 2026.04.08 | LeaveManager leaveLoading 게이트 추가 |
+| 2026.04.08 | page.tsx: initLeaveListener 추가 |
+| 2026.04.08 | PostItem.tsx → PostEditModal.tsx 분리 |
+| 2026.04.08 | TodoItem.tsx → TodoEditModal.tsx + TodoOrderModal.tsx 분리 |
+| 2026.04.08 | ImageViewer 공통 컴포넌트 생성 (src/components/common/ImageViewer.tsx) |
+| 2026.04.08 | useEscClose 전역 스택 방식으로 재설계 (window.__escStack) |
+| 2026.04.08 | postStore: attachments 배열 스키마 확장 + normalizeAttachments |
+| 2026.04.08 | PostItem: attachments 다중 렌더링 적용 |
+| 2026.04.08 | TodoItem: attachments 다중 렌더링 적용 |
 
 ### 🔴 진행 중 (다음 세션)
 ```
-1. PostItem.tsx — 분리 (PostEditModal.tsx)
-2. TodoItem.tsx — 분리 (TodoEditModal.tsx)
-3. 첨부파일 다중 업로드 + UI 재편
-   - post.attachment → post.attachments 배열로 스키마 확장
-   - 하위 호환: 기존 단일 attachment 처리 유지
-   - 버튼: 저장(download) / 추가 / 삭제
-   - 링크 타입: 저장 버튼 → 새탭 열기
-   - 영향 파일: postStore.ts / Post 타입 / TodoItem / PostItem / CreatePost
-   - 세션 시작 전 postStore.ts + Post 타입 파일 첨부 필요
-4. 캘린더 자동 등록 연동 검증
-5. TodoRequestModal 섹션 구조 재편
-6. 댓글 기능 (todoRequests/{id}/comments)
-7. 완료 알림 토스트
+1. ESC 닫기 미작동
+   - 원인 추적: window.__escStack 번들 반영 여부 확인 필요
+   - 다음 세션 시작 시: console.log(window.__escStack, window.__escListenerRegistered) 먼저 확인
+   - PostItem ImageViewer 교체 완료했으나 ESC 미작동 상태
+2. 첨부파일 다중 업로드 — AttachmentManager 공통 컴포넌트 먼저 생성 후 적용 (R8.6)
+   - 영향 파일: PostEditModal / TodoEditModal / CreatePost
+3. 캘린더 자동 등록 연동 검증
+4. TodoRequestModal 섹션 구조 재편
+5. 댓글 기능 (todoRequests/{id}/comments)
+6. 완료 알림 토스트
 ```
 
 ### 🟡 성장 준비
 ```
+- 공통 컴포넌트 분리 (R8.6 기준 — 신규 기능 개발 전 우선 적용)
+  미구현 목록:
+    🔲 AttachmentManager — 첨부파일 편집 UI (다중 업로드 전 필수)
+    🔲 VisibilitySelector — 범위 선택
+    🔲 TaskTypeSelector  — 구분 선택
+    🔲 ModalShell        — P8 모달 껍데기
+    🔲 DueTag            — 기한 뱃지
+    🔲 TagBadge          — 카테고리·범위 뱃지
+    🔲 UserChip          — 팀원 선택 칩
 - 공통 Firestore save helper (stripUndefined 자동화)
 - 언마운트 시 realtime listener 정리 확인
 - 공통 훅 추가: useFileUpload / useIsMobile / useCanEdit
@@ -121,6 +134,7 @@ Claude.ai 작업 순서:
 - Calendar "편집" → "수정" 텍스트
 - 특정인 hover tooltip 미작동 버그
 - 멀티데이 이벤트 수정/전체삭제
+- 완료된 할일 / 삭제된 할일 / 삭제된 메모 관리 UX 개선
 ```
 
 ---
@@ -155,17 +169,22 @@ serviceAccount:    D:\Dropbox\Dropbox\serviceAccount.json
 ```
 src/
 ├── app/
-│   ├── page.tsx                ✅ initLeaveListener 추가
-│   ├── leave/page.tsx          ✅ initUserListener + initLeaveListener
+│   ├── page.tsx
+│   ├── leave/page.tsx
 │   ├── login/page.tsx
 │   └── signup/page.tsx
 ├── components/
+│   ├── common/
+│   │   └── ImageViewer.tsx     ✅ 공통 이미지 확대 뷰어
 │   ├── Panel.tsx
 │   ├── TodoList.tsx
 │   ├── CompletedTodo.tsx
 │   ├── PostList.tsx
-│   ├── PostItem.tsx            ✅ P8 팝업 완료 — 분리 예정 (PostEditModal)
-│   ├── TodoItem.tsx            ✅ P8 팝업 완료 — 분리 예정 (TodoEditModal)
+│   ├── PostItem.tsx            ✅ ImageViewer 적용
+│   ├── PostEditModal.tsx       ✅ PostItem에서 분리
+│   ├── TodoItem.tsx            ✅ ImageViewer 적용
+│   ├── TodoEditModal.tsx       ✅ TodoItem에서 분리
+│   ├── TodoOrderModal.tsx      ✅ TodoItem에서 분리
 │   ├── CreatePost.tsx
 │   ├── Calendar.tsx
 │   ├── NoticeArea.tsx
@@ -173,14 +192,14 @@ src/
 │   ├── TodoRequestBadge.tsx
 │   └── TodoRequestModal.tsx
 ├── hooks/
-│   ├── useEscClose.ts
+│   ├── useEscClose.ts          ✅ window.__escStack 전역 스택 방식
 │   └── useVisibilityTooltip.ts
 ├── store/
 │   ├── authStore.ts
-│   ├── postStore.ts            ✅ initPostListener 패턴
-│   ├── panelStore.ts           ✅ initPanelListener 패턴
-│   ├── userStore.ts            ✅ initUserListener 패턴
-│   ├── leaveStore.ts           ✅ initLeaveListener 패턴
+│   ├── postStore.ts            ✅ attachments 배열 스키마 + normalizeAttachments
+│   ├── panelStore.ts
+│   ├── userStore.ts
+│   ├── leaveStore.ts
 │   ├── toastStore.ts
 │   └── todoRequestStore.ts
 └── lib/
@@ -205,19 +224,15 @@ PostList.tsx
   → PostItem.tsx
   → postStore.ts
 
-TodoItem.tsx → todoRequestStore.ts
+PostItem.tsx → PostEditModal.tsx → common/ImageViewer.tsx
+TodoItem.tsx → TodoEditModal.tsx → common/ImageViewer.tsx
+TodoItem.tsx → TodoOrderModal.tsx
 TodoRequestModal.tsx → todoRequestStore.ts / TodoRequestBadge.tsx
 Calendar.tsx → todoRequestStore.ts / leaveStore.ts
 CreatePost.tsx → todoRequestStore.ts / Calendar.tsx
 
 새 모달 → useEscClose 훅 필수
-
-page.tsx listener 목록:
-  initPostListener / initRequestListener / initPanelListener
-  initUserListener / initLeaveListener
-
-leave/page.tsx listener 목록:
-  initUserListener / initLeaveListener
+이미지 표시 → common/ImageViewer 필수 (R8.6)
 ```
 
 ---
@@ -231,8 +246,9 @@ leave/page.tsx listener 목록:
   panelId: string
   content: string
   title?: string
-  dueDate?: string           // YYYY-MM-DD 형식 (저장 시 반드시 변환)
-  attachment?: { type: 'image' | 'file' | 'link'; url: string; name?: string }
+  dueDate?: string           // YYYY-MM-DD 형식
+  attachment?: PostAttachment  // 하위호환 (읽기 전용)
+  attachments?: PostAttachment[] // 신규 다중 첨부
   author: string
   category: string
   visibleTo: string[]
@@ -251,6 +267,12 @@ leave/page.tsx listener 목록:
   deletedAt?: Date | null
   createdAt: Date
   updatedAt: Date
+}
+
+interface PostAttachment {
+  type: 'image' | 'file' | 'link'
+  url: string
+  name?: string
 }
 ```
 
@@ -280,7 +302,7 @@ leave/page.tsx listener 목록:
 {
   id: string
   title: string
-  startDate: string          // YYYY-MM-DD 형식
+  startDate: string
   endDate: string
   authorId: string
   authorName: string
@@ -374,10 +396,13 @@ npx firebase-tools deploy --only firestore:rules --project hizzi-board
 | dueDate Invalid Date | YYYYMMDD 형식 그대로 파싱 | YYYY-MM-DD 변환 후 파싱 |
 | 이미지 할일 제목 안 보임 | renderContent가 img만 반환 | 제목+이미지 함께 반환 |
 | page.tsx 한글 깨짐 | PowerShell Set-Content 인코딩 오류 | 전체 교체 + UTF8 명시 |
-| 로그인 직후 Panel 1/2/3 표시 | panelStore 모듈 최상위 즉시실행 → auth 전 fallback | initPanelListener 패턴 전환 |
+| 로그인 직후 Panel 1/2/3 표시 | panelStore 모듈 최상위 즉시실행 | initPanelListener 패턴 전환 |
 | 로그인 직후 From admin 표시 | userStore 동일 원인 | initUserListener 패턴 전환 |
-| 연차 페이지 새로고침 Loading 멈춤 | leaveStore 동일 원인 + leaveLoading 전체 게이트 | initLeaveListener + 컴포넌트 게이트로 전환 |
+| 연차 페이지 새로고침 Loading 멈춤 | leaveStore 동일 원인 | initLeaveListener + 컴포넌트 게이트 |
 | 연차 입사일 공란 / 설정저장 무반응 | page.tsx에 initLeaveListener 누락 | page.tsx useEffect에 cleanup5 추가 |
+| 메모 이미지 클릭 시 팝업 열림 | 클릭 레이어 zIndex 충돌 | 루트 div onClick으로 전환 |
+| 할일 이미지 클릭 시 팝업 열림 | 동일 원인 | 동일 해결 |
+| ESC 미작동 | window.__escStack 번들 미반영 추정 | 다음 세션 확인 필요 |
 
 ---
 
@@ -397,4 +422,4 @@ Rehobot 요금제:
 
 ---
 
-*Updated: 2026.04.08 (initListener 패턴 전환 완료 / stale 렌더 구조적 해결 / 연차 버그 수정)*
+*Updated: 2026.04.08 (PostEditModal/TodoEditModal/TodoOrderModal 분리 / ImageViewer 공통 컴포넌트 / useEscClose 전역 스택 재설계 / attachments 다중 스키마)*
