@@ -12,7 +12,7 @@ interface PostItemProps {
 
 export default function PostItem({ post }: PostItemProps) {
   const { user } = useAuthStore();
-  const { deletePost } = usePostStore();
+  const { deletePost, updatePost } = usePostStore();
   const { addToast } = useToastStore();
 
   const canEdit = !!(user && (user.email === post.author || user.role === 'admin'));
@@ -35,8 +35,6 @@ export default function PostItem({ post }: PostItemProps) {
     const d = date instanceof Date ? date : new Date(date);
     return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' });
   };
-
-  const { updatePost } = usePostStore();
 
   const handleStar = async () => {
     if (!canEdit) return;
@@ -88,7 +86,7 @@ export default function PostItem({ post }: PostItemProps) {
 
     if (type === 'image') {
       return (
-        <div style={{ marginTop: 8, position: 'relative', zIndex: 2 }}>
+        <div style={{ marginTop: 8 }}>
           <img
             src={url}
             alt="첨부 이미지"
@@ -101,8 +99,14 @@ export default function PostItem({ post }: PostItemProps) {
 
     if (type === 'file') {
       return (
-        <div style={{ marginTop: 8, position: 'relative', zIndex: 2 }}>
-          <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ marginTop: 8 }}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{ fontSize: 12, color: '#C17B6B', display: 'flex', alignItems: 'center', gap: 6 }}
+          >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2" />
               <path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2" />
@@ -115,8 +119,14 @@ export default function PostItem({ post }: PostItemProps) {
 
     if (type === 'link') {
       return (
-        <div style={{ marginTop: 8, position: 'relative', zIndex: 2 }}>
-          <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}>
+        <div style={{ marginTop: 8 }}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{ fontSize: 12, color: '#C17B6B', wordBreak: 'break-all' }}
+          >
             {url}
           </a>
         </div>
@@ -131,6 +141,7 @@ export default function PostItem({ post }: PostItemProps) {
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={canEdit ? () => setIsEditOpen(true) : undefined}
         style={{
           position: 'relative',
           padding: '10px 20px 10px 28px',
@@ -141,13 +152,10 @@ export default function PostItem({ post }: PostItemProps) {
           gap: 8,
           background: isHovered ? '#FDF8F4' : '#fff',
           transition: 'background 0.15s ease',
+          cursor: canEdit ? 'pointer' : 'default',
         }}
       >
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: getLeftBorderColor(), pointerEvents: 'none' }} />
-
-        {canEdit && (
-          <div onClick={() => setIsEditOpen(true)} style={{ position: 'absolute', left: 46, top: 0, right: 0, bottom: 0, zIndex: 1, cursor: 'pointer' }} />
-        )}
 
         {canEdit && (
           <button
@@ -162,7 +170,7 @@ export default function PostItem({ post }: PostItemProps) {
           </button>
         )}
 
-        <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 0 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', paddingRight: canEdit ? 20 : 0 }}>
             {post.content}
           </p>
