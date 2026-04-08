@@ -105,6 +105,14 @@ export default function PostItem({ post }: PostItemProps) {
         const url = await getDownloadURL(storageRef);
         attachmentUpdate = { attachment: { type: post.attachment.type, url, name: newFile.name } };
         setUploading(false);
+      } else if (newFile && !post.attachment) {
+        setUploading(true);
+        const fileType = newFile.type.startsWith('image/') ? 'image' : 'file';
+        const storageRef = ref(storage, `uploads/${post.panelId}/${Date.now()}_${newFile.name}`);
+        await uploadBytes(storageRef, newFile);
+        const url = await getDownloadURL(storageRef);
+        attachmentUpdate = { attachment: { type: fileType, url, name: newFile.name } };
+        setUploading(false);
       } else if (post.attachment && !removeAttachment) {
         attachmentUpdate = { attachment: post.attachment };
       }
