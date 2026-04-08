@@ -124,7 +124,7 @@ export default function Home() {
 
   const [mobilePanelId, setMobilePanelId] = useState<string | null>(null);
 
-  if (authLoading || panelLoading) {
+  if (authLoading || panelLoading || userLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-[#FDF8F4]">Loading...</div>;
   }
   if (!user) return null;
