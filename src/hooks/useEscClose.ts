@@ -1,3 +1,46 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+
+type Handler = () => void;
+
+function getStack(): Handler[] {
+  if (typeof window === 'undefined') return [];
+  if (!Array.isArray((window as any).__escStack)) {
+    (window as any).__escStack = [];
+  }
+  return (window as any).__escStack as Handler[];
+}
+
+function ensureListener() {
+  if (typeof window === 'undefined') return;
+  if ((window as any).__escListenerRegistered) return;
+  (window as any).__escListenerRegistered = true;
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'Escape') return;
+    const stack = getStack();
+    if (stack.length === 0) return;
+    e.stopImmediatePropagation();
+    stack[stack.length - 1]();
+  }, true);
+}
+
+export function useEscClose(onClose: () => void, isOpen: boolean) {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    ensureListener();
+    if (!isOpen) return;
+    const stack = getStack();
+    const handler: Handler = () => onCloseRef.current();
+    stack.push(handler);
+    return () => {
+      const idx = stack.lastIndexOf(handler);
+      if (idx !== -1) stack.splice(idx, 1);
+    };
+  }, [isOpen]);
+}
 import { useEffect, useRef } from 'react';
 
 const escStack: Array<() => void> = [];
