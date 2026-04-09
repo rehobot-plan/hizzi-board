@@ -132,21 +132,21 @@ function assignWeekRows(
     }
   }
 
-  // 2) 정렬: span 긴 순 → createdAt 최신순 → 멀티데이 우선
+  // 2) 정렬: 단일 이벤트 위 → 멀티데이 아래, 같은 그룹 내 createdAt 최신순
   allEvents.sort((a, b) => {
+    const aMulti = a.ev.startDate !== a.ev.endDate ? 1 : 0;
+    const bMulti = b.ev.startDate !== b.ev.endDate ? 1 : 0;
+    if (aMulti !== bMulti) return aMulti - bMulti; // 단일(0) 위, 멀티(1) 아래
+
+    // 같은 그룹 내: span 긴 것 우선 (멀티데이끼리)
     const aSpan = a.days.length;
     const bSpan = b.days.length;
-    if (aSpan !== bSpan) return bSpan - aSpan; // span 긴 것 우선
+    if (aSpan !== bSpan) return bSpan - aSpan;
 
     // createdAt 비교 (최신이 위)
     const aTime = a.ev.rawCalendar?.createdAt?.toMillis?.() || a.ev.rawCalendar?.createdAt?.seconds * 1000 || 0;
     const bTime = b.ev.rawCalendar?.createdAt?.toMillis?.() || b.ev.rawCalendar?.createdAt?.seconds * 1000 || 0;
-    if (aTime !== bTime) return bTime - aTime;
-
-    // 멀티데이 우선
-    const aMulti = a.ev.startDate !== a.ev.endDate ? 1 : 0;
-    const bMulti = b.ev.startDate !== b.ev.endDate ? 1 : 0;
-    return bMulti - aMulti;
+    return bTime - aTime;
   });
 
   // 3) row 배정
