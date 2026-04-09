@@ -95,6 +95,94 @@ function getMatrix(year: number, month: number): (Date | null)[][] {
   return matrix;
 }
 
+const MAX_VISIBLE_ROWS = 3;
+
+/** 주(week) 단위 row 배정 — 멀티데이 row 고정 + 정렬 우선순위 적용 */
+function assignWeekRows(
+  week: (Date | null)[],
+  getEventsForDay: (date: Date) => CalendarDisplayEvent[],
+): Map<string, Map<string, number>> {
+  // dayStr → eventId → row
+  const dayRowMap = new Map<string, Map<string, number>>();
+  // eventId → 고정 row (멀티데이 span 전체 유지용)
+  const pinnedRow = new Map<string, number>();
+
+  // 1) 이 주에 등장하는 모든 이벤트 수집 (중복 제거)
+  const seen = new Set<string>();
+  const allEvents: { ev: CalendarDisplayEvent; days: string[] }[] = [];
+
+  const weekDates: string[] = [];
+  for (const date of week) {
+    if (!date) { weekDates.push(''); continue; }
+    const ds = toDS(date);
+    weekDates.push(ds);
+    const dayEvs = getEventsForDay(date);
+    for (const ev of dayEvs) {
+      if (!seen.has(ev.id)) {
+        seen.add(ev.id);
+        // 이 주 내에서 이 이벤트가 차지하는 날들
+        const days: string[] = [];
+        for (const d of week) {
+          if (!d) continue;
+          const dds = toDS(d);
+          if (ev.startDate <= dds && ev.endDate >= dds) days.push(dds);
+        }
+        allEvents.push({ ev, days });
+      }
+    }
+  }
+
+  // 2) 정렬: span 긴 순 → createdAt 최신순 → 멀티데이 우선
+  allEvents.sort((a, b) => {
+    const aSpan = a.days.length;
+    const bSpan = b.days.length;
+    if (aSpan !== bSpan) return bSpan - aSpan; // span 긴 것 우선
+
+    // createdAt 비교 (최신이 위)
+    const aTime = a.ev.rawCalendar?.createdAt?.toMillis?.() || a.ev.rawCalendar?.createdAt?.seconds * 1000 || 0;
+    const bTime = b.ev.rawCalendar?.createdAt?.toMillis?.() || b.ev.rawCalendar?.createdAt?.seconds * 1000 || 0;
+    if (aTime !== bTime) return bTime - aTime;
+
+    // 멀티데이 우선
+    const aMulti = a.ev.startDate !== a.ev.endDate ? 1 : 0;
+    const bMulti = b.ev.startDate !== b.ev.endDate ? 1 : 0;
+    return bMulti - aMulti;
+  });
+
+  // 3) row 배정
+  for (const { ev, days } of allEvents) {
+    // 이미 이전 주에서 핀된 경우 (이 로직에서는 주 단위라 해당 없지만 안전장치)
+    let row = pinnedRow.get(ev.id);
+
+    if (row === undefined) {
+      // 이 이벤트가 차지하는 모든 날에서 사용 가능한 공통 row 찾기
+      row = -1;
+      for (let r = 0; r < MAX_VISIBLE_ROWS; r++) {
+        let available = true;
+        for (const ds of days) {
+          const dayMap = dayRowMap.get(ds);
+          if (dayMap) {
+            for (const [, usedRow] of dayMap) {
+              if (usedRow === r) { available = false; break; }
+            }
+          }
+          if (!available) break;
+        }
+        if (available) { row = r; break; }
+      }
+      if (row === -1) continue; // 3개 초과 — 더보기로 처리
+    }
+
+    pinnedRow.set(ev.id, row);
+    for (const ds of days) {
+      if (!dayRowMap.has(ds)) dayRowMap.set(ds, new Map());
+      dayRowMap.get(ds)!.set(ev.id, row);
+    }
+  }
+
+  return dayRowMap;
+}
+
 function addDays(date: Date, n: number): Date {
   const d = new Date(date);
   d.setDate(d.getDate() + n);
@@ -590,7 +678,9 @@ export default function Calendar() {
             {d}
           </div>
         ))}
-        {matrix.map((week, wi) => week.map((date, di) => {
+        {matrix.map((week, wi) => {
+          const weekRowMap = assignWeekRows(week, getEventsForDay);
+          return week.map((date, di) => {
           if (!date) return (
             <div key={wi + '-' + di} style={{ minHeight: 72, borderRight: '0.5px solid #EDE5DC', borderBottom: '0.5px solid #EDE5DC', background: '#FAFAF8' }} />
           );
@@ -599,6 +689,7 @@ export default function Calendar() {
           const isHol = !!HOLIDAYS_2026[ds];
           const isSun = di === 0, isSat = di === 6;
           const dayEvs = getEventsForDay(date);
+          const dayRows = weekRowMap.get(ds);
           const dragSelected = isDragSel(date);
           return (
             <div
@@ -652,64 +743,79 @@ export default function Calendar() {
                 {date.getDate()}
               </div>
               {isHol && <div style={{ fontSize: 9, color: '#C17B6B', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginBottom: 1 }}>{HOLIDAYS_2026[ds]}</div>}
-              {dayEvs.slice(0, 3).map(ev => {
-                const isSingle = ev.source === 'leave' ? !!ev.isSingleSegment : ev.startDate === ev.endDate;
-                const isStart = ev.source === 'leave' ? !!ev.isSegmentStart : ev.startDate === ds;
-                const isEnd = ev.source === 'leave' ? !!ev.isSegmentEnd : ev.endDate === ds;
-                return (
-                  <div key={ev.id} data-event="true" onClick={e => {
-                    e.stopPropagation();
-                    openDisplayEvent(ev);
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.82'; }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-                    style={(() => {
-                      const col = ev.color || '#3B6D11';
-                      const personal = isPersonal(col);
-                      const leave = isLeave(col);
-                      const request = isRequest(col);
-                      const bgColor = personal
-                        ? col === '#639922' ? 'rgba(99,153,34,0.15)'
-                          : col === '#378ADD' ? 'rgba(55,138,221,0.15)'
-                          : 'rgba(186,117,23,0.15)'
-                        : leave ? 'rgba(83,74,183,0.15)'
-                        : col;
-                      const textColor = personal
-                        ? col === '#639922' ? '#3B6D11'
-                          : col === '#378ADD' ? '#185FA5'
-                          : '#854F0B'
-                        : leave ? '#3C3489'
-                        : '#fff';
-                      const borderLeft = isStart || isSingle
-                        ? personal
-                          ? `2px solid ${col}`
-                          : leave ? '2px solid #534AB7'
-                          : request ? '3px solid #72243E'
-                          : 'none'
-                        : 'none';
-                      return {
-                        fontSize: 10,
-                        color: textColor,
-                        background: bgColor,
-                        cursor: 'pointer',
-                        padding: '1px 4px',
-                        marginBottom: 1,
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap' as const,
-                        textOverflow: 'ellipsis',
-                        borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0,
-                        marginLeft: isStart || isSingle ? 0 : -4,
-                        marginRight: isEnd || isSingle ? 0 : -4,
-                        paddingLeft: isStart || isSingle ? 4 : 0,
-                        paddingRight: isEnd || isSingle ? 4 : 0,
-                        borderLeft,
-                      };
-                    })()}>
-                    {ev.source === 'leave' ? (ev.displayTitle || '\u00A0') : (isStart || isSingle ? ev.title : '\u00A0')}
-                  </div>
-                );
-              })}
-              {dayEvs.length > 3 && (
+              {(() => {
+                // row 기반 렌더링: 0,1,2 순서로 출력, 빈 row는 placeholder
+                const evById = new Map(dayEvs.map(ev => [ev.id, ev]));
+                const rowSlots: (CalendarDisplayEvent | null)[] = [];
+                for (let r = 0; r < MAX_VISIBLE_ROWS; r++) {
+                  let found: CalendarDisplayEvent | null = null;
+                  if (dayRows) {
+                    for (const [eid, row] of dayRows) {
+                      if (row === r && evById.has(eid)) { found = evById.get(eid)!; break; }
+                    }
+                  }
+                  rowSlots.push(found);
+                }
+                return rowSlots.map((ev, r) => {
+                  if (!ev) return <div key={'empty-' + r} style={{ height: 15, marginBottom: 1 }} />;
+                  const isSingle = ev.source === 'leave' ? !!ev.isSingleSegment : ev.startDate === ev.endDate;
+                  const isStart = ev.source === 'leave' ? !!ev.isSegmentStart : ev.startDate === ds;
+                  const isEnd = ev.source === 'leave' ? !!ev.isSegmentEnd : ev.endDate === ds;
+                  return (
+                    <div key={ev.id} data-event="true" onClick={e => {
+                      e.stopPropagation();
+                      openDisplayEvent(ev);
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity = '0.82'; }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                      style={(() => {
+                        const col = ev.color || '#3B6D11';
+                        const personal = isPersonal(col);
+                        const leave = isLeave(col);
+                        const request = isRequest(col);
+                        const bgColor = personal
+                          ? col === '#639922' ? 'rgba(99,153,34,0.15)'
+                            : col === '#378ADD' ? 'rgba(55,138,221,0.15)'
+                            : 'rgba(186,117,23,0.15)'
+                          : leave ? 'rgba(83,74,183,0.15)'
+                          : col;
+                        const textColor = personal
+                          ? col === '#639922' ? '#3B6D11'
+                            : col === '#378ADD' ? '#185FA5'
+                            : '#854F0B'
+                          : leave ? '#3C3489'
+                          : '#fff';
+                        const borderLeft = isStart || isSingle
+                          ? personal
+                            ? `2px solid ${col}`
+                            : leave ? '2px solid #534AB7'
+                            : request ? '3px solid #72243E'
+                            : 'none'
+                          : 'none';
+                        return {
+                          fontSize: 10,
+                          color: textColor,
+                          background: bgColor,
+                          cursor: 'pointer',
+                          padding: '1px 4px',
+                          marginBottom: 1,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap' as const,
+                          textOverflow: 'ellipsis',
+                          borderRadius: isSingle ? 3 : isStart ? '3px 0 0 3px' : isEnd ? '0 3px 3px 0' : 0,
+                          marginLeft: isStart || isSingle ? 0 : -4,
+                          marginRight: isEnd || isSingle ? 0 : -4,
+                          paddingLeft: isStart || isSingle ? 4 : 0,
+                          paddingRight: isEnd || isSingle ? 4 : 0,
+                          borderLeft,
+                        };
+                      })()}>
+                      {ev.source === 'leave' ? (ev.displayTitle || '\u00A0') : (isStart || isSingle ? ev.title : '\u00A0')}
+                    </div>
+                  );
+                });
+              })()}
+              {dayEvs.length > MAX_VISIBLE_ROWS && (
                 <div
                   data-event="true"
                   onClick={e => { e.stopPropagation(); setShowMoreDate(ds); }}
@@ -717,12 +823,13 @@ export default function Calendar() {
                   onMouseEnter={e => { e.currentTarget.style.color = '#7A2828'; }}
                   onMouseLeave={e => { e.currentTarget.style.color = '#C17B6B'; }}
                 >
-                  +{dayEvs.length - 3} 더보기
+                  +{dayEvs.length - MAX_VISIBLE_ROWS} 더보기
                 </div>
               )}
             </div>
           );
-        }))}
+        });
+        })}
       </div>
     </div>
   );
