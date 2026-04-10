@@ -97,13 +97,7 @@ function getMatrix(year: number, month: number): (Date | null)[][] {
 
 const MAX_VISIBLE_ROWS = 3;
 
-/** 인접 날짜 판정 (YYYY-MM-DD 문자열 기준) */
-function isNextDayStr(a: string, b: string): boolean {
-  const da = new Date(a + 'T00:00:00');
-  return toDS(addDays(da, 1)) === b;
-}
-
-/** 주(week) 단위 row 배정 — 정렬: 긴 연속 위, 짧은 연속 중간, 단일 아래 */
+/** 주(week) 단위 row 배정 — 멀티데이 row 고정 + 정렬 우선순위 적용 */
 function assignWeekRows(
   week: (Date | null)[],
   getEventsForDay: (date: Date) => CalendarDisplayEvent[],
@@ -111,20 +105,23 @@ function assignWeekRows(
 ): Map<string, Map<string, number>> {
   // dayStr → eventId → row
   const dayRowMap = new Map<string, Map<string, number>>();
-  // eventId → 고정 row
+  // eventId → 고정 row (멀티데이 span 전체 유지용)
   const pinnedRow = new Map<string, number>();
 
   // 1) 이 주에 등장하는 모든 이벤트 수집 (중복 제거)
   const seen = new Set<string>();
   const allEvents: { ev: CalendarDisplayEvent; days: string[] }[] = [];
 
+  const weekDates: string[] = [];
   for (const date of week) {
-    if (!date) continue;
+    if (!date) { weekDates.push(''); continue; }
     const ds = toDS(date);
+    weekDates.push(ds);
     const dayEvs = getEventsForDay(date);
     for (const ev of dayEvs) {
       if (!seen.has(ev.id)) {
         seen.add(ev.id);
+        // 이 주 내에서 이 이벤트가 차지하는 날들
         const days: string[] = [];
         for (const d of week) {
           if (!d) continue;
@@ -136,130 +133,39 @@ function assignWeekRows(
     }
   }
 
-  // 2) 연차 연속 블록 그룹핑 — 합성 이벤트로 교체
-  // synthId → (dayStr → 해당 날의 개별 이벤트 id) (row 전파용)
-  const synthDayMembers = new Map<string, Map<string, string>>();
-
-  const leaveByUser = new Map<string, { ev: CalendarDisplayEvent; days: string[] }[]>();
-  for (const entry of allEvents) {
-    if (entry.ev.source !== 'leave') continue;
-    const uid = (entry.ev.rawLeave as { userId?: string })?.userId;
-    if (!uid) continue;
-    if (!leaveByUser.has(uid)) leaveByUser.set(uid, []);
-    leaveByUser.get(uid)!.push(entry);
-  }
-
-  const removedIds = new Set<string>();
-
-  for (const [uid, entries] of leaveByUser) {
-    entries.sort((a, b) => a.days[0].localeCompare(b.days[0]));
-
-    // 같은 날 2건(반차 쌍) 감지 → 그룹핑 제외
-    const dateCounts = new Map<string, number>();
-    for (const e of entries) dateCounts.set(e.days[0], (dateCounts.get(e.days[0]) || 0) + 1);
-
-    // 연속 체인 탐색
-    let chain: typeof entries = [];
-
-    const flushChain = () => {
-      if (chain.length > 1) {
-        const allDays = chain.map(c => c.days[0]).sort();
-        const leader = chain[0];
-        const memberIds = chain.map(c => c.ev.id);
-
-        // 블록의 절대 시작일 역추적 (이 주 밖의 이전 연차 포함)
-        let blockStart = allDays[0];
-        const leaderLeave = leader.ev.rawLeave as { userId?: string; date?: string } | undefined;
-        if (leaderLeave?.date && !leader.ev.isSegmentStart) {
-          // 이 주 첫 이벤트가 블록 시작이 아님 → 이전 주에서 시작됨
-          // 역추적: 이전 날짜를 하루씩 확인
-          let d = allDays[0];
-          let prev = toDS(addDays(new Date(d + 'T00:00:00'), -1));
-          while (persistedRows.has(`leave-block-${uid}-${prev}`) || persistedRows.has(prev)) {
-            d = prev;
-            prev = toDS(addDays(new Date(d + 'T00:00:00'), -1));
-          }
-          blockStart = d;
-        }
-
-        const synthId = `leave-block-${uid}-${blockStart}`;
-        // dayStr → 해당 날의 개별 이벤트 id 매핑
-        const dayToMember = new Map<string, string>();
-        for (const c of chain) dayToMember.set(c.days[0], c.ev.id);
-        synthDayMembers.set(synthId, dayToMember);
-
-        allEvents.push({
-          ev: { ...leader.ev, id: synthId, startDate: allDays[0], endDate: allDays[allDays.length - 1] },
-          days: allDays,
-        });
-
-        for (const c of chain) removedIds.add(c.ev.id);
-      }
-      chain = [];
-    };
-
-    for (let i = 0; i < entries.length; i++) {
-      const d = entries[i].days[0];
-      if ((dateCounts.get(d) || 0) > 1) { flushChain(); continue; }
-
-      if (chain.length === 0) {
-        chain.push(entries[i]);
-      } else {
-        const prev = chain[chain.length - 1].days[0];
-        if (isNextDayStr(prev, d)) {
-          chain.push(entries[i]);
-        } else {
-          flushChain();
-          chain.push(entries[i]);
-        }
-      }
-    }
-    flushChain();
-  }
-
-  // 개별 연차 이벤트 제거 (합성으로 대체된 것만)
-  const filtered = allEvents.filter(e => !removedIds.has(e.ev.id));
-
-  // 3) 정렬: 긴 연속 위 → 짧은 연속 → 단일 아래
-  filtered.sort((a, b) => {
+  // 2) 정렬: 멀티데이 위 → 단일 아래, 같은 그룹 내 createdAt 최신순
+  allEvents.sort((a, b) => {
     const aMulti = a.ev.startDate !== a.ev.endDate ? 1 : 0;
     const bMulti = b.ev.startDate !== b.ev.endDate ? 1 : 0;
-    if (aMulti !== bMulti) return bMulti - aMulti; // 연속(1) 위, 단일(0) 아래
+    if (aMulti !== bMulti) return bMulti - aMulti; // 멀티(1) 위, 단일(0) 아래
 
-    // 연속끼리: 긴 것 위, 짧은 것 아래
+    // 같은 그룹 내: span 긴 것 우선 (멀티데이끼리)
     const aSpan = a.days.length;
     const bSpan = b.days.length;
     if (aSpan !== bSpan) return bSpan - aSpan;
 
     // createdAt 비교 (최신이 위)
-    const aTime = a.ev.rawCalendar?.createdAt?.toMillis?.() || (a.ev.rawCalendar?.createdAt as { seconds: number })?.seconds * 1000 || 0;
-    const bTime = b.ev.rawCalendar?.createdAt?.toMillis?.() || (b.ev.rawCalendar?.createdAt as { seconds: number })?.seconds * 1000 || 0;
+    const aTime = a.ev.rawCalendar?.createdAt?.toMillis?.() || a.ev.rawCalendar?.createdAt?.seconds * 1000 || 0;
+    const bTime = b.ev.rawCalendar?.createdAt?.toMillis?.() || b.ev.rawCalendar?.createdAt?.seconds * 1000 || 0;
     return bTime - aTime;
   });
 
-  // 4) 이전 주에서 넘어온 row 복원
-  for (const { ev } of filtered) {
+  // 3) 이전 주에서 넘어온 멀티데이 row 복원
+  for (const { ev } of allEvents) {
     const persisted = persistedRows.get(ev.id);
     if (persisted !== undefined) {
       pinnedRow.set(ev.id, persisted);
     }
   }
 
-  // 5) row 배정 — 연속 이벤트 우선, 단일은 연속 아래 배치
-  const maxMultiRowPerDay = new Map<string, number>();
-
-  for (const { ev, days } of filtered) {
-    const isMultiDay = ev.startDate !== ev.endDate;
+  // 4) row 배정
+  for (const { ev, days } of allEvents) {
     let row = pinnedRow.get(ev.id);
 
     if (row === undefined) {
-      // 단일 이벤트: 해당 날의 연속 이벤트 최하단 row 아래부터 탐색
-      const minRow = (!isMultiDay && days.length === 1)
-        ? (maxMultiRowPerDay.get(days[0]) ?? -1) + 1
-        : 0;
-
+      // 이 이벤트가 차지하는 모든 날에서 사용 가능한 공통 row 찾기
       row = -1;
-      for (let r = minRow; r < MAX_VISIBLE_ROWS; r++) {
+      for (let r = 0; r < MAX_VISIBLE_ROWS; r++) {
         let available = true;
         for (const ds of days) {
           const dayMap = dayRowMap.get(ds);
@@ -272,44 +178,18 @@ function assignWeekRows(
         }
         if (available) { row = r; break; }
       }
-      if (row === -1) continue; // visible rows 초과 → 더보기
+      if (row === -1) continue; // 3개 초과 — 더보기로 처리
     }
 
     pinnedRow.set(ev.id, row);
     for (const ds of days) {
       if (!dayRowMap.has(ds)) dayRowMap.set(ds, new Map());
       dayRowMap.get(ds)!.set(ev.id, row);
-
-      // 연속 이벤트 row 최대값 추적 (단일 이벤트 배치 기준)
-      if (isMultiDay) {
-        const cur = maxMultiRowPerDay.get(ds) ?? -1;
-        if (row > cur) maxMultiRowPerDay.set(ds, row);
-      }
     }
 
-    // 연속 이벤트의 row를 다음 주로 전파
-    if (isMultiDay) {
+    // 멀티데이 이벤트의 row를 다음 주로 전파
+    if (ev.startDate !== ev.endDate) {
       persistedRows.set(ev.id, row);
-    }
-  }
-
-  // 6) 합성 이벤트 row를 해당 날의 개별 연차 이벤트 id에 복사 (렌더링용)
-  for (const [synthId, dayToMember] of synthDayMembers) {
-    for (const [ds, dayMap] of dayRowMap) {
-      const synthRow = dayMap.get(synthId);
-      if (synthRow !== undefined) {
-        // 해당 날의 개별 이벤트 id만 추가 (다른 날 id 혼입 방지)
-        const mid = dayToMember.get(ds);
-        if (mid) dayMap.set(mid, synthRow);
-        dayMap.delete(synthId);
-      }
-    }
-    // persistedRows에도 개별 id로 전파 (주 경계 전파)
-    const synthPersisted = persistedRows.get(synthId);
-    if (synthPersisted !== undefined) {
-      for (const [, mid] of dayToMember) {
-        persistedRows.set(mid, synthPersisted);
-      }
     }
   }
 
@@ -950,10 +830,7 @@ export default function Calendar() {
                   );
                 });
               })()}
-              {(() => {
-                const assignedCount = dayRows?.size ?? 0;
-                const hiddenCount = dayEvs.length - assignedCount;
-                return hiddenCount > 0 ? (
+              {dayEvs.length > MAX_VISIBLE_ROWS && (
                 <div
                   data-event="true"
                   onClick={e => { e.stopPropagation(); setShowMoreDate(ds); }}
@@ -961,10 +838,9 @@ export default function Calendar() {
                   onMouseEnter={e => { e.currentTarget.style.color = '#7A2828'; }}
                   onMouseLeave={e => { e.currentTarget.style.color = '#C17B6B'; }}
                 >
-                  +{hiddenCount} 더보기
+                  +{dayEvs.length - MAX_VISIBLE_ROWS} 더보기
                 </div>
-                ) : null;
-              })()}
+              )}
             </div>
           );
         });
