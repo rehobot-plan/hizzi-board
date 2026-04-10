@@ -136,7 +136,7 @@ function assignWeekRows(
   allEvents.sort((a, b) => {
     const aMulti = a.ev.startDate !== a.ev.endDate ? 1 : 0;
     const bMulti = b.ev.startDate !== b.ev.endDate ? 1 : 0;
-    if (aMulti !== bMulti) return aMulti - bMulti; // 단일(0) 위, 멀티(1) 아래
+    if (aMulti !== bMulti) return bMulti - aMulti; // 멀티(1) 위, 단일(0) 아래
 
     // 같은 그룹 내: span 긴 것 우선 (멀티데이끼리)
     const aSpan = a.days.length;
