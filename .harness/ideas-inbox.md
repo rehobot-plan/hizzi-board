@@ -11,3 +11,4 @@
 - [2026-04-10 15:50] [세션#7] progress.md 업데이트 누락 방지 — /close-session에 "직전 세션 번호+1 = 이번 세션 번호" 검증 추가. 세션#5 작업로그 누락 발견. 우선순위: 중.
 - [2026-04-10] [세션#7→#8] 코드 스터디 정책 R4.9 신설 완료. session.md/rules.md/rules-detail.md/CLAUDE.md 반영. ✅
 - [2026-04-10] [세션#7] 검증 방법론 강화 — 코드 라인 매칭 PASS 금지 / E2E 시드 데이터 의무 / Codex 프롬프트에 실행 경로 trace 요구 / 스크린샷 expected vs actual console.log 비교. 인박스 #1(Codex 검열 강화)과 통합 검토. 우선순위: 높음.
+- [2026-04-10] [세션#7→#8] 검증 방법론 R4.10 + Codex 검열 강화 완료. rules.md/rules-detail.md/codex-review-policy.md 반영. ✅
