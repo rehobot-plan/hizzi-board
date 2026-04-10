@@ -101,6 +101,7 @@ const MAX_VISIBLE_ROWS = 3;
 function assignWeekRows(
   week: (Date | null)[],
   getEventsForDay: (date: Date) => CalendarDisplayEvent[],
+  persistedRows: Map<string, number>,
 ): Map<string, Map<string, number>> {
   // dayStr → eventId → row
   const dayRowMap = new Map<string, Map<string, number>>();
@@ -132,7 +133,7 @@ function assignWeekRows(
     }
   }
 
-  // 2) 정렬: 단일 이벤트 위 → 멀티데이 아래, 같은 그룹 내 createdAt 최신순
+  // 2) 정렬: 멀티데이 위 → 단일 아래, 같은 그룹 내 createdAt 최신순
   allEvents.sort((a, b) => {
     const aMulti = a.ev.startDate !== a.ev.endDate ? 1 : 0;
     const bMulti = b.ev.startDate !== b.ev.endDate ? 1 : 0;
@@ -149,9 +150,16 @@ function assignWeekRows(
     return bTime - aTime;
   });
 
-  // 3) row 배정
+  // 3) 이전 주에서 넘어온 멀티데이 row 복원
+  for (const { ev } of allEvents) {
+    const persisted = persistedRows.get(ev.id);
+    if (persisted !== undefined) {
+      pinnedRow.set(ev.id, persisted);
+    }
+  }
+
+  // 4) row 배정
   for (const { ev, days } of allEvents) {
-    // 이미 이전 주에서 핀된 경우 (이 로직에서는 주 단위라 해당 없지만 안전장치)
     let row = pinnedRow.get(ev.id);
 
     if (row === undefined) {
@@ -177,6 +185,11 @@ function assignWeekRows(
     for (const ds of days) {
       if (!dayRowMap.has(ds)) dayRowMap.set(ds, new Map());
       dayRowMap.get(ds)!.set(ev.id, row);
+    }
+
+    // 멀티데이 이벤트의 row를 다음 주로 전파
+    if (ev.startDate !== ev.endDate) {
+      persistedRows.set(ev.id, row);
     }
   }
 
@@ -678,8 +691,10 @@ export default function Calendar() {
             {d}
           </div>
         ))}
-        {matrix.map((week, wi) => {
-          const weekRowMap = assignWeekRows(week, getEventsForDay);
+        {(() => {
+          const persistedRows = new Map<string, number>();
+          return matrix.map((week, wi) => {
+          const weekRowMap = assignWeekRows(week, getEventsForDay, persistedRows);
           return week.map((date, di) => {
           if (!date) return (
             <div key={wi + '-' + di} style={{ minHeight: 72, borderRight: '0.5px solid #EDE5DC', borderBottom: '0.5px solid #EDE5DC', background: '#FAFAF8' }} />
@@ -829,7 +844,8 @@ export default function Calendar() {
             </div>
           );
         });
-        })}
+        });
+        })()}
       </div>
     </div>
   );
