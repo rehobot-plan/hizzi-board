@@ -4,15 +4,14 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-13 세션 #14 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (942f320 — close-session 프리셋 단계 추가)
-- 진행 중: 캘린더/할일/게시물 디자인 통일 (Phase 5) — 기획 완료, 5-A 토큰 파일 작성 대기
+- 마지막 세션: 2026-04-13 세션 #15 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (dd4107d — Phase 5-A 배포 완료)
+- 진행 중: Phase 5-B 공통 프리미티브 추출 대기
 - 다음 TODO:
-  1. Phase 5-A — src/styles/tokens.ts 신설 + globals.css FC CSS Variables 주입 (md/ui/uxui.md 단일 출처화)
-  2. Phase 5-B — 공통 프리미티브 3종 추출 (VisibilityTag / CategoryTag / LeftBorderBar) + getLeftBorderColor util 이전
-  3. Phase 5-C — 도메인 3-pass 적용 (달력 → 할일 → 게시물), 각 pass R4.10 3축 개별 검증
-  4. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후)
-  5. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
+  1. Phase 5-B — 공통 프리미티브 3종 추출 (VisibilityTag / CategoryTag / LeftBorderBar) + getLeftBorderColor util 이전
+  2. Phase 5-C — 도메인 3-pass 적용 (달력 → 할일 → 게시물), 각 pass R4.10 3축 개별 검증
+  3. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후)
+  4. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
   - git remote 미설정
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
@@ -264,3 +263,12 @@ close-session 확장 (commit 942f320)
 교훈
 - R6.1/R6.2 — 인프라 문제 진단 시 실제 파일 먼저 확인. 추측 금지.
 - Phase 5-A는 새 방 권장 (tokens.ts 신설 = 컨텍스트 새로 잡는 게 유리)
+
+### [2026-04-13] 세션 #15 — Phase 5-A 디자인 토큰 인프라
+
+- 완료: src/styles/tokens.ts 신설 (colors/calendarEvent/tagColors/zIndex/typography)
+- 완료: globals.css :root 재작성 (uxui 14토큰 + shadcn 호환 + FC CSS vars 7개)
+- 완료: md/ui/uxui.md today-bg #F5E6E0 추가
+- 완료: --foreground #2B2323 → #2C1810 교정 (uxui.md 단일 출처)
+- 완료: Vercel production 배포 + CSS var 실측 PASS
+- R4.10 3축: 가동 PASS / 기능 5/5 (CSS var 실측) / 디자인 3장 스크린샷
