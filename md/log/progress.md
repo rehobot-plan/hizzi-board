@@ -4,14 +4,13 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-13 세션 #12 (종료)
-- 작업 브랜치: feat/fullcalendar-poc
-- 진행 중: FullCalendar 정식 교체 준비 (다음 세션 새 방에서 진입)
+- 마지막 세션: 2026-04-13 세션 #13 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (3a4b4bc — Phase 4 완료)
+- 진행 중: 캘린더 디자인 통일 (Phase 5) + master 머지 대기
 - 다음 TODO:
-  1. 캘린더 정식 교체 (3-1) — Calendar.tsx 전수 조사 완료, 구현 대기
-  2. 캘린더 디자인 통일 (3-2)
-  3. feat/fullcalendar-poc → master 머지 (1+2 완료 후)
-  4. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
+  1. 캘린더 디자인 통일 (3-2) — 구 Calendar.tsx 시각 토큰과 차이 정리 + 통일
+  2. feat/fullcalendar-poc → master 머지
+  3. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
   - git remote 미설정
   - master.md 15~17행 인코딩 깨짐 잔존 (경미)
@@ -196,3 +195,37 @@ R4.10 정책 작동 사례
 - 드라이런 검증 PASS (10/10 파일 존재, _staging 복사 10개)
 - 백업: presets.json.bak
 - md-presets 폴더는 hizzi-board 리포 밖이므로 git 대상 아님
+
+### [2026-04-13] 세션 #13 — FullCalendar 정식 교체 Phase 1~4 완료
+
+Phase 0 (commit 4660aa4)
+- calendar-helpers.ts 253줄 — 순수 함수/상수 모듈 추출
+
+Phase 1 (commit 04d5622 → 88614cc)
+- CalendarGrid.tsx 285줄 — FullCalendar 2개월 래퍼
+- Calendar.tsx 컨테이너 — Firestore onSnapshot + 어댑터
+- buildCalendarEventInputs 어댑터 — calendarEvents + leaveEvents → EventInput[]
+- 4케이스 시드 PASS (멀티단독/멀티+단일/연차연속/멀티겹침)
+
+Phase 2 (commit 5fa7b37 + f0f4887)
+- CalendarModals.tsx AddEventModal — 추가 모달 이식
+- dateClick/select 콜백 배선
+- initUserListener/initLeaveListener 컨테이너 초기화 추가
+- 6/6 PASS (단일클릭/드래그/반복/구분범위/연차단일/연차범위)
+
+Phase 3 (commit 07d6971)
+- DetailModal + LeaveDetailModal + DeleteConfirmModal 이식
+- eventClick 콜백 배선
+- handleUpdate/handleDeleteSingle/handleDeleteRepeat/handleLeaveUpdate/handleLeaveDelete
+- 8/8 PASS (상세/수정/단일삭제/반복삭제/연차상세/연차수정/연차삭제/업무요청뱃지)
+
+Phase 4 (commit 3a4b4bc)
+- page.tsx import 스왑
+- CreatePost.tsx dynamic→static import 전환 (getEventColor)
+- 구 Calendar.tsx/CalendarV2.tsx/calendar-v2/ 삭제 (-1,776줄)
+- 7/7 PASS (메인렌더/실데이터/추가모달/상세모달/PoC회귀/404/CreatePost)
+
+교훈
+- R4.10 위반: Phase 2 commit 시 1/6 PASS 보고 후 강행 → 추가 검증으로 보강 (인박스 등록)
+- R4.10 능동 보강: Phase 3 케이스 8 데이터 부재 → 오너 지시로 임시 문서 생성 검증 (인박스 등록)
+- listener 중복 초기화: 재정리 패턴으로 안전 (런타임 확인)
