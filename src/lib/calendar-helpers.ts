@@ -251,3 +251,122 @@ export function mergeConsecutiveLeave<T extends LeaveLikeEvent>(events: T[]): (T
 
   return [...others, ...merged];
 }
+
+// ─── Firestore → FullCalendar 어댑터 ───────────────────────
+
+/** Firestore calendarEvents 문서 최소 인터페이스 */
+export interface CalendarEventDoc {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  color: string;
+  authorId?: string;
+  authorName?: string;
+  createdAt?: { toMillis?: () => number; seconds?: number };
+  repeatGroupId?: string;
+  requestId?: string;
+  requestFrom?: string;
+  requestTitle?: string;
+}
+
+/** Firestore leaveEvents 문서 최소 인터페이스 */
+export interface LeaveEventDoc {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail?: string;
+  date: string;
+  type: 'full' | 'half_am' | 'half_pm';
+  days: number;
+  memo?: string;
+  confirmed: boolean;
+  createdBy: string;
+}
+
+/** FullCalendar EventInput 호환 출력 */
+export interface CalendarEventInput {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  backgroundColor: string;
+  extendedProps: {
+    source: 'calendar' | 'leave';
+    rawCalendar?: CalendarEventDoc;
+    rawLeave?: LeaveEventDoc;
+    requestId?: string;
+    requestFrom?: string;
+    requestTitle?: string;
+    isLeave?: boolean;
+    leaveUserId?: string;
+    originalIds?: string[];
+    [key: string]: unknown;
+  };
+}
+
+function addOneDayExclusive(dateStr: string): string {
+  return toDS(addDays(new Date(dateStr + 'T00:00:00'), 1));
+}
+
+/**
+ * Firestore calendarEvents + leaveEvents → FullCalendar EventInput[] 변환.
+ * - calendarEvents: startDate/endDate → start/end(+1일 exclusive)
+ * - leaveEvents: 동일 userId 연속 블록 병합 후 start/end(+1일) 변환
+ */
+export function buildCalendarEventInputs(
+  calendarEvents: CalendarEventDoc[],
+  leaveEvents: LeaveEventDoc[],
+): CalendarEventInput[] {
+  // 1) calendarEvents → EventInput
+  const calInputs: CalendarEventInput[] = calendarEvents.map(ev => ({
+    id: ev.id,
+    title: ev.title || '(제목 없음)',
+    start: ev.startDate,
+    end: addOneDayExclusive(ev.endDate),
+    backgroundColor: ev.color || '#3B6D11',
+    extendedProps: {
+      source: 'calendar' as const,
+      rawCalendar: ev,
+      requestId: ev.requestId,
+      requestFrom: ev.requestFrom,
+      requestTitle: ev.requestTitle,
+    },
+  }));
+
+  // 2) leaveEvents → LeaveLikeEvent 변환 → 연속 블록 병합
+  const leaveLike: LeaveLikeEvent[] = leaveEvents.map(ev => {
+    const typeLabel = ev.type === 'full' ? '연차' : ev.type === 'half_am' ? '오전반차' : '오후반차';
+    return {
+      id: ev.id,
+      title: `${ev.userName || '직원'} ${typeLabel}${ev.confirmed ? ' 🔒' : ''}`,
+      start: ev.date,
+      end: addOneDayExclusive(ev.date),
+      color: '#534AB7',
+      extendedProps: {
+        isLeave: true,
+        leaveUserId: ev.userId,
+        rawLeave: ev,
+      },
+    };
+  });
+
+  const mergedLeave = mergeConsecutiveLeave(leaveLike);
+
+  const leaveInputs: CalendarEventInput[] = mergedLeave.map(ev => ({
+    id: ev.id,
+    title: ev.title,
+    start: ev.start,
+    end: ev.end,
+    backgroundColor: ev.color || '#534AB7',
+    extendedProps: {
+      source: 'leave' as const,
+      isLeave: true,
+      leaveUserId: ev.extendedProps?.leaveUserId as string | undefined,
+      rawLeave: ev.extendedProps?.rawLeave as LeaveEventDoc | undefined,
+      originalIds: ev.extendedProps?.originalIds as string[] | undefined,
+    },
+  }));
+
+  return [...calInputs, ...leaveInputs];
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import CalendarV2 from '@/components/CalendarV2';
+import CalendarV2 from '@/components/calendar/CalendarGrid';
 import { EventInput } from '@fullcalendar/core';
 import { mergeConsecutiveLeave, LeaveLikeEvent } from '@/lib/calendar-helpers';
 
