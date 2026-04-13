@@ -1,7 +1,7 @@
 'use client';
 
-import { LeaveType } from '@/store/leaveStore';
-import { CalendarFormState } from './calendar-types';
+import { LeaveType, LeaveEvent } from '@/store/leaveStore';
+import { CalendarFormState, CalendarEvent, DeleteConfirmTarget } from './calendar-types';
 import {
   DAY_KEYS, KOREAN_DAYS,
   getEventColor, isPersonal, isLeave,
@@ -280,6 +280,234 @@ export function AddEventModal(props: AddEventModalProps) {
           <button onClick={onSubmit} disabled={loading}
             style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: loading ? '#9E8880' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? '저장 중...' : '추가'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 상세 모달 ──────────────────────────────────────────
+
+interface RequestInfo {
+  id: string;
+  status: string;
+}
+
+interface DetailModalProps {
+  open: boolean;
+  event: CalendarEvent | null;
+  form: CalendarFormState;
+  setForm: React.Dispatch<React.SetStateAction<CalendarFormState>>;
+  canEdit: boolean;
+  requests: RequestInfo[];
+  users: UserInfo[];
+  loading: boolean;
+  onCancel: () => void;
+  onUpdate: () => void;
+  onDeleteSingle: (ev: CalendarEvent) => void;
+  onDeleteRepeat: (ev: CalendarEvent) => void;
+}
+
+export function DetailModal(props: DetailModalProps) {
+  const { open, event, form, setForm, canEdit, requests, users, loading, onCancel, onUpdate, onDeleteSingle, onDeleteRepeat } = props;
+  if (!open || !event) return null;
+
+  const req = event.requestId ? requests.find(r => r.id === event.requestId) : null;
+  const fromUser = event.requestFrom ? users.find(u => u.email === event.requestFrom) : null;
+  const isCompleted = req?.status === 'completed';
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+      <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 380 }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>일정 상세</span>
+          {canEdit && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>✎ 편집 가능</span>}
+        </div>
+        <div style={{ padding: '16px 20px' }}>
+          {event.requestId && (
+            <div style={{ marginBottom: 16, padding: '12px', background: '#FFF9F7', border: '1px solid #EDE5DC' }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C17B6B', marginBottom: 10 }}>업무 요청 정보</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>요청자</span>
+                  <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>{fromUser?.name || event.requestFrom}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>담당자</span>
+                  <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>
+                    {event.authorName?.startsWith('담당:') ? event.authorName.replace('담당: ', '') : event.authorName}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>업무</span>
+                  <span style={{ fontSize: 11, color: '#2C1810' }}>{event.requestTitle || event.title.replace('[요청] ', '')}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>완료</span>
+                  <span style={{ fontSize: 9, padding: '2px 8px', background: isCompleted ? '#F0F5F0' : '#FFF5F2', color: isCompleted ? '#5C7A5C' : '#C17B6B', border: `0.5px solid ${isCompleted ? '#5C7A5C' : '#C17B6B'}`, letterSpacing: '0.06em' }}>
+                    {isCompleted ? '완료' : '진행중'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          {canEdit ? (
+            <>
+              <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                  style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                <span style={{ color: '#9E8880' }}>~</span>
+                <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                  style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+              </div>
+              <div style={{ fontSize: 11, color: '#9E8880', marginTop: 8 }}>작성자: {event.authorName}</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1810', marginBottom: 6 }}>{event.title}</div>
+              <div style={{ fontSize: 11, color: '#9E8880', marginBottom: 4 }}>{event.startDate} ~ {event.endDate}</div>
+              <div style={{ fontSize: 11, color: '#9E8880' }}>작성자: {event.authorName}</div>
+            </>
+          )}
+        </div>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
+          {canEdit && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {event.repeatGroupId && (
+                <button onClick={() => onDeleteRepeat(event)}
+                  style={{ fontSize: 10, padding: '6px 10px', border: '1px solid #C17B6B', color: '#C17B6B', background: '#fff', cursor: 'pointer' }}>
+                  이후 모두 삭제
+                </button>
+              )}
+              <button onClick={() => onDeleteSingle(event)}
+                style={{ fontSize: 10, padding: '6px 10px', border: '1px solid #EDE5DC', color: '#9E8880', background: '#fff', cursor: 'pointer' }}>
+                이 일정만 삭제
+              </button>
+              <button onClick={onUpdate} disabled={loading}
+                style={{ fontSize: 10, padding: '6px 14px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}>
+                저장
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 연차 상세 모달 ─────────────────────────────────────
+
+interface LeaveDetailModalProps {
+  open: boolean;
+  leaveEvent: LeaveEvent | null;
+  form: CalendarFormState;
+  setForm: React.Dispatch<React.SetStateAction<CalendarFormState>>;
+  leaveType: LeaveType;
+  setLeaveType: (v: LeaveType) => void;
+  leaveMemo: string;
+  setLeaveMemo: (v: string) => void;
+  canEdit: boolean;
+  loading: boolean;
+  onCancel: () => void;
+  onUpdate: () => void;
+  onDelete: (ev: LeaveEvent) => void;
+}
+
+export function LeaveDetailModal(props: LeaveDetailModalProps) {
+  const { open, leaveEvent, form, setForm, leaveType, setLeaveType, leaveMemo, setLeaveMemo, canEdit, loading, onCancel, onUpdate, onDelete } = props;
+  if (!open || !leaveEvent) return null;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+      <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 380 }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>연차 상세</span>
+          {canEdit && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>✎ 편집 가능</span>}
+        </div>
+        <div style={{ padding: '16px 20px' }}>
+          {canEdit ? (
+            <>
+              <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value, endDate: e.target.value }))}
+                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
+              <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                {([{ key: 'full' as const, label: '전일' }, { key: 'half_am' as const, label: '오전반차' }, { key: 'half_pm' as const, label: '오후반차' }]).map(t => (
+                  <button key={t.key} onClick={() => setLeaveType(t.key)}
+                    style={{ padding: '5px 8px', border: '1px solid ' + (leaveType === t.key ? '#2C1810' : '#EDE5DC'), background: leaveType === t.key ? '#FDF8F4' : '#fff', color: leaveType === t.key ? '#2C1810' : '#9E8880', fontSize: 10, cursor: 'pointer' }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <input value={leaveMemo} onChange={e => setLeaveMemo(e.target.value)}
+                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+              <div style={{ fontSize: 11, color: '#9E8880', marginTop: 8 }}>대상자: {leaveEvent.userName}</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1810', marginBottom: 6 }}>{leaveEvent.userName} 연차</div>
+              <div style={{ fontSize: 11, color: '#9E8880', marginBottom: 4 }}>{leaveEvent.date} / {leaveEvent.type === 'full' ? '전일' : leaveEvent.type === 'half_am' ? '오전반차' : '오후반차'} {leaveEvent.confirmed ? '🔒' : ''}</div>
+              <div style={{ fontSize: 11, color: '#9E8880' }}>메모: {leaveEvent.memo || '-'}</div>
+            </>
+          )}
+        </div>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
+          {canEdit && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => onDelete(leaveEvent)}
+                style={{ fontSize: 10, padding: '6px 10px', border: '1px solid #EDE5DC', color: '#9E8880', background: '#fff', cursor: 'pointer' }}>
+                삭제
+              </button>
+              <button onClick={onUpdate} disabled={loading}
+                style={{ fontSize: 10, padding: '6px 14px', background: '#2C1810', color: '#FDF8F4', border: 'none', cursor: 'pointer' }}>
+                저장
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 삭제 확정 모달 ─────────────────────────────────────
+
+interface DeleteConfirmModalProps {
+  confirm: DeleteConfirmTarget;
+  loading: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+export function DeleteConfirmModal(props: DeleteConfirmModalProps) {
+  const { confirm, loading, onCancel, onConfirm } = props;
+  if (!confirm) return null;
+
+  const title = confirm.type === 'repeat' ? '반복 일정 삭제' : confirm.type === 'leave' ? '연차 삭제' : '일정 삭제';
+  const message = confirm.type === 'repeat'
+    ? '이 날짜 이후의 반복 일정을 모두 삭제할까요?'
+    : confirm.type === 'leave'
+    ? '이 연차를 삭제할까요?'
+    : '이 일정을 삭제할까요?';
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
+      <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 340 }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>{title}</span>
+        </div>
+        <div style={{ padding: '20px' }}>
+          <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6 }}>{message}</p>
+          <p style={{ fontSize: 11, color: '#9E8880', marginTop: 4 }}>삭제된 내용은 복구할 수 없습니다.</p>
+        </div>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
+          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
+          <button onClick={onConfirm} disabled={loading}
+            style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#C17B6B', color: '#FDF8F4', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
+            {loading ? '삭제 중...' : '삭제'}
           </button>
         </div>
       </div>

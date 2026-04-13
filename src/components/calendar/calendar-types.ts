@@ -48,3 +48,9 @@ export interface CalendarFormState {
   _taskType: 'work' | 'personal';
   _visibility: 'all' | 'me' | 'specific';
 }
+
+export type DeleteConfirmTarget =
+  | { type: 'single'; target: CalendarEvent }
+  | { type: 'repeat'; target: CalendarEvent }
+  | { type: 'leave'; target: import('@/store/leaveStore').LeaveEvent }
+  | null;

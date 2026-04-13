@@ -16,9 +16,10 @@ interface CalendarGridProps {
   initialMonth?: number;
   onDateClick?: (dateStr: string) => void;
   onDateRangeSelect?: (startStr: string, endStr: string) => void;
+  onEventClick?: (eventId: string, extendedProps: Record<string, unknown>) => void;
 }
 
-export default function CalendarGrid({ events = [], initialYear, initialMonth, onDateClick, onDateRangeSelect }: CalendarGridProps) {
+export default function CalendarGrid({ events = [], initialYear, initialMonth, onDateClick, onDateRangeSelect, onEventClick }: CalendarGridProps) {
   const leftRef = useRef<FullCalendar>(null);
   const rightRef = useRef<FullCalendar>(null);
 
@@ -196,6 +197,7 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
     events,
     dateClick: onDateClick ? (arg: { date: Date }) => onDateClick(toDS(arg.date)) : undefined,
     select: onDateRangeSelect ? (arg: { start: Date; end: Date }) => onDateRangeSelect(toDS(arg.start), toDS(addDays(arg.end, -1))) : undefined,
+    eventClick: onEventClick ? (arg: { event: { id: string; extendedProps: Record<string, unknown> }; jsEvent: MouseEvent }) => { arg.jsEvent.stopPropagation(); onEventClick(arg.event.id, arg.event.extendedProps); } : undefined,
     dayHeaderContent: renderDayHeaderContent,
     dayCellContent: renderDayCellContent,
     eventContent: renderEventContent,
