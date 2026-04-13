@@ -161,6 +161,7 @@ Claude Code의 PASS 보고는 아래 3축을 모두 충족해야 한다.
 - 인박스 반영 완료 항목(✅) 자동 삭제
 - 세션 번호 검증 — 직전 세션 번호 + 1 = 이번 세션 번호. 불일치 시 오너에게 보고
 - untracked 감사 — md/ 하위 untracked 파일 git status로 확인, 발견 시 오너 보고
+- 다음 세션 프리셋 업데이트 — progress.md 1순위 TODO 기반 필요 파일 리스트를 Claude.ai가 제안, presets.json "current" 엔트리 덮어쓰기. 오너가 "프리셋 생략" 명시 시만 건너뜀. 상세: .claude/commands/close-session.md 단계 8
 
 인박스 이관 흐름:
 1. Claude Code: 인박스 전체 출력 + flag 유지
