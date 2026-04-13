@@ -242,10 +242,25 @@ Phase 4 (commit 3a4b4bc)
 - R4.10 능동 보강: Phase 3 케이스 8 데이터 부재 → 오너 지시로 임시 문서 생성 검증 (인박스 등록)
 - listener 중복 초기화: 재정리 패턴으로 안전 (런타임 확인)
 
-### [2026-04-13] 세션 #14 — 인박스 이관 + 프리셋 리팩터
+### [2026-04-13] 세션 #14 — 프리셋 단일화 + Phase 5 기획 + close-session 확장
 
-- 완료: 인박스 4건 이관 (R4.10-가·나 rules-detail.md, session.md [4] 검증 단계, progress.md 검토 후보)
-- 완료: 프리셋 시스템 리팩터 — 단일 엔트리(current) 구조, 프리셋2(디자인용 10종) 신설
-- 완료: close-session 단계 8 "다음 세션 프리셋 업데이트" 신설 (2파일 동기화)
-- 완료: 컴포넌트 트리 + hex 카운트 전수 조사 (Phase 5 사전 준비)
+Phase 5 기획 (R4.9/R4.10 사전)
+- FullCalendar 테마 API 4방식 비교 → 추천: 하이브리드 C (CSS Variables + .fc-* + TS 토큰)
+- Phase 5 3단계 확정: 5-A(tokens.ts+globals.css) → 5-B(프리미티브 3종) → 5-C(3-pass 도메인)
+- 할일/게시물 hex 카운트 전수 조사 (TodoItem 105 / CalendarModals 97 / CreatePost 71)
+- TodoItem 상세/편집 모달 내장 발견, ImageViewer 루트/common 중복 발견
+
+프리셋 시스템 단일화
+- presets.json: 3엔트리 → 단일 current. 프리셋.ps1: 파라미터 제거, current 고정.
+- 드라이런 PASS (_staging 6파일)
+
+close-session 확장 (commit 942f320)
+- 신규 단계 8 "다음 세션 프리셋 업데이트" + session.md [4] 프리셋 라인 추가
+
+인박스 이관
+- R4.10-가·나 rules-detail.md, session.md [4] 검증 단계, progress.md 검토 후보
 - 인박스 메모 4건: 토큰 최적화(progress 분할), 규칙 단일출처, 프리셋 최소 구성, 인계 요약
+
+교훈
+- R6.1/R6.2 — 인프라 문제 진단 시 실제 파일 먼저 확인. 추측 금지.
+- Phase 5-A는 새 방 권장 (tokens.ts 신설 = 컨텍스트 새로 잡는 게 유리)
