@@ -4,14 +4,13 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-13 세션 #15 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (dd4107d — Phase 5-A 배포 완료)
-- 진행 중: Phase 5-B 공통 프리미티브 추출 대기
+- 마지막 세션: 2026-04-13 세션 #16 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (390a77d — Phase 5-B 배포 완료)
+- 진행 중: Phase 5-C 도메인 3-pass 진입 대기
 - 다음 TODO:
-  1. Phase 5-B — 공통 프리미티브 3종 추출 (VisibilityTag / CategoryTag / LeftBorderBar) + getLeftBorderColor util 이전
-  2. Phase 5-C — 도메인 3-pass 적용 (달력 → 할일 → 게시물), 각 pass R4.10 3축 개별 검증
-  3. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후)
-  4. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
+  1. Phase 5-C — 도메인 3-pass 적용 (달력 → 할일 → 게시물), 각 pass R4.10 3축 개별 검증
+  2. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후)
+  3. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
   - git remote 미설정
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
@@ -273,3 +272,19 @@ close-session 확장 (commit 942f320)
 - 완료: --foreground #2B2323 → #2C1810 교정 (uxui.md 단일 출처)
 - 완료: Vercel production 배포 + CSS var 실측 PASS
 - R4.10 3축: 가동 PASS / 기능 5/5 (CSS var 실측) / 디자인 3장 스크린샷
+
+### [2026-04-13] 세션 #16 — Phase 5-B 공통 프리미티브 + 요청 UI 재설계 길 B 설계
+
+Phase 5-B (commit 390a77d)
+- common/ 4종: LeftBorderBar / CategoryTag / RequestTag / VisibilityTag
+- leftBorderColor.ts: postLeftBorderColor(2분기) + todoLeftBorderColor(3분기)
+- patterns.md P2 교정: 5분기→메모2/할일3 (좌측 띠=카테고리축, visibility·starred는 태그)
+- 12변형 검증 PASS, Vercel 배포 완료
+
+요청 UI 재설계 길 B 설계 (인박스 등록)
+- 진입 버튼 카운트 분리 + 토스트 다리 + cancel_requested + 통합 댓글 스레드
+- 데이터 모델 변경 동반 → 새 방 권장
+
+교훈
+- P2 캐논과 실 코드 불일치 발견 → 선행 조사가 검증 트리거 역할
+- (b) 채택: 코드를 정답으로 두고 문서 교정. Phase 5 시각 변경 없는 인프라 원칙 보존
