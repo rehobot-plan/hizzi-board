@@ -4,20 +4,18 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-13 세션 #8 (종료)
-- 작업 브랜치: master + feat/fullcalendar-poc (f88194c, 부분 PASS)
-- 진행 중: FullCalendar PoC 부분 PASS — 데이터 전처리 + eventOrder 커스텀 영역으로 문제 축소
+- 마지막 세션: 2026-04-13 세션 #9 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (fd2c3c9 — v2 4케이스 PASS)
+- 진행 중: FullCalendar PoC 완전 PASS, 정식 교체 대기
 - 다음 TODO:
-  1. FullCalendar 잔여 문제 해결 — (a) 연차 1일×N → 멀티데이×1 데이터 전처리, (b) eventOrder 커스텀 함수로 멀티데이 우선 강제, (c) 4케이스 재검증
-  2. 캘린더 정식 교체 (3-1) — 잔여 문제 해결 후, Firestore 매핑 정식화 + 카테고리 3종 필터
-  3. 캘린더 디자인 통일 (3-2)
-  4. Codex 검열 강화 (인박스 #1 격상)
-  5. Playwright E2E 자동 트리거 정책
-  6. Claude Code 안전 명령 화이트리스트 (인박스 #5 동일)
-  7. 실작업 복귀
+  1. 캘린더 정식 교체 (3-1) — /calendar-poc → 실제 캘린더 페이지 교체 + Firestore 실데이터 매핑 + CRUD 흐름 재배선 + 카테고리 3종 필터
+  2. 캘린더 디자인 통일 (3-2)
+  3. Codex 검열 강화
+  4. Playwright E2E 자동 트리거
+  5. Claude Code 안전 명령 화이트리스트 (인박스 #5 동일)
+  6. 실작업 복귀
 - 미해결:
-  - git remote 미설정 (Dropbox 동기화 기반)
-  - FullCalendar 옵션만으로 옵션 B 정렬 충족 불가 — 데이터 전처리 + 커스텀 함수 영역
+  - git remote 미설정
   - Phase E 자동화 정책 미결정
 
 ---
@@ -132,3 +130,24 @@ R4.10 정책 작동 사례
 - 인프라(렌더링/한국어/+more/드래그)는 자체 구현 대비 절약 분명
 - 남은 문제 범위: 5사이클 row 충돌 알고리즘 전체 → 데이터 전처리 + 정렬 함수 2건으로 축소 (R4.9 가치)
 - 다음 세션에서 잔여 문제 해결 시도
+
+### [2026-04-13] 세션 #9 — FullCalendar v2 완전 PASS
+
+변경 (commit fd2c3c9)
+- eventOrder: 'duration,-title' → '-duration,start,title' (부호 반전으로 B/D 해결)
+- mergeConsecutiveLeave() 40줄 전처리 함수 신설 (동일 author + 연속 날짜 + 동일 카테고리 그룹화)
+
+검증 (R4.10 3축)
+- 가동: 빌드 70.9kB, FullCalendar 에러 0건
+- 기능: 4케이스 전부 PASS (expected vs actual 표 대조)
+- 디자인: 시드만 / 시드+Firestore 두 모드 스크린샷
+
+총평
+- PoC v1 FAIL 원인은 옵션 문자열 부호 하나 (duration → -duration)
+- 연차 연속은 데이터 전처리 40줄로 자체 구현 5사이클의 합성 이벤트 복잡도 전체 대체
+- R4.9 정책 수치: 자체 구현 5+ 사이클 미완 → 라이브러리 도입 2세션 완결
+- R4.10 Claude.ai 적용 (인박스 #8) 첫 실천: 캡처 시각 훑기 대신 expected 좌표 표 대조
+
+메모
+- 같은 방 연속 세션 2회째 (세션 #8 → #9). 인박스 #7 규칙 한도 도달
+- 정식 교체(TODO 1)는 새 방에서 master.md / flows.md 첨부 후 진입 권장
