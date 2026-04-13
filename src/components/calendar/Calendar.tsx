@@ -6,7 +6,9 @@ import { collection, query, orderBy, onSnapshot, addDoc } from 'firebase/firesto
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import { useLeaveStore, LeaveType } from '@/store/leaveStore';
+import { initLeaveListener } from '@/store/leaveStore';
 import { useUserStore } from '@/store/userStore';
+import { initUserListener } from '@/store/userStore';
 import { useEscClose } from '@/hooks/useEscClose';
 import {
   buildCalendarEventInputs, CalendarEventDoc, CalendarEventInput,
@@ -28,6 +30,14 @@ export default function CalendarContainer() {
   // ─── Firestore 데이터 ─────────────────────────────────
   const [calendarEvents, setCalendarEvents] = useState<CalendarEventDoc[]>([]);
   const [eventInputs, setEventInputs] = useState<CalendarEventInput[]>([]);
+
+  // user/leave listener 초기화 (calendar-poc 등 독립 라우트 지원)
+  // Phase 4 스왑 후 page.tsx 와 중복 초기화되지만, 각 listener 내부 cleanup 패턴으로 안전
+  useEffect(() => {
+    const cleanupUser = initUserListener();
+    const cleanupLeave = initLeaveListener();
+    return () => { cleanupUser(); cleanupLeave(); };
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, 'calendarEvents'), orderBy('startDate'));
