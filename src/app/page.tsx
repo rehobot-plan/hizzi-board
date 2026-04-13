@@ -10,7 +10,7 @@ import { initPostListener } from '@/store/postStore';
 import { initRequestListener } from '@/store/todoRequestStore';
 import { useLeaveStore, initLeaveListener } from '@/store/leaveStore';
 import Panel from '@/components/Panel';
-import Calendar from '@/components/Calendar';
+import Calendar from '@/components/calendar/Calendar';
 import NoticeArea from '@/components/NoticeArea';
 import LeaveManager from '@/components/LeaveManager';
 

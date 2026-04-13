@@ -10,6 +10,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 import { useEscClose } from '@/hooks/useEscClose';
 import { useToastStore } from '@/store/toastStore';
+import { getEventColor } from '@/lib/calendar-helpers';
 
 interface CreatePostProps {
   panelId: string;
@@ -159,13 +160,9 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
       if (activeTab === 'todo' && dueDate && addToCalendar) {
         const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase');
-          const calendarModule = await import('@/components/Calendar').catch(() => null);
-          const getEventColor: ((input: { taskType: TaskType; visibleTo: string[] }) => string) | undefined = calendarModule && 'getEventColor' in calendarModule
-            ? calendarModule.getEventColor as (input: { taskType: TaskType; visibleTo: string[] }) => string
-            : undefined;
-          const color = typeof getEventColor === 'function'
-            ? getEventColor({ taskType, visibleTo: getVisibleTo() })
-          : (taskType === 'work' ? '#3B6D11' : 'rgba(99,153,34,0.15)');
+          const visibleTo = getVisibleTo();
+          const visibility = !visibleTo || visibleTo.length === 0 ? 'all' : visibleTo.length === 1 && visibleTo[0] === myEmail ? 'me' : 'specific';
+          const color = getEventColor(taskType, visibility);
         await addDoc(collection(db, 'calendarEvents'), stripUndefined({
           title: content.trim(),
           startDate: dueDate,
