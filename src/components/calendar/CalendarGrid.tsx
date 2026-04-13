@@ -3,19 +3,22 @@
 import { useRef, useState, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { EventInput, EventContentArg } from '@fullcalendar/core';
 import {
   HOLIDAYS_2026, DAY_NAMES,
-  toDS, isPersonal, isLeave, isRequest,
+  toDS, addDays, isPersonal, isLeave, isRequest,
 } from '@/lib/calendar-helpers';
 
 interface CalendarGridProps {
   events?: EventInput[];
   initialYear?: number;
   initialMonth?: number;
+  onDateClick?: (dateStr: string) => void;
+  onDateRangeSelect?: (startStr: string, endStr: string) => void;
 }
 
-export default function CalendarGrid({ events = [], initialYear, initialMonth }: CalendarGridProps) {
+export default function CalendarGrid({ events = [], initialYear, initialMonth, onDateClick, onDateRangeSelect }: CalendarGridProps) {
   const leftRef = useRef<FullCalendar>(null);
   const rightRef = useRef<FullCalendar>(null);
 
@@ -177,17 +180,22 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth }:
   };
 
   const commonProps = {
-    plugins: [dayGridPlugin],
+    plugins: [dayGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth' as const,
     locale: 'ko',
     headerToolbar: false as const,
     height: 'auto' as const,
     fixedWeekCount: false,
     showNonCurrentDates: true,
+    selectable: true,
+    unselectAuto: true,
+    longPressDelay: 100,
     eventOrder: '-duration,start,title',
     eventOrderStrict: true,
     dayMaxEvents: 3,
     events,
+    dateClick: onDateClick ? (arg: { date: Date }) => onDateClick(toDS(arg.date)) : undefined,
+    select: onDateRangeSelect ? (arg: { start: Date; end: Date }) => onDateRangeSelect(toDS(arg.start), toDS(addDays(arg.end, -1))) : undefined,
     dayHeaderContent: renderDayHeaderContent,
     dayCellContent: renderDayCellContent,
     eventContent: renderEventContent,
