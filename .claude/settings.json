@@ -20,7 +20,9 @@
       "Bash(npm test:*)",
       "Bash(npx tsc:*)",
       "Bash(npx next build:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   },
   "hooks": {
