@@ -4,17 +4,22 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-13 세션 #13 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (3a4b4bc — Phase 4 완료)
-- 진행 중: 캘린더 디자인 통일 (Phase 5) + master 머지 대기
+- 마지막 세션: 2026-04-13 세션 #14 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (942f320 — close-session 프리셋 단계 추가)
+- 진행 중: 캘린더/할일/게시물 디자인 통일 (Phase 5) — 기획 완료, 5-A 토큰 파일 작성 대기
 - 다음 TODO:
-  1. 캘린더 디자인 통일 (3-2) — 새 방 진입, R4.9 외부 조사(FullCalendar 테마 API + 히찌보드 디자인 토큰) 선행
-  2. feat/fullcalendar-poc → master 머지 (1 완료 후)
-  3. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
+  1. Phase 5-A — src/styles/tokens.ts 신설 + globals.css FC CSS Variables 주입 (md/ui/uxui.md 단일 출처화)
+  2. Phase 5-B — 공통 프리미티브 3종 추출 (VisibilityTag / CategoryTag / LeftBorderBar) + getLeftBorderColor util 이전
+  3. Phase 5-C — 도메인 3-pass 적용 (달력 → 할일 → 게시물), 각 pass R4.10 3축 개별 검증
+  4. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후)
+  5. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
   - git remote 미설정
-  - master.md 15~17행 인코딩 깨짐 잔존 (경미)
-- 참고: 프리셋1 (md-presets/presets.json) — 새 방 진입 시 `프리셋 프리셋1` 실행 후 _staging/ 드래그
+  - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
+  - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
+  - src/components/ImageViewer.tsx 루트/common 중복 (경미, 별도 세션)
+  - src/components/TodoItem.tsx 상세/편집 모달 내장 (Phase 5-B ModalShell 추출 시 분리 판단)
+- 참고: 프리셋 시스템 단일화 완료. `프리셋` 한 단어로 current 엔트리 실행.
 - 검토 후보 (조건부 진입):
   - FullCalendar 미활용 기능 7건 (master 머지 + 디자인 통일 완료 후)
     · 추천 순서: iCal 공휴일 피드 → 드래그 → 리사이즈 → rrule → 주간 뷰 → 검색 → 타임존
@@ -236,3 +241,11 @@ Phase 4 (commit 3a4b4bc)
 - R4.10 위반: Phase 2 commit 시 1/6 PASS 보고 후 강행 → 추가 검증으로 보강 (인박스 등록)
 - R4.10 능동 보강: Phase 3 케이스 8 데이터 부재 → 오너 지시로 임시 문서 생성 검증 (인박스 등록)
 - listener 중복 초기화: 재정리 패턴으로 안전 (런타임 확인)
+
+### [2026-04-13] 세션 #14 — 인박스 이관 + 프리셋 리팩터
+
+- 완료: 인박스 4건 이관 (R4.10-가·나 rules-detail.md, session.md [4] 검증 단계, progress.md 검토 후보)
+- 완료: 프리셋 시스템 리팩터 — 단일 엔트리(current) 구조, 프리셋2(디자인용 10종) 신설
+- 완료: close-session 단계 8 "다음 세션 프리셋 업데이트" 신설 (2파일 동기화)
+- 완료: 컴포넌트 트리 + hex 카운트 전수 조사 (Phase 5 사전 준비)
+- 인박스 메모 4건: 토큰 최적화(progress 분할), 규칙 단일출처, 프리셋 최소 구성, 인계 요약
