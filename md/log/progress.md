@@ -4,19 +4,20 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-13 세션 #9 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (fd2c3c9 — v2 4케이스 PASS)
-- 진행 중: FullCalendar PoC 완전 PASS, 정식 교체 대기
+- 마지막 세션: 2026-04-13 세션 #10 (진행 중 — 진단+동기화)
+- 작업 브랜치: feat/fullcalendar-poc (e60cf79 — 화이트리스트 추가)
+- 진행 중: FullCalendar 정식 교체 준비
 - 다음 TODO:
   1. 캘린더 정식 교체 (3-1) — /calendar-poc → 실제 캘린더 페이지 교체 + Firestore 실데이터 매핑 + CRUD 흐름 재배선 + 카테고리 3종 필터
   2. 캘린더 디자인 통일 (3-2)
-  3. Codex 검열 강화
-  4. Playwright E2E 자동 트리거
-  5. Claude Code 안전 명령 화이트리스트 (인박스 #5 동일)
-  6. 실작업 복귀
+  3. feat/fullcalendar-poc → master 머지 (1+2 완료 후)
+  4. Playwright E2E 자동 트리거 정책 결정
+  5. 인박스 정리 (12건 → 완료/무효 3+2건 제거)
+  6. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
   - git remote 미설정
   - Phase E 자동화 정책 미결정
+  - master.md 15~17행 인코딩 깨짐 잔존 (경미)
 
 ---
 
@@ -151,3 +152,10 @@ R4.10 정책 작동 사례
 메모
 - 같은 방 연속 세션 2회째 (세션 #8 → #9). 인박스 #7 규칙 한도 도달
 - 정식 교체(TODO 1)는 새 방에서 master.md / flows.md 첨부 후 진입 권장
+
+### [2026-04-13] 세션 #10 — 화이트리스트 + 동기화 감사
+
+- 완료: .claude/settings.json permissions.allow 20개 항목 추가 (읽기+빌드/테스트 범위). commit e60cf79.
+- 완료: progress.md "다음 TODO" 실제 파일 상태 대조 감사. TODO 3(Codex 검열 강화), 5(화이트리스트)가 이미 완료 상태로 잔존 발견 → 제거.
+- 메모: 세션 #7 시점 progress.md 기준으로 세션 진입 후 MD 코드 스터디 정책 반영(TODO 1)·라이브러리 조사(TODO 2) 작업 진입 시도 → 이미 세션 #8·#9에서 완료된 항목임을 파일 첨부 확인으로 발견. 구조적 원인: close-session이 완료 TODO 자동 제거 미수행. 개선안 별도 인박스 등록 예정.
+- 교훈: 세션 시작 시 "progress.md 다음 TODO ↔ 실제 파일 상태" 사전 검증 단계 필요.
