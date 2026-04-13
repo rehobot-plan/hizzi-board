@@ -6,6 +6,7 @@ import {
   DAY_KEYS, KOREAN_DAYS,
   getEventColor, isPersonal, isLeave,
 } from '@/lib/calendar-helpers';
+import { colors, calendarEvent } from '@/styles/tokens';
 
 interface UserInfo {
   id: string;
@@ -69,11 +70,11 @@ export function AddEventModal(props: AddEventModalProps) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-      <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto' }}>
+    <div style={{ position: 'fixed', inset: 0, background: colors.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto' }}>
         {/* 헤더 */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC', position: 'sticky', top: 0, background: '#fff' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>일정 추가</span>
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${colors.border}`, position: 'sticky', top: 0, background: colors.cardBg }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: colors.textPrimary }}>일정 추가</span>
         </div>
 
         <div style={{ padding: '16px 20px' }}>
@@ -93,23 +94,23 @@ export function AddEventModal(props: AddEventModalProps) {
             <>
               {/* 제목 */}
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="일정 제목"
-                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 16, fontFamily: 'inherit' }} />
+                style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '8px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', marginBottom: 16, fontFamily: 'inherit' }} />
 
               {/* 날짜 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>날짜</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>날짜</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <input type="date" value={form.startDate} onChange={e => { setForm(f => ({ ...f, startDate: e.target.value })); const d = new Date(e.target.value + 'T00:00:00'); setWeeklyDay(DAY_KEYS[d.getDay()]); }}
-                    style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
-                  <span style={{ color: '#9E8880' }}>~</span>
+                    style={{ flex: 1, border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 12, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                  <span style={{ color: colors.textSecondary }}>~</span>
                   <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                    style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                    style={{ flex: 1, border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 12, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
                 </div>
               </div>
 
               {/* 반복 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>반복</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>반복</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {(['none', 'daily', 'weekly', 'monthly', 'yearly'] as const).map(t => {
                     const labels: Record<string, string> = { none: '안함', daily: '매일', weekly: '매주', monthly: '매월', yearly: '매년' };
@@ -123,19 +124,19 @@ export function AddEventModal(props: AddEventModalProps) {
                 </div>
 
                 {repeatType === 'weekly' && weeklyDay && (
-                  <div style={{ marginTop: 8, fontSize: 11, color: '#9E8880' }}>매주 {KOREAN_DAYS[DAY_KEYS.indexOf(weeklyDay)]} 반복</div>
+                  <div style={{ marginTop: 8, fontSize: 11, color: colors.textSecondary }}>매주 {KOREAN_DAYS[DAY_KEYS.indexOf(weeklyDay)]} 반복</div>
                 )}
 
                 {repeatType !== 'none' && (
                   <div style={{ marginTop: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                      <span style={{ fontSize: 11, color: '#9E8880' }}>공휴일 제외</span>
+                      <span style={{ fontSize: 11, color: colors.textSecondary }}>공휴일 제외</span>
                       <div onClick={() => setExcludeHolidays((v: boolean) => !v)}
                         style={{ width: 32, height: 18, background: excludeHolidays ? '#C17B6B' : '#EDE5DC', borderRadius: 9, position: 'relative', cursor: 'pointer', transition: 'background .2s', flexShrink: 0 }}>
-                        <div style={{ position: 'absolute', top: 2, left: excludeHolidays ? 14 : 2, width: 14, height: 14, background: '#fff', borderRadius: '50%', transition: 'left .2s' }} />
+                        <div style={{ position: 'absolute', top: 2, left: excludeHolidays ? 14 : 2, width: 14, height: 14, background: colors.cardBg, borderRadius: '50%', transition: 'left .2s' }} />
                       </div>
                     </div>
-                    <div style={{ fontSize: 10, color: '#9E8880', marginBottom: 6 }}>종료</div>
+                    <div style={{ fontSize: 10, color: colors.textSecondary, marginBottom: 6 }}>종료</div>
                     <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                       {(['forever', 'date', 'count'] as const).map(t => {
                         const labels: Record<string, string> = { forever: '무기한', date: '날짜 지정', count: '횟수 지정' };
@@ -149,17 +150,17 @@ export function AddEventModal(props: AddEventModalProps) {
                     </div>
                     {endType === 'date' && (
                       <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                        style={{ border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                        style={{ border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '4px 0', fontSize: 12, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
                     )}
                     {endType === 'count' && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <input type="number" value={endCount} min={1} max={200} onChange={e => setEndCount(Math.max(1, parseInt(e.target.value) || 1))}
-                          style={{ width: 60, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', textAlign: 'center', fontFamily: 'inherit' }} />
-                        <span style={{ fontSize: 11, color: '#9E8880' }}>회</span>
+                          style={{ width: 60, border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '4px 0', fontSize: 12, color: colors.textPrimary, outline: 'none', background: 'transparent', textAlign: 'center', fontFamily: 'inherit' }} />
+                        <span style={{ fontSize: 11, color: colors.textSecondary }}>회</span>
                       </div>
                     )}
                     {endType === 'forever' && (
-                      <div style={{ fontSize: 11, color: '#C4B8B0' }}>1년치 일정이 생성됩니다</div>
+                      <div style={{ fontSize: 11, color: colors.textHint }}>1년치 일정이 생성됩니다</div>
                     )}
                   </div>
                 )}
@@ -167,7 +168,7 @@ export function AddEventModal(props: AddEventModalProps) {
 
               {/* 구분 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>구분</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>구분</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {([
                     { v: 'work' as const, label: '업무', color: '#3B6D11', bg: '#EAF3DE', border: '#639922' },
@@ -184,7 +185,7 @@ export function AddEventModal(props: AddEventModalProps) {
 
               {/* 공개 범위 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>공개 범위</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>공개 범위</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {([
                     { v: 'all' as const, label: '전체', solidColor: '#3B6D11', alphaColor: 'rgba(99,153,34,0.15)', border: '#639922' },
@@ -202,22 +203,22 @@ export function AddEventModal(props: AddEventModalProps) {
 
               {/* 미리보기 */}
               <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>달력 표시 미리보기</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>달력 표시 미리보기</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {(() => {
                     const col = form.color;
                     const personal = isPersonal(col);
                     const leave = isLeave(col);
-                    const bgColor = personal ? (col === '#639922' ? 'rgba(99,153,34,0.15)' : col === '#378ADD' ? 'rgba(55,138,221,0.15)' : 'rgba(186,117,23,0.15)') : leave ? 'rgba(83,74,183,0.15)' : col;
-                    const textColor = personal ? (col === '#639922' ? '#3B6D11' : col === '#378ADD' ? '#185FA5' : '#854F0B') : leave ? '#3C3489' : '#fff';
-                    const borderLeft = personal ? `2px solid ${col}` : leave ? '2px solid #534AB7' : 'none';
+                    const bgColor = personal ? (col === calendarEvent.personal.all.border ? calendarEvent.personal.all.bg : col === calendarEvent.personal.meOnly.border ? calendarEvent.personal.meOnly.bg : calendarEvent.personal.specific.bg) : leave ? calendarEvent.leave.bg : col;
+                    const textColor = personal ? (col === calendarEvent.personal.all.border ? calendarEvent.work.all : col === calendarEvent.personal.meOnly.border ? calendarEvent.work.meOnly : calendarEvent.work.specific) : leave ? calendarEvent.leave.text : '#fff';
+                    const borderLeft = personal ? `2px solid ${col}` : leave ? `2px solid ${calendarEvent.leave.border}` : 'none';
                     return (
                       <div style={{ fontSize: 10, color: textColor, background: bgColor, padding: '2px 8px', borderRadius: 3, borderLeft, minWidth: 80, maxWidth: 160, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                         {form.title || '일정 제목'}
                       </div>
                     );
                   })()}
-                  <span style={{ fontSize: 10, color: '#C4B8B0' }}>달력에서 이렇게 보여요</span>
+                  <span style={{ fontSize: 10, color: colors.textHint }}>달력에서 이렇게 보여요</span>
                 </div>
               </div>
             </>
@@ -225,17 +226,17 @@ export function AddEventModal(props: AddEventModalProps) {
             <>
               {/* 연차 — 대상자 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>대상자</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>대상자</div>
                 {canSelectLeaveTarget ? (
                   <select value={leaveTargetUserId} onChange={e => setLeaveTargetUserId(e.target.value)}
-                    style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}>
+                    style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '8px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }}>
                     <option value="">직원 선택</option>
                     {users.filter(u => u.role !== 'admin').map(u => (
                       <option key={u.id} value={u.id}>{u.name}</option>
                     ))}
                   </select>
                 ) : (
-                  <div style={{ width: '100%', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810' }}>
+                  <div style={{ width: '100%', borderBottom: `1px solid ${colors.border}`, padding: '8px 0', fontSize: 13, color: colors.textPrimary }}>
                     {currentUserDisplay}
                   </div>
                 )}
@@ -243,8 +244,8 @@ export function AddEventModal(props: AddEventModalProps) {
 
               {/* 연차 — 날짜 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>날짜</div>
-                <div style={{ fontSize: 11, color: '#2C1810', borderBottom: '1px solid #EDE5DC', padding: '6px 0' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>날짜</div>
+                <div style={{ fontSize: 11, color: colors.textPrimary, borderBottom: `1px solid ${colors.border}`, padding: '6px 0' }}>
                   {(selectedStartDate || form.startDate) === (selectedEndDate || form.endDate || form.startDate)
                     ? (selectedStartDate || form.startDate)
                     : `${selectedStartDate || form.startDate} ~ ${selectedEndDate || form.endDate || form.startDate}`}
@@ -253,7 +254,7 @@ export function AddEventModal(props: AddEventModalProps) {
 
               {/* 연차 — 종류 */}
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>종류</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>종류</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {([{ key: 'full' as const, label: '전일' }, { key: 'half_am' as const, label: '오전반차' }, { key: 'half_pm' as const, label: '오후반차' }]).map(t => (
                     <button key={t.key} onClick={() => setLeaveType(t.key)}
@@ -266,17 +267,17 @@ export function AddEventModal(props: AddEventModalProps) {
 
               {/* 연차 — 메모 */}
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#9E8880', marginBottom: 8 }}>메모</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>메모</div>
                 <input value={leaveMemo} onChange={e => setLeaveMemo(e.target.value)} placeholder="선택 입력"
-                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '8px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                  style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '8px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
               </div>
             </>
           )}
         </div>
 
         {/* 푸터 */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', bottom: 0 }}>
-          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
+        <div style={{ padding: '12px 20px', borderTop: `1px solid ${colors.border}`, background: colors.mainBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', bottom: 0 }}>
+          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: colors.textSecondary, background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
           <button onClick={onSubmit} disabled={loading}
             style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: loading ? '#9E8880' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? '저장 중...' : '추가'}
@@ -318,33 +319,33 @@ export function DetailModal(props: DetailModalProps) {
   const isCompleted = req?.status === 'completed';
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-      <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 380 }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>일정 상세</span>
-          {canEdit && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>✎ 편집 가능</span>}
+    <div style={{ position: 'fixed', inset: 0, background: colors.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, width: '100%', maxWidth: 380 }}>
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: colors.textPrimary }}>일정 상세</span>
+          {canEdit && <span style={{ fontSize: 10, color: colors.accent, letterSpacing: '0.04em' }}>✎ 편집 가능</span>}
         </div>
         <div style={{ padding: '16px 20px' }}>
           {event.requestId && (
-            <div style={{ marginBottom: 16, padding: '12px', background: '#FFF9F7', border: '1px solid #EDE5DC' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C17B6B', marginBottom: 10 }}>업무 요청 정보</div>
+            <div style={{ marginBottom: 16, padding: '12px', background: '#FFF9F7', border: `1px solid ${colors.border}` }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.accent, marginBottom: 10 }}>업무 요청 정보</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>요청자</span>
-                  <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>{fromUser?.name || event.requestFrom}</span>
+                  <span style={{ fontSize: 11, color: colors.textSecondary, width: 44, flexShrink: 0 }}>요청자</span>
+                  <span style={{ fontSize: 11, color: colors.textPrimary, fontWeight: 600 }}>{fromUser?.name || event.requestFrom}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>담당자</span>
-                  <span style={{ fontSize: 11, color: '#2C1810', fontWeight: 600 }}>
+                  <span style={{ fontSize: 11, color: colors.textSecondary, width: 44, flexShrink: 0 }}>담당자</span>
+                  <span style={{ fontSize: 11, color: colors.textPrimary, fontWeight: 600 }}>
                     {event.authorName?.startsWith('담당:') ? event.authorName.replace('담당: ', '') : event.authorName}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>업무</span>
-                  <span style={{ fontSize: 11, color: '#2C1810' }}>{event.requestTitle || event.title.replace('[요청] ', '')}</span>
+                  <span style={{ fontSize: 11, color: colors.textSecondary, width: 44, flexShrink: 0 }}>업무</span>
+                  <span style={{ fontSize: 11, color: colors.textPrimary }}>{event.requestTitle || event.title.replace('[요청] ', '')}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#9E8880', width: 44, flexShrink: 0 }}>완료</span>
+                  <span style={{ fontSize: 11, color: colors.textSecondary, width: 44, flexShrink: 0 }}>완료</span>
                   <span style={{ fontSize: 9, padding: '2px 8px', background: isCompleted ? '#F0F5F0' : '#FFF5F2', color: isCompleted ? '#5C7A5C' : '#C17B6B', border: `0.5px solid ${isCompleted ? '#5C7A5C' : '#C17B6B'}`, letterSpacing: '0.06em' }}>
                     {isCompleted ? '완료' : '진행중'}
                   </span>
@@ -355,36 +356,36 @@ export function DetailModal(props: DetailModalProps) {
           {canEdit ? (
             <>
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
+                style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                  style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
-                <span style={{ color: '#9E8880' }}>~</span>
+                  style={{ flex: 1, border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '4px 0', fontSize: 12, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                <span style={{ color: colors.textSecondary }}>~</span>
                 <input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                  style={{ flex: 1, border: 'none', borderBottom: '1px solid #EDE5DC', padding: '4px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                  style={{ flex: 1, border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '4px 0', fontSize: 12, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
               </div>
-              <div style={{ fontSize: 11, color: '#9E8880', marginTop: 8 }}>작성자: {event.authorName}</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginTop: 8 }}>작성자: {event.authorName}</div>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1810', marginBottom: 6 }}>{event.title}</div>
-              <div style={{ fontSize: 11, color: '#9E8880', marginBottom: 4 }}>{event.startDate} ~ {event.endDate}</div>
-              <div style={{ fontSize: 11, color: '#9E8880' }}>작성자: {event.authorName}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 6 }}>{event.title}</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}>{event.startDate} ~ {event.endDate}</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary }}>작성자: {event.authorName}</div>
             </>
           )}
         </div>
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
+        <div style={{ padding: '12px 20px', borderTop: `1px solid ${colors.border}`, background: colors.mainBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: colors.textSecondary, background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
           {canEdit && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {event.repeatGroupId && (
                 <button onClick={() => onDeleteRepeat(event)}
-                  style={{ fontSize: 10, padding: '6px 10px', border: '1px solid #C17B6B', color: '#C17B6B', background: '#fff', cursor: 'pointer' }}>
+                  style={{ fontSize: 10, padding: '6px 10px', border: '1px solid #C17B6B', color: colors.accent, background: colors.cardBg, cursor: 'pointer' }}>
                   이후 모두 삭제
                 </button>
               )}
               <button onClick={() => onDeleteSingle(event)}
-                style={{ fontSize: 10, padding: '6px 10px', border: '1px solid #EDE5DC', color: '#9E8880', background: '#fff', cursor: 'pointer' }}>
+                style={{ fontSize: 10, padding: '6px 10px', border: `1px solid ${colors.border}`, color: colors.textSecondary, background: colors.cardBg, cursor: 'pointer' }}>
                 이 일정만 삭제
               </button>
               <button onClick={onUpdate} disabled={loading}
@@ -422,17 +423,17 @@ export function LeaveDetailModal(props: LeaveDetailModalProps) {
   if (!open || !leaveEvent) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-      <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 380 }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>연차 상세</span>
-          {canEdit && <span style={{ fontSize: 10, color: '#C17B6B', letterSpacing: '0.04em' }}>✎ 편집 가능</span>}
+    <div style={{ position: 'fixed', inset: 0, background: colors.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, width: '100%', maxWidth: 380 }}>
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: colors.textPrimary }}>연차 상세</span>
+          {canEdit && <span style={{ fontSize: 10, color: colors.accent, letterSpacing: '0.04em' }}>✎ 편집 가능</span>}
         </div>
         <div style={{ padding: '16px 20px' }}>
           {canEdit ? (
             <>
               <input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value, endDate: e.target.value }))}
-                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
+                style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', marginBottom: 10, fontFamily: 'inherit' }} />
               <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                 {([{ key: 'full' as const, label: '전일' }, { key: 'half_am' as const, label: '오전반차' }, { key: 'half_pm' as const, label: '오후반차' }]).map(t => (
                   <button key={t.key} onClick={() => setLeaveType(t.key)}
@@ -442,23 +443,23 @@ export function LeaveDetailModal(props: LeaveDetailModalProps) {
                 ))}
               </div>
               <input value={leaveMemo} onChange={e => setLeaveMemo(e.target.value)}
-                style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 12, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
-              <div style={{ fontSize: 11, color: '#9E8880', marginTop: 8 }}>대상자: {leaveEvent.userName}</div>
+                style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 12, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginTop: 8 }}>대상자: {leaveEvent.userName}</div>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2C1810', marginBottom: 6 }}>{leaveEvent.userName} 연차</div>
-              <div style={{ fontSize: 11, color: '#9E8880', marginBottom: 4 }}>{leaveEvent.date} / {leaveEvent.type === 'full' ? '전일' : leaveEvent.type === 'half_am' ? '오전반차' : '오후반차'} {leaveEvent.confirmed ? '🔒' : ''}</div>
-              <div style={{ fontSize: 11, color: '#9E8880' }}>메모: {leaveEvent.memo || '-'}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: colors.textPrimary, marginBottom: 6 }}>{leaveEvent.userName} 연차</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary, marginBottom: 4 }}>{leaveEvent.date} / {leaveEvent.type === 'full' ? '전일' : leaveEvent.type === 'half_am' ? '오전반차' : '오후반차'} {leaveEvent.confirmed ? '🔒' : ''}</div>
+              <div style={{ fontSize: 11, color: colors.textSecondary }}>메모: {leaveEvent.memo || '-'}</div>
             </>
           )}
         </div>
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
+        <div style={{ padding: '12px 20px', borderTop: `1px solid ${colors.border}`, background: colors.mainBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: colors.textSecondary, background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
           {canEdit && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={() => onDelete(leaveEvent)}
-                style={{ fontSize: 10, padding: '6px 10px', border: '1px solid #EDE5DC', color: '#9E8880', background: '#fff', cursor: 'pointer' }}>
+                style={{ fontSize: 10, padding: '6px 10px', border: `1px solid ${colors.border}`, color: colors.textSecondary, background: colors.cardBg, cursor: 'pointer' }}>
                 삭제
               </button>
               <button onClick={onUpdate} disabled={loading}
@@ -494,17 +495,17 @@ export function DeleteConfirmModal(props: DeleteConfirmModalProps) {
     : '이 일정을 삭제할까요?';
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-      <div style={{ background: '#fff', border: '1px solid #EDE5DC', width: '100%', maxWidth: 340 }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDE5DC' }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#2C1810' }}>{title}</span>
+    <div style={{ position: 'fixed', inset: 0, background: colors.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
+      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, width: '100%', maxWidth: 340 }}>
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${colors.border}` }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: colors.textPrimary }}>{title}</span>
         </div>
         <div style={{ padding: '20px' }}>
-          <p style={{ fontSize: 13, color: '#2C1810', lineHeight: 1.6 }}>{message}</p>
-          <p style={{ fontSize: 11, color: '#9E8880', marginTop: 4 }}>삭제된 내용은 복구할 수 없습니다.</p>
+          <p style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 1.6 }}>{message}</p>
+          <p style={{ fontSize: 11, color: colors.textSecondary, marginTop: 4 }}>삭제된 내용은 복구할 수 없습니다.</p>
         </div>
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #EDE5DC', background: '#FDF8F4', display: 'flex', justifyContent: 'space-between' }}>
-          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
+        <div style={{ padding: '12px 20px', borderTop: `1px solid ${colors.border}`, background: colors.mainBg, display: 'flex', justifyContent: 'space-between' }}>
+          <button onClick={onCancel} style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: colors.textSecondary, background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
           <button onClick={onConfirm} disabled={loading}
             style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 20px', background: '#C17B6B', color: '#FDF8F4', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? '삭제 중...' : '삭제'}

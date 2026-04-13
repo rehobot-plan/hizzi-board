@@ -9,6 +9,7 @@ import {
   HOLIDAYS_2026, DAY_NAMES,
   toDS, addDays, isPersonal, isLeave, isRequest,
 } from '@/lib/calendar-helpers';
+import { colors, calendarEvent } from '@/styles/tokens';
 
 interface CalendarGridProps {
   events?: EventInput[];
@@ -99,7 +100,7 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
   // ─── 커스텀 렌더 ───────────────────────────────────────
 
   const renderDayHeaderContent = (arg: { text: string; dow: number }) => {
-    const color = arg.dow === 0 ? '#C17B6B' : arg.dow === 6 ? '#6B8BC1' : '#9E8880';
+    const color = arg.dow === 0 ? colors.accent : arg.dow === 6 ? '#6B8BC1' : colors.textSecondary;
     return (
       <span style={{ fontSize: 10, fontWeight: 600, color }}>
         {DAY_NAMES[arg.dow]}
@@ -111,7 +112,7 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
     const ds = toDS(arg.date);
     const dow = arg.date.getDay();
     const isHol = !!HOLIDAYS_2026[ds];
-    const dateColor = arg.isToday ? '#C17B6B' : isHol || dow === 0 ? '#C17B6B' : dow === 6 ? '#6B8BC1' : '#2C1810';
+    const dateColor = arg.isToday ? colors.accent : isHol || dow === 0 ? colors.accent : dow === 6 ? '#6B8BC1' : colors.textPrimary;
 
     return (
       <div style={{ textAlign: 'right', padding: '2px 4px 0 0' }}>
@@ -125,12 +126,12 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
           width: 20,
           height: 20,
           borderRadius: arg.isToday ? '50%' : 0,
-          background: arg.isToday ? '#F5E6E0' : 'transparent',
+          background: arg.isToday ? colors.todayBg : 'transparent',
         }}>
           {arg.date.getDate()}
         </span>
         {isHol && (
-          <div style={{ fontSize: 9, color: '#C17B6B', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 9, color: colors.accent, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
             {HOLIDAYS_2026[ds]}
           </div>
         )}
@@ -139,27 +140,27 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
   };
 
   const renderEventContent = (arg: EventContentArg) => {
-    const col = arg.event.backgroundColor || '#3B6D11';
+    const col = arg.event.backgroundColor || calendarEvent.work.all;
     const personal = isPersonal(col);
     const leave = isLeave(col);
     const request = isRequest(col);
 
     const bgColor = personal
-      ? col === '#639922' ? 'rgba(99,153,34,0.15)'
-        : col === '#378ADD' ? 'rgba(55,138,221,0.15)'
-        : 'rgba(186,117,23,0.15)'
-      : leave ? 'rgba(83,74,183,0.15)'
+      ? col === calendarEvent.personal.all.border ? calendarEvent.personal.all.bg
+        : col === calendarEvent.personal.meOnly.border ? calendarEvent.personal.meOnly.bg
+        : calendarEvent.personal.specific.bg
+      : leave ? calendarEvent.leave.bg
       : col;
     const textColor = personal
-      ? col === '#639922' ? '#3B6D11'
-        : col === '#378ADD' ? '#185FA5'
-        : '#854F0B'
-      : leave ? '#3C3489'
+      ? col === calendarEvent.personal.all.border ? calendarEvent.work.all
+        : col === calendarEvent.personal.meOnly.border ? calendarEvent.work.meOnly
+        : calendarEvent.work.specific
+      : leave ? calendarEvent.leave.text
       : '#fff';
     const borderLeft = personal
       ? `2px solid ${col}`
-      : leave ? '2px solid #534AB7'
-      : request ? '3px solid #72243E'
+      : leave ? `2px solid ${calendarEvent.leave.border}`
+      : request ? `3px solid ${calendarEvent.request.border}`
       : 'none';
 
     return (
@@ -206,14 +207,14 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
   // ─── 색상 범례 ────────────────────────────────────────
 
   const legends: { color: string; label: string; style: 'solid' | 'border' }[] = [
-    { color: '#3B6D11', label: '업무·전체', style: 'solid' },
-    { color: '#185FA5', label: '업무·나만', style: 'solid' },
-    { color: '#854F0B', label: '업무·지정', style: 'solid' },
-    { color: '#993556', label: '업무요청', style: 'solid' },
-    { color: '#639922', label: '개인·전체', style: 'border' },
-    { color: '#378ADD', label: '개인·나만', style: 'border' },
-    { color: '#BA7517', label: '개인·지정', style: 'border' },
-    { color: '#534AB7', label: '연차', style: 'border' },
+    { color: calendarEvent.work.all, label: '업무·전체', style: 'solid' },
+    { color: calendarEvent.work.meOnly, label: '업무·나만', style: 'solid' },
+    { color: calendarEvent.work.specific, label: '업무·지정', style: 'solid' },
+    { color: calendarEvent.request.bg, label: '업무요청', style: 'solid' },
+    { color: calendarEvent.personal.all.border, label: '개인·전체', style: 'border' },
+    { color: calendarEvent.personal.meOnly.border, label: '개인·나만', style: 'border' },
+    { color: calendarEvent.personal.specific.border, label: '개인·지정', style: 'border' },
+    { color: calendarEvent.leave.border, label: '연차', style: 'border' },
   ];
 
   return (
@@ -221,17 +222,17 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
       {/* 커스텀 toolbar */}
       <div style={{
         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12,
-        padding: '12px 0', background: '#fff', borderBottom: '1px solid #EDE5DC',
+        padding: '12px 0', background: colors.cardBg, borderBottom: `1px solid ${colors.border}`,
       }}>
-        <button onClick={() => moveMonth(-1)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18, color: '#9E8880' }}>‹</button>
+        <button onClick={() => moveMonth(-1)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18, color: colors.textSecondary }}>‹</button>
 
         {editYear ? (
           <input value={navYear} onChange={e => setNavYear(e.target.value)}
             onBlur={applyYearInput} onKeyDown={e => e.key === 'Enter' && applyYearInput()}
-            autoFocus style={{ width: 48, textAlign: 'center', fontSize: 16, fontWeight: 700, color: '#2C1810', border: 'none', borderBottom: '2px solid #C17B6B', outline: 'none', background: 'transparent' }}
+            autoFocus style={{ width: 48, textAlign: 'center', fontSize: 16, fontWeight: 700, color: colors.textPrimary, border: 'none', borderBottom: `2px solid ${colors.accent}`, outline: 'none', background: 'transparent' }}
           />
         ) : (
-          <span onClick={() => setEditYear(true)} style={{ fontSize: 16, fontWeight: 700, color: '#2C1810', cursor: 'pointer' }}>
+          <span onClick={() => setEditYear(true)} style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary, cursor: 'pointer' }}>
             {cur.year}년
           </span>
         )}
@@ -239,21 +240,21 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
         {editMonth ? (
           <input value={navMonth} onChange={e => setNavMonth(e.target.value)}
             onBlur={applyMonthInput} onKeyDown={e => e.key === 'Enter' && applyMonthInput()}
-            autoFocus style={{ width: 28, textAlign: 'center', fontSize: 16, fontWeight: 700, color: '#2C1810', border: 'none', borderBottom: '2px solid #C17B6B', outline: 'none', background: 'transparent' }}
+            autoFocus style={{ width: 28, textAlign: 'center', fontSize: 16, fontWeight: 700, color: colors.textPrimary, border: 'none', borderBottom: `2px solid ${colors.accent}`, outline: 'none', background: 'transparent' }}
           />
         ) : (
-          <span onClick={() => setEditMonth(true)} style={{ fontSize: 16, fontWeight: 700, color: '#2C1810', cursor: 'pointer' }}>
+          <span onClick={() => setEditMonth(true)} style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary, cursor: 'pointer' }}>
             {String(cur.month + 1).padStart(2, '0')}월
           </span>
         )}
 
-        <button onClick={() => moveMonth(1)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18, color: '#9E8880' }}>›</button>
+        <button onClick={() => moveMonth(1)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 18, color: colors.textSecondary }}>›</button>
       </div>
 
       {/* 2개월 병렬 (모바일: 1개월) */}
       <div style={{ display: 'flex', gap: 16, padding: '8px 0' }}>
-        <div style={{ flex: 1, minWidth: 0, border: '1px solid #EDE5DC', background: '#fff' }}>
-          <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#2C1810', padding: '8px 0' }}>
+        <div style={{ flex: 1, minWidth: 0, border: `1px solid ${colors.border}`, background: colors.cardBg }}>
+          <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: colors.textPrimary, padding: '8px 0' }}>
             {cur.year}년 {cur.month + 1}월
           </div>
           <FullCalendar
@@ -264,8 +265,8 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
         </div>
 
         {!isMobile && (
-          <div style={{ flex: 1, minWidth: 0, border: '1px solid #EDE5DC', background: '#fff' }}>
-            <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#2C1810', padding: '8px 0' }}>
+          <div style={{ flex: 1, minWidth: 0, border: `1px solid ${colors.border}`, background: colors.cardBg }}>
+            <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: colors.textPrimary, padding: '8px 0' }}>
               {n.year}년 {n.month + 1}월
             </div>
             <FullCalendar
@@ -286,7 +287,7 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
               background: lg.style === 'solid' ? lg.color : `${lg.color}26`,
               border: lg.style === 'border' ? `2px solid ${lg.color}` : 'none',
             }} />
-            <span style={{ fontSize: 10, color: '#9E8880' }}>{lg.label}</span>
+            <span style={{ fontSize: 10, color: colors.textSecondary }}>{lg.label}</span>
           </div>
         ))}
       </div>

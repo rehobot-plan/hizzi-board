@@ -16,6 +16,7 @@ import {
   getEventColor, DAY_KEYS, buildRepeatDates, buildDateRange,
 } from '@/lib/calendar-helpers';
 import { CalendarFormState, CalendarEvent, DeleteConfirmTarget } from './calendar-types';
+import { calendarEvent } from '@/styles/tokens';
 import CalendarGrid from './CalendarGrid';
 import { AddEventModal, DetailModal, LeaveDetailModal, DeleteConfirmModal } from './CalendarModals';
 
@@ -129,7 +130,7 @@ export default function CalendarContainer() {
     } else if (source === 'leave') {
       const raw = extendedProps.rawLeave as LeaveEvent | undefined;
       if (!raw) return;
-      setForm({ title: '', startDate: raw.date, endDate: raw.date, color: '#534AB7', _taskType: 'work', _visibility: 'all' });
+      setForm({ title: '', startDate: raw.date, endDate: raw.date, color: calendarEvent.leave.border, _taskType: 'work', _visibility: 'all' });
       setLeaveType(raw.type || 'full');
       setLeaveMemo(raw.memo || '');
       setShowDetail(null);
