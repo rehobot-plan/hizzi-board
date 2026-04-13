@@ -4,19 +4,45 @@
 @tailwind utilities;
 
 :root {
-  --background: #FDF8F4;
-  --foreground: #2B2323;
-  --card: #fff;
-  --card-foreground: #2B2323;
-  --sidebar: #5C1F1F;
+  /* [A] uxui.md "2. 컬러 팔레트" 단일 출처 */
+  --sidebar-bg: #5C1F1F;
+  --main-bg: #FDF8F4;
+  --card-bg: #FFFFFF;
+  --accent: #C17B6B;
+  --active-text: #7A2828;
+  --text-primary: #2C1810;
+  --text-secondary: #9E8880;
+  --text-hint: #C4B8B0;
+  --color-border: #EDE5DC;
+  --todo-work-bg: #FFF5F2;
+  --todo-personal-bg: #F5F0EE;
+  --request-bg: #FCEEE9;
+  --overlay: rgba(44,20,16,0.4);
+  --today-bg: #F5E6E0;
+
+  /* [B] shadcn 호환 (값은 uxui 토큰 참조) */
+  --background: var(--main-bg);
+  --foreground: var(--text-primary);
+  --card: var(--card-bg);
+  --card-foreground: var(--text-primary);
+  --sidebar: var(--sidebar-bg);
   --sidebar-foreground: #fff;
-  --primary: #5C1F1F;
+  --primary: var(--sidebar-bg);
   --primary-foreground: #fff;
   --muted: #F5E9E2;
   --muted-foreground: #5C1F1F;
-  --border: #EDE5DC;
+  --border: var(--color-border);
   --radius: 0px;
   --font-sans: 'Inter', sans-serif;
+
+  /* [C] FullCalendar CSS Variables */
+  --fc-border-color: var(--color-border);
+  --fc-page-bg-color: var(--card-bg);
+  --fc-neutral-bg-color: var(--main-bg);
+  --fc-today-bg-color: var(--today-bg);
+  --fc-event-bg-color: transparent;
+  --fc-event-border-color: transparent;
+  --fc-event-text-color: var(--text-primary);
 }
 
 body {
