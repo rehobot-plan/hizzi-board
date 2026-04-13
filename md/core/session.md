@@ -168,6 +168,11 @@ Claude Code의 PASS 보고는 아래 3축을 모두 충족해야 한다.
 3. Claude.ai: 항목별 분류 (progress.md / master-debt.md / session.md·rules / 무효)
 4. 오너: 분류 결과 patch 블록을 Claude Code에 전달
 5. Claude Code: 반영 + 인박스 비우기 + flag 삭제
+6. 검증 단계:
+   - Claude Code: 반영 파일의 diff 요약 출력
+   - 반영 항목별 "원본 인박스 라인 → 반영 파일 라인" 매핑표 보고
+   - 반영 실패 항목 있으면 "이동 실패" 플래그 → 다음 세션 재시도
+   - 오너: 매핑표 확인 후 세션 종료 승인
 
 ## [4-1. 같은 방 연속 세션 정책]
 

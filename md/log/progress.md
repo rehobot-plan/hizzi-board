@@ -8,13 +8,20 @@
 - 작업 브랜치: feat/fullcalendar-poc (3a4b4bc — Phase 4 완료)
 - 진행 중: 캘린더 디자인 통일 (Phase 5) + master 머지 대기
 - 다음 TODO:
-  1. 캘린더 디자인 통일 (3-2) — 구 Calendar.tsx 시각 토큰과 차이 정리 + 통일
-  2. feat/fullcalendar-poc → master 머지
+  1. 캘린더 디자인 통일 (3-2) — 새 방 진입, R4.9 외부 조사(FullCalendar 테마 API + 히찌보드 디자인 토큰) 선행
+  2. feat/fullcalendar-poc → master 머지 (1 완료 후)
   3. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
   - git remote 미설정
   - master.md 15~17행 인코딩 깨짐 잔존 (경미)
 - 참고: 프리셋1 (md-presets/presets.json) — 새 방 진입 시 `프리셋 프리셋1` 실행 후 _staging/ 드래그
+- 검토 후보 (조건부 진입):
+  - FullCalendar 미활용 기능 7건 (master 머지 + 디자인 통일 완료 후)
+    · 추천 순서: iCal 공휴일 피드 → 드래그 → 리사이즈 → rrule → 주간 뷰 → 검색 → 타임존
+    · 각 후보 R4.9+R4.10 순서, 단일 세션 1건씩
+    · 3/4/5 는 스키마 변경 동반
+  - R4.10 preflight 훅 구현 (N/M PASS 카운트 검증)
+    · R4.10-가/나 텍스트 반영 후 1~2세션 관찰 → 개선 불충분 시 훅으로 승격
 
 ---
 
