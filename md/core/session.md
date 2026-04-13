@@ -11,9 +11,9 @@
 
 **1단계: 아래 3개 파일 첨부**
 ```
-session.md
-progress.md
-rules.md
+md/core/session.md
+md/log/progress.md
+md/core/rules.md
 ```
 
 **2단계: 아래 프롬프트 붙여넣기**
@@ -64,7 +64,7 @@ rules.md
     * 단점 — 1~2줄
     * 추천 — 옵션명 한 줄
     * 추천 이유 — 1~2줄
-  배경 설명·맥락 재진술·요약 문단 금지. 오너는 이미 맥락을 안다.
+  배경 설명·맥락 재진술·요약 문단은 오너가 명시적으로 요청한 경우에만 추가. 기본값은 위 4항목만.
   옵션이 3개 이상이면 표 형식 허용 (열: 장점 / 단점). 추천은 표 밖에 별도 줄.
   제안 → 대기 → 승인 → 실행. 순서 변경 금지.
   불확실하면 파일 먼저 요청. 추측 금지.
@@ -133,6 +133,7 @@ Claude Code의 PASS 보고는 아래 3축을 모두 충족해야 한다.
 세션 시작 프롬프트를 받으면 Claude는 아래 단일 응답으로 회신한다.
 
 응답 구조:
+0. **TODO 실재성 검증** — progress.md 다음 TODO를 핵심 파일(rules-detail.md / CLAUDE.md / package.json / .claude/settings.json / src/)과 대조. 이미 완료된 항목 발견 시 추천 전에 오너에게 보고 + progress.md 제거 요청.
 1. **다음 TODO** — progress.md "다음 TODO" 목록 그대로 표시
 2. **오늘의 추천** — 1개 선정 + 추천 이유 (우선순위·리스크·선행 의존 기준)
    → 추천 이유는 3줄 이내. 대안 비교는 1줄씩.
@@ -149,3 +150,27 @@ Claude Code의 PASS 보고는 아래 3축을 모두 충족해야 한다.
 현황 출처:
 - Remaining Work / 진행 중 / 다음 TODO → **progress.md 단일 출처**
 - session.md에는 현황을 중복 보관하지 않는다.
+
+---
+
+## [4. 세션 종료 규약]
+
+/close-session 실행 시 아래 통합 정리 단계를 포함한다.
+
+인박스·TODO 정리 통합:
+- 완료 TODO 자동 제거 — progress.md 다음 TODO를 실제 파일 상태와 대조, 완료분 삭제 제안
+- 인박스 반영 완료 항목(✅) 자동 삭제
+- 세션 번호 검증 — 직전 세션 번호 + 1 = 이번 세션 번호. 불일치 시 오너에게 보고
+- untracked 감사 — md/ 하위 untracked 파일 git status로 확인, 발견 시 오너 보고
+
+인박스 이관 흐름:
+1. Claude Code: 인박스 전체 출력 + flag 유지
+2. 오너: 인박스 덤프를 Claude.ai에 전달
+3. Claude.ai: 항목별 분류 (progress.md / master-debt.md / session.md·rules / 무효)
+4. 오너: 분류 결과 patch 블록을 Claude Code에 전달
+5. Claude Code: 반영 + 인박스 비우기 + flag 삭제
+
+## [4-1. 같은 방 연속 세션 정책]
+
+조건: 다음 작업이 이전 산출물에 직접 의존 + 2세션 연속까지 허용.
+3세션 이상 연속 또는 주제 전환 시 새 방 권장.

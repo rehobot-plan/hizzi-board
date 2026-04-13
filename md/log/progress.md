@@ -4,15 +4,15 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-13 세션 #10 (진행 중 — 진단+동기화)
-- 작업 브랜치: feat/fullcalendar-poc (e60cf79 — 화이트리스트 추가)
-- 진행 중: FullCalendar 정식 교체 준비
+- 마지막 세션: 2026-04-13 세션 #12 (종료)
+- 작업 브랜치: feat/fullcalendar-poc
+- 진행 중: 캘린더 정식 교체 설계 완료, 구현 대기
 - 다음 TODO:
-  1. 캘린더 정식 교체 (3-1) — /calendar-poc → 실제 캘린더 페이지 교체 + Firestore 실데이터 매핑 + CRUD 흐름 재배선 + 카테고리 3종 필터
+  1. 캘린더 정식 교체 (3-1) — Calendar.tsx 전수 조사 완료, 구현 대기
   2. 캘린더 디자인 통일 (3-2)
-  3. feat/fullcalendar-poc → master 머지 (1+2 완료 후)
+  3. feat/fullcalendar-poc → master 머지
   4. Playwright E2E 자동 트리거 정책 결정
-  5. 인박스 정리 (12건 → 완료/무효 3+2건 제거)
+  5. 개발 취지 기반 사례 리스트 검토 (페르소나×일과 매트릭스 30~50개, 캘린더 도입 후)
   6. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
   - git remote 미설정
@@ -159,3 +159,19 @@ R4.10 정책 작동 사례
 - 완료: progress.md "다음 TODO" 실제 파일 상태 대조 감사. TODO 3(Codex 검열 강화), 5(화이트리스트)가 이미 완료 상태로 잔존 발견 → 제거.
 - 메모: 세션 #7 시점 progress.md 기준으로 세션 진입 후 MD 코드 스터디 정책 반영(TODO 1)·라이브러리 조사(TODO 2) 작업 진입 시도 → 이미 세션 #8·#9에서 완료된 항목임을 파일 첨부 확인으로 발견. 구조적 원인: close-session이 완료 TODO 자동 제거 미수행. 개선안 별도 인박스 등록 예정.
 - 교훈: 세션 시작 시 "progress.md 다음 TODO ↔ 실제 파일 상태" 사전 검증 단계 필요.
+
+### [2026-04-13] 세션 #11 — 프리셋 시스템 + 인박스 메모
+
+- 완료: md-presets/ 프리셋 시스템 구축 (presets.json + 프리셋.ps1 + _staging/ + PS 프로필 별칭)
+- 완료: 프리셋.ps1 UTF-8 BOM 수정, hizzi-session-start 3종 복사 검증 PASS
+- 완료: md/core/progress.md stale 복사본 삭제 확인
+- 인박스 메모 4건: close-session 완료 TODO 자동 제거, start-session TODO 실재성 검증, R4.8 cd+git 체인 금지, 인박스 ✅ 자동 삭제 통합
+
+### [2026-04-13] 세션 #12 — 캘린더 교체 설계 + 인박스 루프 진단 + MD 정책 정비
+
+- 완료: Calendar.tsx 전수 조사 (5개 store, CRUD 5진입점, 교체 연쇄 영향 10건)
+- 완료: close-session 인박스 이관 단절 원인 조사 — 4단계 수동 루프 미완주가 근본 원인
+- 완료: 인박스 15건 분류 + 이관 (무효 4, session.md 5, rules-detail.md 2, progress.md TODO 1, 병합 1)
+- 완료: md/core/session.md 5건 반영 (첨부 경로 명시 / 제안 규칙 4항목 강화 / TODO 실재성 검증 / close-session 통합 단계 / 연속 세션 정책)
+- 완료: md/core/rules-detail.md 2건 반영 (R4.8 cd 체인 금지 / R4.10 Claude.ai 캡처 검수)
+- 메모: 인박스 루프 구조 개선(옵션 C) 적용 — Claude.ai 분류 → Claude Code 반영 2단계
