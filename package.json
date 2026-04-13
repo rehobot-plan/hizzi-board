@@ -11,6 +11,10 @@
     "clear-posts": "node scripts/clear-posts-client.js"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/react": "^6.1.20",
     "clsx": "^2.1.1",
     "firebase": "^10",
     "firebase-admin": "^13.7.0",
