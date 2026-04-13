@@ -15,6 +15,7 @@
 - 미해결:
   - git remote 미설정
   - master.md 15~17행 인코딩 깨짐 잔존 (경미)
+- 참고: 프리셋1 (md-presets/presets.json) — 새 방 진입 시 `프리셋 프리셋1` 실행 후 _staging/ 드래그
 
 ---
 
@@ -187,3 +188,11 @@ R4.10 정책 작동 사례
 - 완료: md/core/session.md 5건 반영 (첨부 경로 명시 / 제안 규칙 4항목 강화 / TODO 실재성 검증 / close-session 통합 단계 / 연속 세션 정책)
 - 완료: md/core/rules-detail.md 2건 반영 (R4.8 cd 체인 금지 / R4.10 Claude.ai 캡처 검수)
 - 메모: 인박스 루프 구조 개선(옵션 C) 적용 — Claude.ai 분류 → Claude Code 반영 2단계
+
+프리셋 시스템 확장
+- D:\Dropbox\Dropbox\md-presets\presets.json 에 "프리셋1" 엔트리 추가
+- 등록 파일 10개: session/progress/rules + flows/master/master-schema + CalendarV2.tsx + calendar-helpers.ts + Calendar.tsx + leaveStore.ts
+- 용도: 캘린더 V2 Phase 2+ 작업용 세션 진입 프리셋
+- 드라이런 검증 PASS (10/10 파일 존재, _staging 복사 10개)
+- 백업: presets.json.bak
+- md-presets 폴더는 hizzi-board 리포 밖이므로 git 대상 아님
