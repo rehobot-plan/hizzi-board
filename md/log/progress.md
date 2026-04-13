@@ -10,13 +10,10 @@
 - 다음 TODO:
   1. 캘린더 정식 교체 (3-1) — Calendar.tsx 전수 조사 완료, 구현 대기
   2. 캘린더 디자인 통일 (3-2)
-  3. feat/fullcalendar-poc → master 머지
-  4. Playwright E2E 자동 트리거 정책 결정
-  5. 개발 취지 기반 사례 리스트 검토 (페르소나×일과 매트릭스 30~50개, 캘린더 도입 후)
-  6. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
+  3. feat/fullcalendar-poc → master 머지 (1+2 완료 후)
+  4. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / TodoRequestModal 섹션 재편 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
   - git remote 미설정
-  - Phase E 자동화 정책 미결정
   - master.md 15~17행 인코딩 깨짐 잔존 (경미)
 
 ---
@@ -152,6 +149,14 @@ R4.10 정책 작동 사례
 메모
 - 같은 방 연속 세션 2회째 (세션 #8 → #9). 인박스 #7 규칙 한도 도달
 - 정식 교체(TODO 1)는 새 방에서 master.md / flows.md 첨부 후 진입 권장
+
+### [2026-04-13] 세션 #12 — Playwright E2E 조건부 자동 트리거 정책
+
+- 완료: .github/workflows/ci.yml에 e2e job 추가. 트리거 = PR 라벨 `needs-e2e` OR `src/components/calendar/**` · `src/components/**Modal*.tsx` 경로 변경. dorny/paths-filter@v3 사용. 현재 범위는 playwright-login.spec.js 1건.
+- 완료: md/core/session-harness.md 하네스 루프 Phase E 설명을 "조건부 자동"으로 갱신.
+- 완료: TODO 4(E2E 정책), TODO 5(사례 리스트) 제거. 미해결 "Phase E 자동화 정책 미결정" 해소.
+- 메모: 인증 기반 spec 확대는 Firebase 테스트 환경 구성 후 별도 세션. 현재는 진입점만 열어둔 최소 가동 상태.
+- 교훈: 정책 결정 TODO는 "최소 가동 구조 + 확장 여지" 형태로 닫는 게 현재 방 성격(MD/정책)에 맞음.
 
 ### [2026-04-13] 세션 #11 — 제안 규칙 통일
 

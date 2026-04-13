@@ -28,3 +28,51 @@ jobs:
 
       - name: Build success
         run: echo "✅ Build passed"
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            e2e:
+              - 'src/components/calendar/**'
+              - 'src/components/**Modal*.tsx'
+
+      - name: Determine trigger
+        id: trigger
+        run: |
+          LABEL="${{ contains(github.event.pull_request.labels.*.name, 'needs-e2e') }}"
+          PATHS="${{ steps.filter.outputs.e2e }}"
+          if [ "$LABEL" = "true" ] || [ "$PATHS" = "true" ]; then
+            echo "run=true" >> $GITHUB_OUTPUT
+          else
+            echo "run=false" >> $GITHUB_OUTPUT
+            echo "⏭️  E2E skipped (no needs-e2e label, no calendar/modal path changes)"
+          fi
+
+      - name: Setup Node.js
+        if: steps.trigger.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.trigger.outputs.run == 'true'
+        run: npm ci
+
+      - name: Install Playwright browsers
+        if: steps.trigger.outputs.run == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E
+        if: steps.trigger.outputs.run == 'true'
+        run: npx playwright test playwright-login.spec.js
