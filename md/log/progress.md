@@ -4,11 +4,11 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-13 세션 #16 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (390a77d — Phase 5-B 배포 완료)
-- 진행 중: Phase 5-C 도메인 3-pass 진입 대기
+- 마지막 세션: 2026-04-14 세션 #17 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (76814ad — Phase 5-C 1차 pass 배포 완료)
+- 진행 중: Phase 5-C 2차 pass(할일) 진입 대기
 - 다음 TODO:
-  1. Phase 5-C — 도메인 3-pass 적용 (달력 → 할일 → 게시물), 각 pass R4.10 3축 개별 검증
+  1. Phase 5-C — 2차 pass 할일(TodoItem 105건) / 3차 pass 게시물(CreatePost 71건), 각 pass R4.10 3축 개별 검증
   2. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후)
   3. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트
 - 미해결:
@@ -16,7 +16,7 @@
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
   - src/components/ImageViewer.tsx 루트/common 중복 (경미, 별도 세션)
-  - src/components/TodoItem.tsx 상세/편집 모달 내장 (Phase 5-B ModalShell 추출 시 분리 판단)
+  - src/components/TodoItem.tsx 상세/편집 모달 내장 (Phase 5-C 2차 pass 시 판단)
 - 참고: 프리셋 시스템 단일화 완료. `프리셋` 한 단어로 current 엔트리 실행.
 - 검토 후보 (조건부 진입):
   - FullCalendar 미활용 기능 7건 (master 머지 + 디자인 통일 완료 후)
@@ -288,3 +288,26 @@ Phase 5-B (commit 390a77d)
 교훈
 - P2 캐논과 실 코드 불일치 발견 → 선행 조사가 검증 트리거 역할
 - (b) 채택: 코드를 정답으로 두고 문서 교정. Phase 5 시각 변경 없는 인프라 원칙 보존
+
+### [2026-04-14] 세션 #17 — Phase 5-C 1차 pass 달력 토큰화
+
+변경 (commit 76814ad)
+- Calendar.tsx / CalendarGrid.tsx / CalendarModals.tsx 3파일 토큰화
+- 치환 108건 (calendarEvent.* 14종 + colors.* 9종 매핑)
+- 잔존 23건: #6B8BC1 토요일 / #fff 이벤트 텍스트 / #FFF5F2 반복 active /
+  #EAF3DE 구분 업무 / #F0F5F0·#5C7A5C 완료 뱃지 / #FFF9F7 요청 박스 /
+  rgba(55,138,221,0.1) 개인 active — tokens.ts 미존재 (인박스 등록됨)
+
+R4.10 3축
+- 가동: 빌드 287kB 직전 대비 ±0 / 에러·경고 0
+- 기능: 매핑표 A(14)+B(9) 1열==3열 전건 일치
+- 디자인: 스크린샷 5/5 + 직전 390a77d 대비 diff 0 / production 재확인 PASS
+
+R4.10 정책 작동 사례
+- Claude Code 1차 보고 3/5 스크린샷 후 "조건부 승인" 제안
+- Claude.ai 반려: 세션 #13 교훈 적용, 2장 추가 촬영 지시
+- 논리 추론만으로 건너뛰기 금지 원칙 보존
+
+교훈
+- (b) colors.* + calendarEvent.* 동시 치환이 정답. 비교 로직과 style 값 영역이 실제로 겹치지 않음
+- 잔존 23건은 3차 pass 완료 후 일괄 "신규 토큰 승격" 안건으로 묶어서 오너 결정
