@@ -4,23 +4,21 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-14 세션 #18 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (76814ad — Phase 5-C 1차 pass 배포 완료)
-- 진행 중: Phase 5-C 2차 pass(할일) 진입 대기
+- 마지막 세션: 2026-04-14 세션 #19 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (e23e1a4 — Phase 5-C 3-pass 완료)
+- 진행 중: Phase 5 완료 판정 대기
 - 다음 TODO:
-  1. Phase 5-C — 2차 pass 할일(TodoItem 105건) / 3차 pass 게시물(CreatePost 71건), 각 pass R4.10 3축 개별 검증
-  2. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후)
+  1. Phase 5 완료 판정 — 잔존 42건 신규 토큰 승격 안건 오너 결정
+  2. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후, git author 일괄 재작성 검토)
   3. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트
   4. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
-     · 현상: 세션 #17 종료 시 인박스 3건 미정리 누적 → #18에서 발견
-     · 개선: close-session.md에 "인박스 0건 확인 → 미달 시 분류 강제" 단계 추가
-     · 산출물: close-session.md 수정 + 1세션 검증
 - 미해결:
-  - git remote 미설정
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
   - src/components/ImageViewer.tsx 루트/common 중복 (경미, 별도 세션)
-  - src/components/TodoItem.tsx 상세/편집 모달 내장 (Phase 5-C 2차 pass 시 판단)
+  - src/components/TodoItem.tsx 상세/편집 모달 내장 (유지)
+  - Vercel Hobby 플랜 Preview 자동 SSO 정책 (Deployment Protection Disabled 필요)
+  - git author dev@hizzi-board.local 구커밋 잔존 (master 머지 시 일괄 재작성 검토)
 - 참고: 프리셋 시스템 단일화 완료. `프리셋` 한 단어로 current 엔트리 실행.
 - 검토 후보 (조건부 진입):
   - FullCalendar 미활용 기능 7건 (master 머지 + 디자인 통일 완료 후)
@@ -31,15 +29,28 @@
   - 토큰 소비 최적화 — progress.md 현재상태/작업로그 분할 (장기 누적 시 재검토)
     · R4.10-가/나 텍스트 반영 후 1~2세션 관찰 → 개선 불충분 시 훅으로 승격
     · 세션 #18에서 1차 분할 실행 (#1~#12 → archive). 추가 분할 또는 훅 승격 판단 보류 중
+  - 게시물 수정 팝업 3종(요청/할일/메모) 디자인·기능 점검
+    · 요청 타입 댓글 질의 기능 비활성 추정 — 우선 확인 필요
+    · 생성 폼 ↔ 수정 팝업 옵션 일치 여부 (공개범위 규칙) + patterns-modal.md 준수 여부 동반 점검
   - 요청 UI 재설계 (길 B) — Phase 5-C 완료 후 새 방
     · 진입 버튼 카운트 분리(받은 N + 변동 M) / 토스트 다리 / cancel_requested + 통합 댓글 스레드
     · 데이터 모델 변경 동반 → flows + master-schema + todoRequestStore 첨부 필요
+    · 병합 메모: 요청자 ↔ 수락자 상호작용 플로우 전반 재검토 포함. 수정·보완 범위 초과 시 재설계로 승격.
   - 일반 메모/할일 완료·삭제 UX 점검 (조건부)
     · 진입 조건: 요청 UI 재설계 후 + 사용자 구체 사례 1~2건 확보
   - Phase 5-C 잔존 정리 (3-pass 완료 후 일괄 안건)
     · tokens.ts 미존재 hex 일괄 신규 토큰 승격 (#17 작업로그 23건 + #16 후속 8종)
     · CalendarEventBadge 프리미티브 추출 (AddEventModal 미리보기 ↔ CalendarGrid renderEventContent 로직 중복)
     · AddEventModal 구분 버튼 색 P2 정합성 확인 (현재 카테고리 태그 아닌 캘린더 이벤트 색 사용)
+
+---
+
+## 장기 방향성
+
+> 모든 세션의 작업이 이 축 위에서 움직인다. 단일 세션 작업이 아닌 지속 발전 대상.
+
+- **AI 챗봇 인터페이스 전환** — 할일/달력 세팅 마무리 후, 각 기능을 AI 챗봇으로 구동하는 구조로 전환. 하이브리드 로직(기본 규칙 로직 + AI 판단 로직 병행)으로 토큰 최소화. 입력은 단순하게, 구동은 최적·최고로.
+- **모바일 우선 최적화** — 히찌보드·Rehobot 공통 전제. 기본 사용 환경이 모바일, 데스크톱은 보조. 할일/달력/AI 챗봇 다음으로 이어지는 작업 축.
 
 ---
 
@@ -171,3 +182,29 @@ R4.10 정책 작동 사례
 - 교훈
   · Claude.ai 해석 오류: "13까지만 남기고"를 "#13만 남기고"로 잘못 정리 후 자기 보정
   · 인박스 누적은 close-session 강제 게이트 부재가 근본 원인. 다음 세션 구조 개선 필요
+
+### [2026-04-14] 세션 #19 — Phase 5-C 2차/3차 pass + 인프라 정비
+
+Phase 5-C 2차 pass (commit 287c740)
+- TodoItem.tsx 토큰화 약 90건 (colors.* 9 + tagColors.* 16 + leftBorderColor 1 = 26종)
+- R4.10 3축 PASS — 로컬 5/5 + Preview 5/5 이중 검증
+
+Phase 5-C 3차 pass (commit e23e1a4)
+- CreatePost.tsx 토큰화 약 75건 (colors.* 9 + tagColors.* 12 + calendarEvent 1 = 22종)
+- R4.10 3축 PASS — 로컬 빌드 + Preview 3/3 검증
+
+Phase 5-C 3-pass 총괄
+- 1차 달력(108) + 2차 할일(90) + 3차 게시물(75) = 총 약 273건 토큰화
+- 최종 잔존 42건 (SVG 12 + rgba off-state 38 + 기타 6) → 신규 토큰 승격 안건
+
+인프라 정비
+- GitHub remote 연결: origin → rehobot-plan/hizzi-Board.git
+- Vercel Git 연동 배포 전환 (CLI → GitHub push 자동 트리거)
+- Firebase env var Preview 환경 추가 + Deployment Protection Disabled
+- git author 재작성: dev@hizzi-board.local → oilpig85@gmail.com / rehobot (--local)
+- Preview URL 확보: hizzi-board-git-feat-fullcalendar-poc-rehobot.vercel.app
+
+교훈
+- 인프라 블로커 연쇄 시 증상별 분리 진단 (author / env / protection 3단)
+- CLI 배포와 Git 연동 배포 혼용 금지. 택 1
+- Hobby 플랜 제약 사전 파악 필요 (Preview SSO 강제)
