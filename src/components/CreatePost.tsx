@@ -11,6 +11,7 @@ import { storage } from '@/lib/firebase';
 import { useEscClose } from '@/hooks/useEscClose';
 import { useToastStore } from '@/store/toastStore';
 import { getEventColor } from '@/lib/calendar-helpers';
+import { colors, tagColors, calendarEvent } from '@/styles/tokens';
 
 interface CreatePostProps {
   panelId: string;
@@ -244,16 +245,16 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
 
   const taskBtnStyle = (t: TaskType) => {
     const isOn = taskType === t;
-    if (t === 'work') return divBtn(isOn, '#C17B6B', '#FFF5F2', '#C17B6B', 'rgba(193,123,107,0.45)', 'rgba(193,123,107,0.35)');
-    return divBtn(isOn, '#7B5EA7', '#F0ECF5', '#7B5EA7', 'rgba(123,94,167,0.45)', 'rgba(123,94,167,0.35)');
+    if (t === 'work') return divBtn(isOn, tagColors.category.work.fg, tagColors.category.work.bg, tagColors.category.work.border, 'rgba(193,123,107,0.45)', 'rgba(193,123,107,0.35)');
+    return divBtn(isOn, tagColors.category.personal.fg, tagColors.category.personal.bg, tagColors.category.personal.border, 'rgba(123,94,167,0.45)', 'rgba(123,94,167,0.35)');
   };
 
   const visBtnStyle = (v: VisibilityType) => {
     const isOn = visibility === v;
     const map = {
-      all: { on: '#3B6D11', border: '#639922', offC: 'rgba(59,109,17,0.45)', offB: 'rgba(99,153,34,0.35)' },
-      me: { on: '#185FA5', border: '#378ADD', offC: 'rgba(24,95,165,0.45)', offB: 'rgba(55,138,221,0.35)' },
-      specific: { on: '#854F0B', border: '#BA7517', offC: 'rgba(133,79,11,0.45)', offB: 'rgba(186,117,23,0.35)' },
+      all: { on: tagColors.visibility.all.fg, border: tagColors.visibility.all.border, offC: 'rgba(59,109,17,0.45)', offB: 'rgba(99,153,34,0.35)' },
+      me: { on: tagColors.visibility.meOnly.fg, border: tagColors.visibility.meOnly.border, offC: 'rgba(24,95,165,0.45)', offB: 'rgba(55,138,221,0.35)' },
+      specific: { on: tagColors.visibility.specific.fg, border: tagColors.visibility.specific.border, offC: 'rgba(133,79,11,0.45)', offB: 'rgba(186,117,23,0.35)' },
     };
     const c = map[v];
     return divBtn(isOn, c.on, 'transparent', c.border, c.offC, c.offB);
@@ -261,32 +262,32 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
 
   const reqVisBtnStyle = (v: RequestVisibilityType) => {
     const isOn = requestVisibility === v;
-    if (v === 'requestOnly') return divBtn(isOn, '#993556', '#FBEAF0', '#993556', 'rgba(153,53,86,0.45)', 'rgba(153,53,86,0.35)');
-    if (v === 'all') return divBtn(isOn, '#3B6D11', 'transparent', '#639922', 'rgba(59,109,17,0.45)', 'rgba(99,153,34,0.35)');
-    return divBtn(isOn, '#854F0B', 'transparent', '#BA7517', 'rgba(133,79,11,0.45)', 'rgba(186,117,23,0.35)');
+    if (v === 'requestOnly') return divBtn(isOn, tagColors.category.request.fg, tagColors.category.request.bg, tagColors.category.request.border, 'rgba(153,53,86,0.45)', 'rgba(153,53,86,0.35)');
+    if (v === 'all') return divBtn(isOn, tagColors.visibility.all.fg, 'transparent', tagColors.visibility.all.border, 'rgba(59,109,17,0.45)', 'rgba(99,153,34,0.35)');
+    return divBtn(isOn, tagColors.visibility.specific.fg, 'transparent', tagColors.visibility.specific.border, 'rgba(133,79,11,0.45)', 'rgba(186,117,23,0.35)');
   };
 
   const sectionLabel: CSSProperties = {
     fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
-    color: '#C4B8B0', textTransform: 'uppercase', marginBottom: 7,
+    color: colors.textHint, textTransform: 'uppercase', marginBottom: 7,
   };
 
   const fieldSection: CSSProperties = {
-    padding: '12px 20px', borderBottom: '1px solid #EDE5DC',
+    padding: '12px 20px', borderBottom: `1px solid ${colors.border}`,
   };
 
   const statusTagWork: CSSProperties = {
     fontSize: 10, padding: '2px 7px', borderRadius: 3, marginRight: 4,
-    background: taskType === 'personal' ? '#F0ECF5' : '#FFF5F2',
-    color: taskType === 'personal' ? '#7B5EA7' : '#C17B6B',
-    border: `1px solid ${taskType === 'personal' ? '#7B5EA7' : '#C17B6B'}`,
+    background: taskType === 'personal' ? tagColors.category.personal.bg : tagColors.category.work.bg,
+    color: taskType === 'personal' ? tagColors.category.personal.fg : tagColors.category.work.fg,
+    border: `1px solid ${taskType === 'personal' ? tagColors.category.personal.border : tagColors.category.work.border}`,
   };
 
   const statusTagVis = (): CSSProperties => {
     const map = {
-      all: { color: '#3B6D11', border: '1px solid #639922' },
-      me: { color: '#185FA5', border: '1px solid #378ADD' },
-      specific: { color: '#854F0B', border: '1px solid #BA7517' },
+      all: { color: tagColors.visibility.all.fg, border: `1px solid ${tagColors.visibility.all.border}` },
+      me: { color: tagColors.visibility.meOnly.fg, border: `1px solid ${tagColors.visibility.meOnly.border}` },
+      specific: { color: tagColors.visibility.specific.fg, border: `1px solid ${tagColors.visibility.specific.border}` },
     };
     return { fontSize: 10, padding: '2px 7px', borderRadius: 3, background: 'none', ...map[visibility] };
   };
@@ -297,21 +298,21 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
     : activeTab === 'todo' ? title.trim().length > 0 : content.trim().length > 0;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#fff', border: '1px solid #EDE5DC', borderRadius: 6, width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ background: '#5C1F1F', padding: '15px 20px 13px', flexShrink: 0, minHeight: 52 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: colors.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 6, width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ background: colors.sidebarBg, padding: '15px 20px 13px', flexShrink: 0, minHeight: 52 }}>
           {(() => {
             const titleText = activeTab === 'request' ? requestTitle : activeTab === 'todo' ? title : content;
             if (!titleText.trim()) return null;
             return (
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4, wordBreak: 'break-word' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: colors.mainBg, lineHeight: 1.4, wordBreak: 'break-word' }}>
                 {titleText}
               </div>
             );
           })()}
         </div>
 
-        <div style={{ display: 'flex', borderBottom: '1px solid #EDE5DC', background: '#fff', flexShrink: 0 }}>
+        <div style={{ display: 'flex', borderBottom: `1px solid ${colors.border}`, background: colors.cardBg, flexShrink: 0 }}>
           {(['todo', 'memo', 'request'] as TabType[]).map(tab => (
             <div
               key={tab}
@@ -321,8 +322,8 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                 textAlign: 'center',
                 padding: '9px 4px',
                 fontSize: 12,
-                color: activeTab === tab ? '#5C1F1F' : '#C4B8B0',
-                borderBottom: activeTab === tab ? '2px solid #5C1F1F' : '2px solid transparent',
+                color: activeTab === tab ? colors.sidebarBg : colors.textHint,
+                borderBottom: activeTab === tab ? `2px solid ${colors.sidebarBg}` : '2px solid transparent',
                 fontWeight: activeTab === tab ? 700 : 400,
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
@@ -332,12 +333,12 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
           ))}
         </div>
 
-        <div style={{ background: '#FDF8F4', borderBottom: '1px solid #EDE5DC', padding: '7px 20px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#9E8880', paddingRight: 10, borderRight: '1px solid #D5C9C0', marginRight: 10 }}>
+        <div style={{ background: colors.mainBg, borderBottom: `1px solid ${colors.border}`, padding: '7px 20px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: colors.textSecondary, paddingRight: 10, borderRight: '1px solid #D5C9C0', marginRight: 10 }}>
             {activeTab === 'todo' ? '할일' : activeTab === 'memo' ? '메모' : '요청'}
           </span>
           {activeTab === 'request' ? (
-            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: '#FBEAF0', color: '#993556', border: '1px solid #993556' }}>요청</span>
+            <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: tagColors.category.request.bg, color: tagColors.category.request.fg, border: `1px solid ${tagColors.category.request.border}` }}>요청</span>
           ) : (
             <>
               <span style={statusTagWork}>{taskType === 'personal' ? '개인' : '업무'}</span>
@@ -351,24 +352,24 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
             <>
               <div style={fieldSection}>
                 <div style={sectionLabel}>내용</div>
-                <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="내용을 입력하세요 (선택)" rows={4} style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
+                <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="내용을 입력하세요 (선택)" rows={4} style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>첨부파일</div>
                 {attachFile ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: '0.5px solid #EDE5DC', background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
-                    <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{attachFile.name}</span>
-                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer' }}>✕</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: colors.textPrimary }}>{attachFile.name}</span>
+                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: colors.textHint, cursor: 'pointer' }}>✕</span>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 12, color: '#C4B8B0', marginBottom: 7 }}>없음</div>
+                  <div style={{ fontSize: 12, color: colors.textHint, marginBottom: 7 }}>없음</div>
                 )}
-                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '0.5px dashed #C17B6B', color: '#C17B6B', fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
+                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: `0.5px dashed ${colors.accent}`, color: colors.accent, fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
                   + 파일 추가
                 </div>
                 <input ref={fileInputRef} type="file" onChange={e => { const f = e.target.files?.[0]; if (f) setAttachFile(f); }} style={{ display: 'none' }} />
               </div>
-              <div style={{ borderTop: '1px solid #EDE5DC', margin: '0 20px' }} />
+              <div style={{ borderTop: `1px solid ${colors.border}`, margin: '0 20px' }} />
               <div style={{ ...fieldSection, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 28, flexShrink: 0 }}>구분</div>
                 <div style={{ display: 'flex', gap: 5 }}>
@@ -395,7 +396,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                     {otherUsers.map(u => {
                       const sel = selectedUsers.includes(u.email);
                       return (
-                        <div key={u.email} onClick={() => setSelectedUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #BA7517' : '1px solid rgba(186,117,23,0.32)', color: sel ? '#854F0B' : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
+                        <div key={u.email} onClick={() => setSelectedUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? `1px solid ${tagColors.visibility.specific.border}` : '1px solid rgba(186,117,23,0.32)', color: sel ? tagColors.visibility.specific.fg : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
                           {u.name || u.email.split('@')[0]}
                         </div>
                       );
@@ -414,12 +415,12 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   placeholder="할일 제목을 입력하세요"
-                  style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
+                  style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }}
                 />
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>내용</div>
-                <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="상세 내용을 입력하세요 (선택)" rows={3} style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
+                <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="상세 내용을 입력하세요 (선택)" rows={3} style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>기한</div>
@@ -435,15 +436,15 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                       else if (!val) { setDueDate(''); setAddToCalendar(false); }
                     }}
                     placeholder="yyyymmdd"
-                    style={{ border: 'none', borderBottom: `1px solid ${dueDate ? '#C17B6B' : '#EDE5DC'}`, padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', width: 110, letterSpacing: '0.04em', fontFamily: 'inherit' }}
+                    style={{ border: 'none', borderBottom: `1px solid ${dueDate ? colors.accent : colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', width: 110, letterSpacing: '0.04em', fontFamily: 'inherit' }}
                   />
                   {dueDate && (
-                    <span style={{ fontSize: 12, color: '#9E8880' }}>
+                    <span style={{ fontSize: 12, color: colors.textSecondary }}>
                       {new Date(dueDate + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })}
                     </span>
                   )}
                   <div style={{ position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-                    <svg width="15" height="15" viewBox="0 0 12 12" fill="none" style={{ color: '#C4B8B0', cursor: 'pointer' }}>
+                    <svg width="15" height="15" viewBox="0 0 12 12" fill="none" style={{ color: colors.textHint, cursor: 'pointer' }}>
                       <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
                       <path d="M1 5h10M4 1v2M8 1v2" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                     </svg>
@@ -457,22 +458,22 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                   </div>
                   {dueDate && (
                     <span onClick={() => { setDueDate(''); setDueDateInput(''); setAddToCalendar(false); }}
-                      style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer', lineHeight: 1, marginLeft: 2 }}>✕</span>
+                      style={{ fontSize: 13, color: colors.textHint, cursor: 'pointer', lineHeight: 1, marginLeft: 2 }}>✕</span>
                   )}
                 </div>
                 {dueDate && (
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginTop: 10, paddingTop: 9, borderTop: '1px dashed #EDE5DC' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginTop: 10, paddingTop: 9, borderTop: `1px dashed ${colors.border}` }}>
                     <div
                       onClick={() => setAddToCalendar(prev => !prev)}
-                      style={{ width: 14, height: 14, borderRadius: 2, border: `1px solid ${addToCalendar ? '#C17B6B' : '#D5C9C0'}`, background: addToCalendar ? '#C17B6B' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 1 }}>
+                      style={{ width: 14, height: 14, borderRadius: 2, border: `1px solid ${addToCalendar ? colors.accent : '#D5C9C0'}`, background: addToCalendar ? colors.accent : colors.cardBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 1 }}>
                       {addToCalendar && (
                         <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
                           <path d="M1 3.5l2.5 2.5L8 1" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: '#9E8880', lineHeight: 1.45 }}>
-                      <span style={{ color: '#C17B6B', fontWeight: 600 }}>캘린더에도 등록</span> - 체크 시 내 캘린더에 일정이 함께 생성됩니다
+                    <div style={{ fontSize: 11, color: colors.textSecondary, lineHeight: 1.45 }}>
+                      <span style={{ color: colors.accent, fontWeight: 600 }}>캘린더에도 등록</span> - 체크 시 내 캘린더에 일정이 함께 생성됩니다
                     </div>
                   </div>
                 )}
@@ -480,19 +481,19 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
               <div style={fieldSection}>
                 <div style={sectionLabel}>첨부파일</div>
                 {attachFile ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: '0.5px solid #EDE5DC', background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
-                    <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{attachFile.name}</span>
-                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer' }}>✕</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: colors.textPrimary }}>{attachFile.name}</span>
+                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: colors.textHint, cursor: 'pointer' }}>✕</span>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 12, color: '#C4B8B0', marginBottom: 7 }}>없음</div>
+                  <div style={{ fontSize: 12, color: colors.textHint, marginBottom: 7 }}>없음</div>
                 )}
-                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '0.5px dashed #C17B6B', color: '#C17B6B', fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
+                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: `0.5px dashed ${colors.accent}`, color: colors.accent, fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
                   + 파일 추가
                 </div>
                 <input ref={fileInputRef} type="file" onChange={e => { const f = e.target.files?.[0]; if (f) setAttachFile(f); }} style={{ display: 'none' }} />
               </div>
-              <div style={{ borderTop: '1px solid #EDE5DC', margin: '0 20px' }} />
+              <div style={{ borderTop: `1px solid ${colors.border}`, margin: '0 20px' }} />
               <div style={{ ...fieldSection, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 28, flexShrink: 0 }}>구분</div>
                 <div style={{ display: 'flex', gap: 5 }}>
@@ -519,7 +520,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                     {otherUsers.map(u => {
                       const sel = selectedUsers.includes(u.email);
                       return (
-                        <div key={u.email} onClick={() => setSelectedUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #BA7517' : '1px solid rgba(186,117,23,0.32)', color: sel ? '#854F0B' : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
+                        <div key={u.email} onClick={() => setSelectedUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? `1px solid ${tagColors.visibility.specific.border}` : '1px solid rgba(186,117,23,0.32)', color: sel ? tagColors.visibility.specific.fg : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
                           {u.name || u.email.split('@')[0]}
                         </div>
                       );
@@ -538,24 +539,24 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                   {otherUsers.map(u => {
                     const sel = requestTo.includes(u.email);
                     return (
-                      <div key={u.email} onClick={() => setRequestTo(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #993556' : '1px solid rgba(153,53,86,0.3)', color: sel ? '#993556' : 'rgba(153,53,86,0.4)', background: sel ? '#FBEAF0' : 'none' }}>
+                      <div key={u.email} onClick={() => setRequestTo(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? `1px solid ${tagColors.category.request.border}` : '1px solid rgba(153,53,86,0.3)', color: sel ? tagColors.category.request.fg : 'rgba(153,53,86,0.4)', background: sel ? tagColors.category.request.bg : 'none' }}>
                         {u.name || u.email.split('@')[0]}
-                        {requestTo.length >= 2 && sel && <span style={{ marginLeft: 3, fontSize: 9, color: '#C17B6B' }}>✓</span>}
+                        {requestTo.length >= 2 && sel && <span style={{ marginLeft: 3, fontSize: 9, color: colors.accent }}>✓</span>}
                       </div>
                     );
                   })}
                 </div>
                 {requestTo.length >= 2 && (
-                  <div style={{ fontSize: 10, color: '#C17B6B', marginTop: 6 }}>팀 요청 ({requestTo.length}명)</div>
+                  <div style={{ fontSize: 10, color: colors.accent, marginTop: 6 }}>팀 요청 ({requestTo.length}명)</div>
                 )}
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>제목</div>
-                <input value={requestTitle} onChange={e => setRequestTitle(e.target.value)} placeholder="요청 제목을 입력하세요" style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
+                <input value={requestTitle} onChange={e => setRequestTitle(e.target.value)} placeholder="요청 제목을 입력하세요" style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', fontFamily: 'inherit' }} />
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>내용</div>
-                <textarea value={requestContent} onChange={e => setRequestContent(e.target.value)} placeholder="요청 내용을 입력하세요 (선택)" rows={3} style={{ width: '100%', border: 'none', borderBottom: '1px solid #EDE5DC', padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
+                <textarea value={requestContent} onChange={e => setRequestContent(e.target.value)} placeholder="요청 내용을 입력하세요 (선택)" rows={3} style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>기한</div>
@@ -571,15 +572,15 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                       else if (!val) setRequestDueDate('');
                     }}
                     placeholder="yyyymmdd"
-                    style={{ border: 'none', borderBottom: `1px solid ${requestDueDate ? '#C17B6B' : '#EDE5DC'}`, padding: '6px 0', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', width: 110, letterSpacing: '0.04em', fontFamily: 'inherit' }}
+                    style={{ border: 'none', borderBottom: `1px solid ${requestDueDate ? colors.accent : colors.border}`, padding: '6px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', width: 110, letterSpacing: '0.04em', fontFamily: 'inherit' }}
                   />
                   {requestDueDate && (
-                    <span style={{ fontSize: 12, color: '#9E8880' }}>
+                    <span style={{ fontSize: 12, color: colors.textSecondary }}>
                       {new Date(requestDueDate + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })}
                     </span>
                   )}
                   <div style={{ position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-                    <svg width="15" height="15" viewBox="0 0 12 12" fill="none" style={{ color: '#C4B8B0', cursor: 'pointer' }}>
+                    <svg width="15" height="15" viewBox="0 0 12 12" fill="none" style={{ color: colors.textHint, cursor: 'pointer' }}>
                       <rect x="1" y="2" width="10" height="9" rx="1.5" stroke="currentColor" strokeWidth="1"/>
                       <path d="M1 5h10M4 1v2M8 1v2" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                     </svg>
@@ -593,26 +594,26 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                   </div>
                   {requestDueDate && (
                     <span onClick={() => { setRequestDueDate(''); setRequestDueDateInput(''); }}
-                      style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer', lineHeight: 1, marginLeft: 2 }}>✕</span>
+                      style={{ fontSize: 13, color: colors.textHint, cursor: 'pointer', lineHeight: 1, marginLeft: 2 }}>✕</span>
                   )}
                 </div>
               </div>
               <div style={fieldSection}>
                 <div style={sectionLabel}>첨부파일</div>
                 {attachFile ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: '0.5px solid #EDE5DC', background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
-                    <span style={{ flex: 1, fontSize: 12, color: '#2C1810' }}>{attachFile.name}</span>
-                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: '#C4B8B0', cursor: 'pointer' }}>✕</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                    <span style={{ flex: 1, fontSize: 12, color: colors.textPrimary }}>{attachFile.name}</span>
+                    <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: colors.textHint, cursor: 'pointer' }}>✕</span>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 12, color: '#C4B8B0', marginBottom: 7 }}>없음</div>
+                  <div style={{ fontSize: 12, color: colors.textHint, marginBottom: 7 }}>없음</div>
                 )}
-                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: '0.5px dashed #C17B6B', color: '#C17B6B', fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
+                <div onClick={() => fileInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, border: `0.5px dashed ${colors.accent}`, color: colors.accent, fontSize: 12, padding: '7px 10px', borderRadius: 3, cursor: 'pointer', width: '100%' }}>
                   + 파일 추가
                 </div>
                 <input ref={fileInputRef} type="file" onChange={e => { const f = e.target.files?.[0]; if (f) setAttachFile(f); }} style={{ display: 'none' }} />
               </div>
-              <div style={{ borderTop: '1px solid #EDE5DC', margin: '0 20px' }} />
+              <div style={{ borderTop: `1px solid ${colors.border}`, margin: '0 20px' }} />
               <div style={fieldSection}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <div style={{ ...sectionLabel, marginBottom: 0, minWidth: 52, flexShrink: 0 }}>보이는 범위</div>
@@ -630,12 +631,12 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                 </div>
                 {requestVisibility === 'specific' && (
                   <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: 10, color: '#C4B8B0', marginBottom: 5 }}>수신자 외 추가:</div>
+                    <div style={{ fontSize: 10, color: colors.textHint, marginBottom: 5 }}>수신자 외 추가:</div>
                     <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                       {otherUsers.filter(u => !requestTo.includes(u.email)).map(u => {
                         const sel = requestSpecificUsers.includes(u.email);
                         return (
-                          <div key={u.email} onClick={() => setRequestSpecificUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? '1px solid #BA7517' : '1px solid rgba(186,117,23,0.32)', color: sel ? '#854F0B' : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
+                          <div key={u.email} onClick={() => setRequestSpecificUsers(prev => sel ? prev.filter(e => e !== u.email) : [...prev, u.email])} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: sel ? `1px solid ${tagColors.visibility.specific.border}` : '1px solid rgba(186,117,23,0.32)', color: sel ? tagColors.visibility.specific.fg : 'rgba(133,79,11,0.42)', background: sel ? 'rgba(186,117,23,0.07)' : 'none' }}>
                             {u.name || u.email.split('@')[0]}
                           </div>
                         );
@@ -648,16 +649,16 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
           )}
         </div>
 
-        <div style={{ background: '#FDF8F4', borderTop: '1px solid #EDE5DC', padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <button onClick={() => onClose()} style={{ fontSize: 12, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: '5px 2px' }}>
+        <div style={{ background: colors.mainBg, borderTop: `1px solid ${colors.border}`, padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <button onClick={() => onClose()} style={{ fontSize: 12, color: colors.textSecondary, background: 'none', border: 'none', cursor: 'pointer', padding: '5px 2px' }}>
             닫기
           </button>
           {activeTab === 'request' ? (
-            <button onClick={handleRequestSubmit} disabled={requestSubmitting || !isReady} style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: !isReady ? '#C4B8B0' : '#72243E', color: '#FDF8F4', border: 'none', cursor: !isReady ? 'not-allowed' : 'pointer' }}>
+            <button onClick={handleRequestSubmit} disabled={requestSubmitting || !isReady} style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: !isReady ? colors.textHint : calendarEvent.request.border, color: colors.mainBg, border: 'none', cursor: !isReady ? 'not-allowed' : 'pointer' }}>
               {requestSubmitting ? '전송 중...' : '요청 보내기'}
             </button>
           ) : (
-            <button onClick={handleSubmit} disabled={uploading || !isReady} style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: !isReady ? '#C4B8B0' : '#2C1810', color: '#FDF8F4', border: 'none', cursor: !isReady ? 'not-allowed' : 'pointer' }}>
+            <button onClick={handleSubmit} disabled={uploading || !isReady} style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: !isReady ? colors.textHint : colors.textPrimary, color: colors.mainBg, border: 'none', cursor: !isReady ? 'not-allowed' : 'pointer' }}>
               {uploading ? '업로드 중...' : '저장'}
             </button>
           )}
