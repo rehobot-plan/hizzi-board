@@ -6,7 +6,7 @@ import {
   DAY_KEYS, KOREAN_DAYS,
   getEventColor, isPersonal, isLeave,
 } from '@/lib/calendar-helpers';
-import { colors, calendarEvent } from '@/styles/tokens';
+import { colors, calendarEvent, tagColors } from '@/styles/tokens';
 
 interface UserInfo {
   id: string;
@@ -171,7 +171,7 @@ export function AddEventModal(props: AddEventModalProps) {
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>구분</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {([
-                    { v: 'work' as const, label: '업무', color: '#3B6D11', bg: '#EAF3DE', border: '#639922' },
+                    { v: 'work' as const, label: '업무', color: '#3B6D11', bg: calendarEvent.work.rangeBg, border: '#639922' },
                     { v: 'personal' as const, label: '개인', color: '#185FA5', bg: 'rgba(55,138,221,0.1)', border: '#378ADD' },
                   ]).map(opt => (
                     <button key={opt.v}
@@ -327,7 +327,7 @@ export function DetailModal(props: DetailModalProps) {
         </div>
         <div style={{ padding: '16px 20px' }}>
           {event.requestId && (
-            <div style={{ marginBottom: 16, padding: '12px', background: '#FFF9F7', border: `1px solid ${colors.border}` }}>
+            <div style={{ marginBottom: 16, padding: '12px', background: calendarEvent.request.bgLight, border: `1px solid ${colors.border}` }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.accent, marginBottom: 10 }}>업무 요청 정보</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -346,7 +346,7 @@ export function DetailModal(props: DetailModalProps) {
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <span style={{ fontSize: 11, color: colors.textSecondary, width: 44, flexShrink: 0 }}>완료</span>
-                  <span style={{ fontSize: 9, padding: '2px 8px', background: isCompleted ? '#F0F5F0' : '#FFF5F2', color: isCompleted ? '#5C7A5C' : '#C17B6B', border: `0.5px solid ${isCompleted ? '#5C7A5C' : '#C17B6B'}`, letterSpacing: '0.06em' }}>
+                  <span style={{ fontSize: 9, padding: '2px 8px', background: isCompleted ? calendarEvent.completed.bg : tagColors.category.work.bg, color: isCompleted ? calendarEvent.completed.fg : colors.accent, border: `0.5px solid ${isCompleted ? calendarEvent.completed.fg : colors.accent}`, letterSpacing: '0.06em' }}>
                     {isCompleted ? '완료' : '진행중'}
                   </span>
                 </div>

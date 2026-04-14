@@ -323,7 +323,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const tableRow = (isAlt: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'flex-start',
     padding: '10px 20px',
-    background: isAlt ? '#F5EFE9' : colors.cardBg,
+    background: isAlt ? colors.altRowBg : colors.cardBg,
     borderBottom: `1px solid ${colors.border}`,
     gap: 12,
   });
@@ -601,7 +601,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
               </div>
             </div>
             <div style={{ background: colors.mainBg, borderBottom: `1px solid ${colors.border}`, padding: '7px 20px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: colors.textSecondary, paddingRight: 10, borderRight: '1px solid #D5C9C0', marginRight: 10 }}>할일</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: colors.textSecondary, paddingRight: 10, borderRight: `1px solid ${colors.divider}`, marginRight: 10 }}>할일</span>
               <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: detailTaskType === 'personal' ? tagColors.category.personal.bg : tagColors.category.work.bg, color: detailTaskType === 'personal' ? tagColors.category.personal.fg : tagColors.category.work.fg, border: `1px solid ${detailTaskType === 'personal' ? tagColors.category.personal.fg : tagColors.category.work.fg}`, marginRight: 4 }}>
                 {detailTaskType === 'work' ? '업무' : '개인'}
               </span>
@@ -714,7 +714,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 {(post.requestDueDate || post.dueDate) && (() => {
                   const dueDateStr = post.requestDueDate || post.dueDate!;
                   return (
-                    <div style={{ fontSize: 12, color: '#F4C0D1', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
+                    <div style={{ fontSize: 12, color: tagColors.dueSoonLight, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
                       <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#F4C0D1" strokeWidth="1.2"/><path d="M5 3v2.2l1.4 1" stroke="#F4C0D1" strokeWidth="1.2" strokeLinecap="round"/></svg>
                       {new Date(dueDateStr + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })} 까지
                     </div>

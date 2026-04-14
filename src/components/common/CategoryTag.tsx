@@ -1,8 +1,10 @@
 'use client';
 
+import { tagColors } from '@/styles/tokens';
+
 const styles: Record<'work' | 'personal', { bg: string; fg: string; border: string; label: string }> = {
-  work: { bg: '#FFF5F2', fg: '#C17B6B', border: '#C17B6B', label: '업무' },
-  personal: { bg: '#F0ECF5', fg: '#7B5EA7', border: '#7B5EA7', label: '개인' },
+  work: { bg: tagColors.category.work.bg, fg: tagColors.category.work.fg, border: tagColors.category.work.border, label: '업무' },
+  personal: { bg: tagColors.category.personal.bg, fg: tagColors.category.personal.fg, border: tagColors.category.personal.border, label: '개인' },
 };
 
 export default function CategoryTag({ kind }: { kind: 'work' | 'personal' }) {

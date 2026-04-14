@@ -22,6 +22,10 @@ export const colors = {
   requestBg: 'var(--request-bg)',
   overlay: 'var(--overlay)',
   todayBg: 'var(--today-bg)',
+  saturdayText: '#6B8BC1',
+  divider: '#D5C9C0',
+  subCardBg: '#FDFAF8',
+  altRowBg: '#F5EFE9',
 } as const;
 
 // ─── 캘린더 이벤트 색상 (uxui.md "4. 색상 의미 시스템") ─
@@ -31,6 +35,7 @@ export const calendarEvent = {
     all: '#3B6D11',
     meOnly: '#185FA5',
     specific: '#854F0B',
+    rangeBg: '#EAF3DE',
   },
   personal: {
     all: { border: '#639922', bg: 'rgba(99,153,34,0.15)' },
@@ -38,7 +43,8 @@ export const calendarEvent = {
     specific: { border: '#BA7517', bg: 'rgba(186,117,23,0.15)' },
   },
   leave: { border: '#534AB7', bg: 'rgba(83,74,183,0.15)', text: '#3C3489' },
-  request: { bg: '#993556', border: '#72243E' },
+  request: { bg: '#993556', border: '#72243E', bgLight: '#FFF9F7' },
+  completed: { bg: '#F0F5F0', fg: '#5C7A5C' },
 } as const;
 
 // ─── 태그 색상 (uxui.md 할일/메모 태그) ─────────────────
@@ -58,6 +64,7 @@ export const tagColors = {
   team: { bg: '#F5F0EE', fg: '#9E8880' },
   dueSoon: { fg: '#993556', bg: '#FBEAF0', border: '#993556' },
   dueLater: { fg: '#C17B6B', bg: '#FFF5F2', border: '#C17B6B' },
+  dueSoonLight: '#F4C0D1',
 } as const;
 
 // ─── z-index 계층 (rules-detail.md R8.4) ────────────────

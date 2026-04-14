@@ -100,7 +100,7 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
   // ─── 커스텀 렌더 ───────────────────────────────────────
 
   const renderDayHeaderContent = (arg: { text: string; dow: number }) => {
-    const color = arg.dow === 0 ? colors.accent : arg.dow === 6 ? '#6B8BC1' : colors.textSecondary;
+    const color = arg.dow === 0 ? colors.accent : arg.dow === 6 ? colors.saturdayText : colors.textSecondary;
     return (
       <span style={{ fontSize: 10, fontWeight: 600, color }}>
         {DAY_NAMES[arg.dow]}
@@ -112,7 +112,7 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
     const ds = toDS(arg.date);
     const dow = arg.date.getDay();
     const isHol = !!HOLIDAYS_2026[ds];
-    const dateColor = arg.isToday ? colors.accent : isHol || dow === 0 ? colors.accent : dow === 6 ? '#6B8BC1' : colors.textPrimary;
+    const dateColor = arg.isToday ? colors.accent : isHol || dow === 0 ? colors.accent : dow === 6 ? colors.saturdayText : colors.textPrimary;
 
     return (
       <div style={{ textAlign: 'right', padding: '2px 4px 0 0' }}>

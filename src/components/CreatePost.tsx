@@ -357,7 +357,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
               <div style={fieldSection}>
                 <div style={sectionLabel}>첨부파일</div>
                 {attachFile ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: colors.subCardBg, borderRadius: 3, marginBottom: 6 }}>
                     <span style={{ flex: 1, fontSize: 12, color: colors.textPrimary }}>{attachFile.name}</span>
                     <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: colors.textHint, cursor: 'pointer' }}>✕</span>
                   </div>
@@ -465,7 +465,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginTop: 10, paddingTop: 9, borderTop: `1px dashed ${colors.border}` }}>
                     <div
                       onClick={() => setAddToCalendar(prev => !prev)}
-                      style={{ width: 14, height: 14, borderRadius: 2, border: `1px solid ${addToCalendar ? colors.accent : '#D5C9C0'}`, background: addToCalendar ? colors.accent : colors.cardBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 1 }}>
+                      style={{ width: 14, height: 14, borderRadius: 2, border: `1px solid ${addToCalendar ? colors.accent : colors.divider}`, background: addToCalendar ? colors.accent : colors.cardBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 1 }}>
                       {addToCalendar && (
                         <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
                           <path d="M1 3.5l2.5 2.5L8 1" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
@@ -481,7 +481,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
               <div style={fieldSection}>
                 <div style={sectionLabel}>첨부파일</div>
                 {attachFile ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: colors.subCardBg, borderRadius: 3, marginBottom: 6 }}>
                     <span style={{ flex: 1, fontSize: 12, color: colors.textPrimary }}>{attachFile.name}</span>
                     <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: colors.textHint, cursor: 'pointer' }}>✕</span>
                   </div>
@@ -601,7 +601,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
               <div style={fieldSection}>
                 <div style={sectionLabel}>첨부파일</div>
                 {attachFile ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: '#FDFAF8', borderRadius: 3, marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', border: `0.5px solid ${colors.border}`, background: colors.subCardBg, borderRadius: 3, marginBottom: 6 }}>
                     <span style={{ flex: 1, fontSize: 12, color: colors.textPrimary }}>{attachFile.name}</span>
                     <span onClick={() => setAttachFile(null)} style={{ fontSize: 13, color: colors.textHint, cursor: 'pointer' }}>✕</span>
                   </div>

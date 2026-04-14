@@ -1,9 +1,11 @@
 'use client';
 
+import { tagColors } from '@/styles/tokens';
+
 const styles: Record<'전체' | '나만' | '특정', { fg: string; border: string }> = {
-  '전체': { fg: '#3B6D11', border: '#639922' },
-  '나만': { fg: '#185FA5', border: '#378ADD' },
-  '특정': { fg: '#854F0B', border: '#BA7517' },
+  '전체': { fg: tagColors.visibility.all.fg, border: tagColors.visibility.all.border },
+  '나만': { fg: tagColors.visibility.meOnly.fg, border: tagColors.visibility.meOnly.border },
+  '특정': { fg: tagColors.visibility.specific.fg, border: tagColors.visibility.specific.border },
 };
 
 export default function VisibilityTag({ visibility }: { visibility: '전체' | '나만' | '특정' }) {

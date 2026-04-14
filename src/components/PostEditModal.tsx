@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { db, storage } from '@/lib/firebase';
 import { useToastStore } from '@/store/toastStore';
+import { colors } from '@/styles/tokens';
 
 interface PostEditModalProps {
   post: Post;
@@ -122,7 +123,7 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
     display: 'flex',
     alignItems: 'flex-start',
     padding: '10px 20px',
-    background: isAlt ? '#F5EFE9' : '#fff',
+    background: isAlt ? colors.altRowBg : '#fff',
     borderBottom: '1px solid #EDE5DC',
     gap: 12,
   });
@@ -278,7 +279,7 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
 
         {/* 상태바 */}
         <div style={{ background: '#FDF8F4', borderBottom: '1px solid #EDE5DC', padding: '7px 20px', display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#9E8880', paddingRight: 10, borderRight: '1px solid #D5C9C0', marginRight: 10 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#9E8880', paddingRight: 10, borderRight: `1px solid ${colors.divider}`, marginRight: 10 }}>
             메모
           </span>
           <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: editTaskType === 'personal' ? '#F0ECF5' : '#FFF5F2', color: editTaskType === 'personal' ? '#7B5EA7' : '#C17B6B', border: `1px solid ${editTaskType === 'personal' ? '#7B5EA7' : '#C17B6B'}`, marginRight: 4 }}>
