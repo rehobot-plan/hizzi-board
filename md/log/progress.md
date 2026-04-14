@@ -4,7 +4,7 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-14 세션 #17 (종료)
+- 마지막 세션: 2026-04-14 세션 #18 (종료)
 - 작업 브랜치: feat/fullcalendar-poc (76814ad — Phase 5-C 1차 pass 배포 완료)
 - 진행 중: Phase 5-C 2차 pass(할일) 진입 대기
 - 다음 TODO:
@@ -148,9 +148,22 @@ R4.10 정책 작동 사례
 - (b) colors.* + calendarEvent.* 동시 치환이 정답. 비교 로직과 style 값 영역이 실제로 겹치지 않음
 - 잔존 23건은 3차 pass 완료 후 일괄 "신규 토큰 승격" 안건으로 묶어서 오너 결정
 
-### [2026-04-14] 세션 #18 — session.md 톤 조정 + progress.md archive 분할
+### [2026-04-14] 세션 #18 — session.md 톤 조정 + progress.md archive 분할 + 인박스 정리
 
-- 완료: md/core/session.md 세션 시작 프롬프트 인사말 교체 — 진정성 기반 관계성 + 초보 롤 명시
-- 완료: md/log/progress.md → md/archive/progress-2026-04-A.md 분할 — #1~#12 archive, #13~#17 잔존, 310→139줄 (-55%)
-- 메모: 검토 후보 "토큰 소비 최적화" 1차 실행
-- 교훈: Claude.ai 해석 오류 — 모호한 지시는 명령 블록 직전 한 줄 재확인이 안전
+- 완료: md/core/session.md 세션 시작 프롬프트 인사말 교체
+  · 기존: "수석 개발자 / 글로벌 상용화 / 정확성 우선" 명령형
+  · 신규: 진정성 기반 관계성 + "나는 초보야. 너의 전문성으로 나를 이끌어줘" 롤 명시
+  · 의도: 톤 자체가 응답 품질에 영향. 관계성 문장 = 토큰 낭비가 아닌 투자
+- 완료: md/log/progress.md → md/archive/progress-2026-04-A.md 분할 (commit 71c836b)
+  · 세션 #1~#12 (12개) archive 이동, #13~#17만 progress.md 잔존
+  · progress.md 310→139줄 (-55%)
+  · 컷 지점: #13(FullCalendar 정식 교체)이 현재 Phase 5 시리즈 직전 맥락
+- 완료: 인박스 3건 정리
+  · 요청 UI 재설계(길 B) → progress 검토 후보
+  · 메모/할일 완료·삭제 UX → progress 검토 후보 (조건부)
+  · Phase 5-C 잔존 + 중복 로직 → progress 검토 후보 (3-pass 완료 후 일괄)
+  · 신규 인박스 1건 등록: close-session 인박스 강제 검증 누락
+- 메모: 세션 #17 종료 시 인박스 3건 미정리 누적 → close-session 인박스 0건 강제 검증 부재가 근본 원인
+- 교훈
+  · Claude.ai 해석 오류: "13까지만 남기고"를 "#13만 남기고"로 잘못 정리 후 자기 보정
+  · 인박스 누적은 close-session 강제 게이트 부재가 근본 원인. 다음 세션 구조 개선 필요
