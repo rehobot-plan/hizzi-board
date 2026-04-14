@@ -11,6 +11,10 @@
   1. Phase 5-C — 2차 pass 할일(TodoItem 105건) / 3차 pass 게시물(CreatePost 71건), 각 pass R4.10 3축 개별 검증
   2. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후)
   3. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트
+  4. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+     · 현상: 세션 #17 종료 시 인박스 3건 미정리 누적 → #18에서 발견
+     · 개선: close-session.md에 "인박스 0건 확인 → 미달 시 분류 강제" 단계 추가
+     · 산출물: close-session.md 수정 + 1세션 검증
 - 미해결:
   - git remote 미설정
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
