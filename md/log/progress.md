@@ -137,3 +137,10 @@ R4.10 정책 작동 사례
 교훈
 - (b) colors.* + calendarEvent.* 동시 치환이 정답. 비교 로직과 style 값 영역이 실제로 겹치지 않음
 - 잔존 23건은 3차 pass 완료 후 일괄 "신규 토큰 승격" 안건으로 묶어서 오너 결정
+
+### [2026-04-14] 세션 #18 — session.md 톤 조정 + progress.md archive 분할
+
+- 완료: md/core/session.md 세션 시작 프롬프트 인사말 교체 — 진정성 기반 관계성 + 초보 롤 명시
+- 완료: md/log/progress.md → md/archive/progress-2026-04-A.md 분할 — #1~#12 archive, #13~#17 잔존, 310→139줄 (-55%)
+- 메모: 검토 후보 "토큰 소비 최적화" 1차 실행
+- 교훈: Claude.ai 해석 오류 — 모호한 지시는 명령 블록 직전 한 줄 재확인이 안전
