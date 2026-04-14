@@ -26,6 +26,16 @@
   - R4.10 preflight 훅 구현 (N/M PASS 카운트 검증)
   - 토큰 소비 최적화 — progress.md 현재상태/작업로그 분할 (장기 누적 시 재검토)
     · R4.10-가/나 텍스트 반영 후 1~2세션 관찰 → 개선 불충분 시 훅으로 승격
+    · 세션 #18에서 1차 분할 실행 (#1~#12 → archive). 추가 분할 또는 훅 승격 판단 보류 중
+  - 요청 UI 재설계 (길 B) — Phase 5-C 완료 후 새 방
+    · 진입 버튼 카운트 분리(받은 N + 변동 M) / 토스트 다리 / cancel_requested + 통합 댓글 스레드
+    · 데이터 모델 변경 동반 → flows + master-schema + todoRequestStore 첨부 필요
+  - 일반 메모/할일 완료·삭제 UX 점검 (조건부)
+    · 진입 조건: 요청 UI 재설계 후 + 사용자 구체 사례 1~2건 확보
+  - Phase 5-C 잔존 정리 (3-pass 완료 후 일괄 안건)
+    · tokens.ts 미존재 hex 일괄 신규 토큰 승격 (#17 작업로그 23건 + #16 후속 8종)
+    · CalendarEventBadge 프리미티브 추출 (AddEventModal 미리보기 ↔ CalendarGrid renderEventContent 로직 중복)
+    · AddEventModal 구분 버튼 색 P2 정합성 확인 (현재 카테고리 태그 아닌 캘린더 이벤트 색 사용)
 
 ---
 
