@@ -23,7 +23,10 @@
       → D:\Dropbox\Dropbox\md-presets\presets.json 의 "current" 엔트리
          files/description 갱신 (타임스탬프 .bak 의무)
       → 갱신 후 새 files 배열 출력
-   d. 생략 조건: 오너가 명시적으로 "프리셋 생략"이라고 말한 경우
+   e. ⚠️ presets.json 갱신 후 PowerShell에서 `프리셋` 명령 반드시 실행.
+      _staging 실물 복사 누락 시 다음 세션이 구버전 파일로 시작됨.
+      세션 종료 전 오너가 `프리셋` 실행 완료를 Claude Code에 보고해야 close-session 종료 처리.
+   f. 생략 조건: 오너가 명시적으로 "프리셋 생략"이라고 말한 경우
 
 9. 아래 명령 실행:
    Remove-Item -Force .harness/session-started.flag -ErrorAction SilentlyContinue
