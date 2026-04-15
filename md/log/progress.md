@@ -4,24 +4,19 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-15 세션 #21 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (e8a90e5 — 변경 없음, 조사 세션)
-- 진행 중: 길 B 로드맵 확정. 길 B-1 (PostEditModal POC) 진입 대기.
+- 마지막 세션: 2026-04-15 세션 #23 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (c8de177 — 길 B-2 + 에러 색상 교체)
+- 진행 중: 길 B-2 완료. master 머지 → 길 B-3 순서.
 - 다음 TODO:
-  1. 수정 팝업 3종 재설계 — 길 B (Radix Dialog 도입)
-     · 대상: 메모 / 할일 / 요청 3종 (게시물 표기는 오류였음)
-     · 방향: Radix Dialog 도입 + 보고서 느낌 디자인 + 메모↔할일 P8 공통 추출
-     · 진입 조건 없음 (B-1만), B-3 진입 시 머지 선행 필수
-     · B-1: PostEditModal POC (단일 파일, 단일 세션)
-     · B-2: CreatePost 전환 + useEscClose 의존 일괄 정리
-     · B-3: TodoItem 3모달 분리 + Radix 전환 (최고 위험, 단일 세션 전체)
+  1. feat/fullcalendar-poc → master 머지 (새 방 권장, git author 일괄 재작성 동반 판단)
+  2. 수정 팝업 3종 재설계 — 길 B-3 (TodoItem 3모달 분리 + Radix 전환)
+     · B-1: ✅ 완료 (commit bb21291)
+     · B-2: ✅ 완료 (commit a82ed49)
+     · B-3: TodoItem 3모달 분리 + Radix 전환 (최고 위험, 머지 선행 필수) ← 다음 진입
      · 별도 트랙: vaul 모바일 바텀시트는 모바일 우선 최적화 단계까지 보류
-  2. feat/fullcalendar-poc → master 머지 (새 방 권장, git author 일괄 재작성 동반 판단)
   3. 실작업 복귀: 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
   4. 요청 댓글 질의응답 — 데이터 모델 변경 + 통합 댓글 스레드 (길 B 재설계와 병합 검토)
-  5. 모달 기반 통합 — ESC/포커스트랩/스크롤락 (shadcn Dialog 기반, R4.9 필수)
-  6. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
-- 메모: TODO 1은 설계 대화 단계라 코드 변경 없음. 머지(TODO 2) 선행 없이 진행 가능. 단 TODO 1의 3~4단계(인라인 패턴 + 최종 명세) 진입 시점부터는 머지 선행 필요.
+  5. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
@@ -61,9 +56,6 @@
     · 진입 조건: 길 B 시리즈 완료 + 머지 완료 후
     · 선행 작업: Claude가 "어느 기능이 어디서 어떤 색으로 나오는지"
       현황 스캔표 작성 → 오너가 통일 기준 결정 → 토큰 조정
-  - 에러 페이지 색상 교체 (#81D8D0 / #6BC4BB)
-    · error.tsx 버튼 색이 히찌보드 톤과 불일치 — 토큰 승격이 아닌 색 교체 대상
-    · 단일 세션 짬 작업
 
 ---
 
@@ -298,3 +290,50 @@ R4.10 3축 (조사 세션)
 - Claude Code 보고서가 사전 계획보다 안전한 진입 순서 제시 → 수용 (TodoItem 분리는 별도 세션)
 - 길 B 단일 세션 욕심 → 3세션 분할이 정답 (#20 "좁게 닫기" 교훈 적용)
 - 미확인 플래그 2건 정직 표기 → R4.9/R4.10 정신 작동 확인
+
+### [2026-04-15] 세션 #22 — PostEditModal Radix Dialog 전환 + 토큰화 잔존 정리 (길 B-1)
+
+길 B-1 POC (commit bb21291)
+- @radix-ui/react-dialog 1.1.15 + @radix-ui/react-visually-hidden 도입
+- PostEditModal.tsx 직접 작성 ESC useEffect 제거
+- 모달 껍데기 Dialog.Root / Portal / Overlay / Content 교체
+- VisuallyHidden Dialog.Title / Dialog.Description 추가 (Radix 접근성)
+- 토큰화 잔존 정리: colors 9종 + tagColors 6종 + zIndex 2종 (~70줄)
+- 호출부 PostItem.tsx:186 1곳, props 변경 없음
+
+R4.10 3축
+- 가동: 빌드 PASS, 328kB (+11kB Radix 번들)
+- 기능: 3/3 PASS (오픈/ESC/오버레이) + 3건 코드 무변경
+- 디자인: diff 0 — 시각 변화 없음 (POC 목표 달성)
+
+오너 검증
+- Vercel Preview 자동 배포 PASS
+- 메모 카드 진입 → 모달 동작 이상 없음 확인
+
+잔존
+- hex 19건 (rgba off-state + SVG — 기존 패턴과 동일, 신규 토큰 승격 안건으로 묶음)
+- 길 B-2: CreatePost 전환 + useEscClose 의존 일괄 정리 (다음 세션)
+- 길 B-3: TodoItem 3모달 분리 + Radix 전환 (단일 세션 전체)
+
+교훈
+- "최소 범위" 추천이 정답이었음. ModalShell 추출은 메모/할일 양쪽 본 후 B-3 시점에 하는 게 정확
+- Radix 도입으로 ESC·focus trap·scroll lock·Portal 자동 처리 — 직접구현 코드 영구 제거 시작점
+
+### [2026-04-15] 세션 #23 — 길 B-2 CreatePost Radix 전환 + 에러 페이지 색상 교체
+
+길 B-2 (commit a82ed49)
+- CreatePost.tsx Radix Dialog 전환 (15 ins / 8 del)
+- useEscClose CreatePost에서 제거 (잔존 4파일: Calendar/ImageViewer/LeaveManager/Panel — B-3 이후)
+- 번들 328kB ±0 (Radix B-1과 공유)
+- R4.10 3축 PASS, Preview 검증 PASS
+
+에러 페이지 색상 교체 (commit c8de177)
+- error.tsx + Panel.tsx 2파일 2건 일괄 교체
+- #81D8D0 → #C17B6B (accent), #6BC4BB → #A86855 (accent hover)
+- Panel 버튼 정체: 카테고리 추가 모달 "추가" 버튼 (정찰로 추가 발견)
+- 빌드 328kB ±0, R4.10 3축 PASS
+
+교훈
+- 정찰 단계 분리가 정답. progress.md "error.tsx만"으로 적혀있던 항목에서 Panel.tsx 동일 색 1건 추가 발견
+- 같은 색·같은 의도면 일괄 처리. progress.md 표기 좁게 적혀 있어도 정찰 결과 우선
+- hover 톤 #A86855는 추측값. uxui.md hover 톤 정의 부재 — 향후 토큰 승격 안건 후보
