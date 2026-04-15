@@ -4,13 +4,13 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-14 세션 #19 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (e23e1a4 — Phase 5-C 3-pass 완료)
-- 진행 중: Phase 5 완료 판정 대기
+- 마지막 세션: 2026-04-15 세션 #20 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (e8a90e5 — Phase 5 좁게 닫기 완료)
+- 진행 중: Phase 5 시리즈 완료. 머지 대기.
 - 다음 TODO:
-  1. Phase 5 완료 판정 — 잔존 42건 신규 토큰 승격 안건 오너 결정
-  2. feat/fullcalendar-poc → master 머지 (Phase 5 완료 후, git author 일괄 재작성 검토)
-  3. 실작업 복귀: ESC 닫기 버그 / 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트
+  1. feat/fullcalendar-poc → master 머지 (새 방 권장, git author 일괄 재작성 동반 판단)
+  2. 실작업 복귀: 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
+  3. 모달 기반 통합 — ESC/포커스트랩/스크롤락 (shadcn Dialog 기반, R4.9 필수)
   4. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
@@ -42,6 +42,13 @@
     · tokens.ts 미존재 hex 일괄 신규 토큰 승격 (#17 작업로그 23건 + #16 후속 8종)
     · CalendarEventBadge 프리미티브 추출 (AddEventModal 미리보기 ↔ CalendarGrid renderEventContent 로직 중복)
     · AddEventModal 구분 버튼 색 P2 정합성 확인 (현재 카테고리 태그 아닌 캘린더 이벤트 색 사용)
+  - Phase 6 잔여 파일 토큰화 (14파일, 약 465행)
+    · 대상: LeaveManager / page.tsx / leave/page.tsx / PostEditModal(잔여) / TodoRequestModal / NoticeArea / PostList / Panel / DeletedTodo / CompletedTodo / login / signup / PostItem / TodoRequestBadge
+    · 진입 조건: 머지 완료 후
+    · 모바일 리팩터링과 겹치는 파일은 그쪽 세션에 흡수 검토
+  - 에러 페이지 색상 교체 (#81D8D0 / #6BC4BB)
+    · error.tsx 버튼 색이 히찌보드 톤과 불일치 — 토큰 승격이 아닌 색 교체 대상
+    · 단일 세션 짬 작업
 
 ---
 
@@ -208,3 +215,29 @@ Phase 5-C 3-pass 총괄
 - 인프라 블로커 연쇄 시 증상별 분리 진단 (author / env / protection 3단)
 - CLI 배포와 Git 연동 배포 혼용 금지. 택 1
 - Hobby 플랜 제약 사전 파악 필요 (Preview SSO 강제)
+
+### [2026-04-15] 세션 #20 — Phase 5 좁게 닫기 + 단일 출처 정비
+
+Phase 5 좁게 닫기 (commit e8a90e5)
+- tokens.ts 9색 신규 승격 (그룹1 달력UI 3 + 그룹2 완료상태 2 + 그룹3 레이어보조 3 + 그룹4 요청보조 1)
+- uxui.md 단일 출처 갱신 — "보조 UI (2026.04.15 추가)" 하위 섹션 신설
+- common/ 프리미티브 4파일(CategoryTag/VisibilityTag/RequestTag/leftBorderColor) tokens.ts 연결
+- 9색 치환 4파일(CalendarGrid/CalendarModals/CreatePost/TodoItem) 총 15건
+- PostEditModal 외과 수술 2건 (divider/altRowBg)
+
+R4.10 3축
+- 가동: 빌드 PASS, 317kB 직전 대비 ±0, 에러·경고 0
+- 기능: 9색 + 프리미티브 4파일 매핑표 전건 일치
+- 디자인: 5/5 PASS, 로컬 + Preview 이중 확인
+
+잔존 현황
+- Phase 5 범위 내 치환 불가: SVG stroke 13 + rgba off-state 22 + rgba 모달헤더 6 + #fff 이벤트텍스트 1 = 42건
+- Phase 6 대상: 미토큰화 14파일 약 465행 → 검토 후보 이월
+
+Phase 5 시리즈 완료 판정
+- 5-A 인프라 → 5-B 프리미티브 → 5-C 3-pass → 5-D 좁게 닫기 전체 PASS
+
+교훈
+- 좁게 닫기가 정답이었음. 15파일 욕심 내지 않고 주요 3파일 + 프리미티브 + 신규 토큰만 처리해 단일 세션 마무리
+- 스캔 단계에서 "잔존 42건" 기록이 실측과 차이 → progress.md 숫자 관리는 실측 기준 의무
+- 프리미티브 4파일이 tokens.ts를 import하지 않던 구조적 이슈는 Phase 5-B의 미완성분이었음. 5-D에서 해소
