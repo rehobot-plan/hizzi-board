@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { doc, updateDoc, deleteField } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Post, usePostStore } from '@/store/postStore';
@@ -8,7 +8,9 @@ import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import { db, storage } from '@/lib/firebase';
 import { useToastStore } from '@/store/toastStore';
-import { colors } from '@/styles/tokens';
+import { colors, tagColors, zIndex } from '@/styles/tokens';
+import * as Dialog from '@radix-ui/react-dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface PostEditModalProps {
   post: Post;
@@ -46,12 +48,6 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
   const [uploading, setUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
 
   const formatDate = (date: Date) => {
     if (!date) return '';
@@ -123,8 +119,8 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
     display: 'flex',
     alignItems: 'flex-start',
     padding: '10px 20px',
-    background: isAlt ? colors.altRowBg : '#fff',
-    borderBottom: '1px solid #EDE5DC',
+    background: isAlt ? colors.altRowBg : colors.cardBg,
+    borderBottom: `1px solid ${colors.border}`,
     gap: 12,
   });
 
@@ -134,7 +130,7 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
     fontSize: 10,
     fontWeight: 700,
     letterSpacing: '0.06em',
-    color: '#C4B8B0',
+    color: colors.textHint,
     textTransform: 'uppercase',
     paddingTop: 2,
   };
@@ -144,17 +140,17 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
     if (task === 'work') {
       return {
         fontSize: 11, padding: '5px 13px', borderRadius: 3, cursor: 'pointer',
-        border: `1px solid ${isOn ? '#C17B6B' : 'rgba(193,123,107,0.35)'}`,
-        color: isOn ? '#C17B6B' : 'rgba(193,123,107,0.45)',
-        background: isOn ? '#FFF5F2' : 'transparent',
+        border: `1px solid ${isOn ? tagColors.category.work.border : 'rgba(193,123,107,0.35)'}`,
+        color: isOn ? tagColors.category.work.fg : 'rgba(193,123,107,0.45)',
+        background: isOn ? tagColors.category.work.bg : 'transparent',
         transition: 'all 0.15s ease',
       };
     }
     return {
       fontSize: 11, padding: '5px 13px', borderRadius: 3, cursor: 'pointer',
-      border: `1px solid ${isOn ? '#7B5EA7' : 'rgba(123,94,167,0.35)'}`,
-      color: isOn ? '#7B5EA7' : 'rgba(123,94,167,0.45)',
-      background: isOn ? '#F0ECF5' : 'transparent',
+      border: `1px solid ${isOn ? tagColors.category.personal.border : 'rgba(123,94,167,0.35)'}`,
+      color: isOn ? tagColors.category.personal.fg : 'rgba(123,94,167,0.45)',
+      background: isOn ? tagColors.category.personal.bg : 'transparent',
       transition: 'all 0.15s ease',
     };
   };
@@ -162,9 +158,9 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
   const visBtnStyle = (visibility: VisibilityType): React.CSSProperties => {
     const isOn = editVisibility === visibility;
     const map = {
-      all:      { on: '#3B6D11', border: '#639922', offC: 'rgba(59,109,17,0.45)',  offB: 'rgba(99,153,34,0.35)' },
-      me:       { on: '#185FA5', border: '#378ADD', offC: 'rgba(24,95,165,0.45)',  offB: 'rgba(55,138,221,0.35)' },
-      specific: { on: '#854F0B', border: '#BA7517', offC: 'rgba(133,79,11,0.45)', offB: 'rgba(186,117,23,0.35)' },
+      all:      { on: tagColors.visibility.all.fg, border: tagColors.visibility.all.border, offC: 'rgba(59,109,17,0.45)',  offB: 'rgba(99,153,34,0.35)' },
+      me:       { on: tagColors.visibility.meOnly.fg, border: tagColors.visibility.meOnly.border, offC: 'rgba(24,95,165,0.45)',  offB: 'rgba(55,138,221,0.35)' },
+      specific: { on: tagColors.visibility.specific.fg, border: tagColors.visibility.specific.border, offC: 'rgba(133,79,11,0.45)', offB: 'rgba(186,117,23,0.35)' },
     };
     const c = map[visibility];
     return {
@@ -180,8 +176,8 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
     if (removeAttachment) {
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: '#C4B8B0', flex: 1 }}>삭제 예정</span>
-          <span onClick={() => setRemoveAttachment(false)} style={{ fontSize: 10, color: '#C17B6B', cursor: 'pointer', border: '1px solid #C17B6B', padding: '1px 7px', borderRadius: 2 }}>
+          <span style={{ fontSize: 12, color: colors.textHint, flex: 1 }}>삭제 예정</span>
+          <span onClick={() => setRemoveAttachment(false)} style={{ fontSize: 10, color: colors.accent, cursor: 'pointer', border: `1px solid ${colors.accent}`, padding: '1px 7px', borderRadius: 2 }}>
             취소
           </span>
         </div>
@@ -191,15 +187,15 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
     if (post.attachment && !newFile) {
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ flex: 1, fontSize: 12, color: '#2C1810', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ flex: 1, fontSize: 12, color: colors.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {post.attachment.name || '첨부파일'}
           </span>
           <a href={post.attachment.url} target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 10, color: '#185FA5', border: '1px solid #378ADD', padding: '1px 7px', borderRadius: 2, cursor: 'pointer', textDecoration: 'none', flexShrink: 0 }}>
+            style={{ fontSize: 10, color: tagColors.visibility.meOnly.fg, border: `1px solid ${tagColors.visibility.meOnly.border}`, padding: '1px 7px', borderRadius: 2, cursor: 'pointer', textDecoration: 'none', flexShrink: 0 }}>
             열기
           </a>
           <span onClick={() => setRemoveAttachment(true)}
-            style={{ fontSize: 10, color: '#C17B6B', border: '1px solid #C17B6B', padding: '1px 7px', borderRadius: 2, cursor: 'pointer', flexShrink: 0 }}>
+            style={{ fontSize: 10, color: colors.accent, border: `1px solid ${colors.accent}`, padding: '1px 7px', borderRadius: 2, cursor: 'pointer', flexShrink: 0 }}>
             삭제
           </span>
         </div>
@@ -209,17 +205,17 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
     if (newFile) {
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ flex: 1, fontSize: 12, color: '#C17B6B' }}>{newFile.name}</span>
-          <span onClick={() => setNewFile(null)} style={{ fontSize: 10, color: '#9E8880', cursor: 'pointer' }}>취소</span>
+          <span style={{ flex: 1, fontSize: 12, color: colors.accent }}>{newFile.name}</span>
+          <span onClick={() => setNewFile(null)} style={{ fontSize: 10, color: colors.textSecondary, cursor: 'pointer' }}>취소</span>
         </div>
       );
     }
 
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 12, color: '#C4B8B0', flex: 1 }}>없음</span>
+        <span style={{ fontSize: 12, color: colors.textHint, flex: 1 }}>없음</span>
         <span onClick={() => fileInputRef.current?.click()}
-          style={{ fontSize: 10, color: '#C17B6B', border: '1px solid #C17B6B', padding: '1px 7px', borderRadius: 2, cursor: 'pointer' }}>
+          style={{ fontSize: 10, color: colors.accent, border: `1px solid ${colors.accent}`, padding: '1px 7px', borderRadius: 2, cursor: 'pointer' }}>
           + 추가
         </span>
       </div>
@@ -227,16 +223,17 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
   };
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-      onClick={onClose}
-    >
-      <div
-        style={{ background: '#fff', border: '1px solid #EDE5DC', borderRadius: 6, width: '100%', maxWidth: 480, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
-        onClick={e => e.stopPropagation()}
-      >
+    <Dialog.Root open onOpenChange={o => { if (!o) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay style={{ position: 'fixed', inset: 0, background: colors.overlay, zIndex: zIndex.modalOverlay }} />
+        <Dialog.Content
+          style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 6, width: '100%', maxWidth: 480, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: zIndex.modalBody }}
+          onOpenAutoFocus={e => e.preventDefault()}
+        >
+          <VisuallyHidden asChild><Dialog.Title>메모 수정</Dialog.Title></VisuallyHidden>
+          <VisuallyHidden asChild><Dialog.Description>{editTitle || '메모'}</Dialog.Description></VisuallyHidden>
         {/* 헤더 */}
-        <div style={{ background: '#5C1F1F', padding: '14px 20px 12px', flexShrink: 0 }}>
+        <div style={{ background: colors.sidebarBg, padding: '14px 20px 12px', flexShrink: 0 }}>
           <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', color: 'rgba(253,248,244,0.45)', textTransform: 'uppercase', marginBottom: 6 }}>
             메모
           </div>
@@ -247,11 +244,11 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
               onBlur={() => setIsEditingTitle(false)}
               onKeyDown={e => { if (e.key === 'Enter') setIsEditingTitle(false); }}
               autoFocus
-              style={{ fontSize: 15, fontWeight: 700, color: '#FDF8F4', background: 'transparent', border: 'none', borderBottom: '1px solid rgba(253,248,244,0.4)', outline: 'none', width: '100%', fontFamily: 'inherit', padding: '2px 0' }}
+              style={{ fontSize: 15, fontWeight: 700, color: colors.mainBg, background: 'transparent', border: 'none', borderBottom: '1px solid rgba(253,248,244,0.4)', outline: 'none', width: '100%', fontFamily: 'inherit', padding: '2px 0' }}
             />
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#FDF8F4', lineHeight: 1.4 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: colors.mainBg, lineHeight: 1.4 }}>
                 {editTitle || post.content.slice(0, 20)}
               </span>
               {canEdit && (
@@ -278,14 +275,14 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
         </div>
 
         {/* 상태바 */}
-        <div style={{ background: '#FDF8F4', borderBottom: '1px solid #EDE5DC', padding: '7px 20px', display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: '#9E8880', paddingRight: 10, borderRight: `1px solid ${colors.divider}`, marginRight: 10 }}>
+        <div style={{ background: colors.mainBg, borderBottom: `1px solid ${colors.border}`, padding: '7px 20px', display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', color: colors.textSecondary, paddingRight: 10, borderRight: `1px solid ${colors.divider}`, marginRight: 10 }}>
             메모
           </span>
-          <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: editTaskType === 'personal' ? '#F0ECF5' : '#FFF5F2', color: editTaskType === 'personal' ? '#7B5EA7' : '#C17B6B', border: `1px solid ${editTaskType === 'personal' ? '#7B5EA7' : '#C17B6B'}`, marginRight: 4 }}>
+          <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: editTaskType === 'personal' ? tagColors.category.personal.bg : tagColors.category.work.bg, color: editTaskType === 'personal' ? tagColors.category.personal.fg : tagColors.category.work.fg, border: `1px solid ${editTaskType === 'personal' ? tagColors.category.personal.border : tagColors.category.work.border}`, marginRight: 4 }}>
             {editTaskType === 'work' ? '업무' : '개인'}
           </span>
-          <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: 'none', color: editVisibility === 'all' ? '#3B6D11' : editVisibility === 'me' ? '#185FA5' : '#854F0B', border: `1px solid ${editVisibility === 'all' ? '#639922' : editVisibility === 'me' ? '#378ADD' : '#BA7517'}` }}>
+          <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: 'none', color: editVisibility === 'all' ? tagColors.visibility.all.fg : editVisibility === 'me' ? tagColors.visibility.meOnly.fg : tagColors.visibility.specific.fg, border: `1px solid ${editVisibility === 'all' ? tagColors.visibility.all.border : editVisibility === 'me' ? tagColors.visibility.meOnly.border : tagColors.visibility.specific.border}` }}>
             {editVisibility === 'all' ? '전체' : editVisibility === 'me' ? '나만' : '특정'}
           </span>
         </div>
@@ -298,7 +295,7 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
               value={editContent}
               onChange={e => setEditContent(e.target.value)}
               rows={4}
-              style={{ flex: 1, border: 'none', fontSize: 13, color: '#2C1810', outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit', lineHeight: 1.6 }}
+              style={{ flex: 1, border: 'none', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit', lineHeight: 1.6 }}
             />
           </div>
 
@@ -350,7 +347,7 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
                       onClick={() => setEditSelectedUsers(prev =>
                         selected ? prev.filter(email => email !== currentUser.email) : [...prev, currentUser.email]
                       )}
-                      style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: selected ? '1px solid #BA7517' : '1px solid rgba(186,117,23,0.32)', color: selected ? '#854F0B' : 'rgba(133,79,11,0.42)', background: selected ? 'rgba(186,117,23,0.07)' : 'none' }}
+                      style={{ fontSize: 11, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', border: selected ? `1px solid ${tagColors.visibility.specific.border}` : '1px solid rgba(186,117,23,0.32)', color: selected ? tagColors.visibility.specific.fg : 'rgba(133,79,11,0.42)', background: selected ? 'rgba(186,117,23,0.07)' : 'none' }}
                     >
                       {currentUser.name || currentUser.email.split('@')[0]}
                     </div>
@@ -362,26 +359,27 @@ export default function PostEditModal({ post, onClose }: PostEditModalProps) {
         </div>
 
         {/* 푸터 */}
-        <div style={{ background: '#FDF8F4', borderTop: '1px solid #EDE5DC', padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ background: colors.mainBg, borderTop: `1px solid ${colors.border}`, padding: '11px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span onClick={onClose} style={{ fontSize: 12, color: '#9E8880', cursor: 'pointer', padding: '5px 2px' }}>
+            <span onClick={onClose} style={{ fontSize: 12, color: colors.textSecondary, cursor: 'pointer', padding: '5px 2px' }}>
               닫기
             </span>
             <span
               onClick={handleDelete}
-              style={{ fontSize: 12, color: '#C17B6B', border: '1px solid #C17B6B', background: 'none', padding: '5px 12px', borderRadius: 3, cursor: 'pointer' }}
+              style={{ fontSize: 12, color: colors.accent, border: `1px solid ${colors.accent}`, background: 'none', padding: '5px 12px', borderRadius: 3, cursor: 'pointer' }}
             >
               삭제
             </span>
           </div>
           <span
             onClick={!isUpdating && !uploading ? handleEditSave : undefined}
-            style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: isUpdating || uploading ? '#9E8880' : '#2C1810', color: '#FDF8F4', cursor: isUpdating || uploading ? 'not-allowed' : 'pointer', transition: 'background 0.15s ease' }}
+            style={{ fontSize: 12, fontWeight: 700, padding: '6px 18px', borderRadius: 3, background: isUpdating || uploading ? colors.textSecondary : colors.textPrimary, color: colors.mainBg, cursor: isUpdating || uploading ? 'not-allowed' : 'pointer', transition: 'background 0.15s ease' }}
           >
             {uploading ? '업로드 중...' : isUpdating ? '저장 중...' : '저장'}
           </span>
         </div>
-      </div>
-    </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

@@ -4,14 +4,24 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-15 세션 #20 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (e8a90e5 — Phase 5 좁게 닫기 완료)
-- 진행 중: Phase 5 시리즈 완료. 머지 대기.
+- 마지막 세션: 2026-04-15 세션 #21 (종료)
+- 작업 브랜치: feat/fullcalendar-poc (e8a90e5 — 변경 없음, 조사 세션)
+- 진행 중: 길 B 로드맵 확정. 길 B-1 (PostEditModal POC) 진입 대기.
 - 다음 TODO:
-  1. feat/fullcalendar-poc → master 머지 (새 방 권장, git author 일괄 재작성 동반 판단)
-  2. 실작업 복귀: 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
-  3. 모달 기반 통합 — ESC/포커스트랩/스크롤락 (shadcn Dialog 기반, R4.9 필수)
-  4. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+  1. 수정 팝업 3종 재설계 — 길 B (Radix Dialog 도입)
+     · 대상: 메모 / 할일 / 요청 3종 (게시물 표기는 오류였음)
+     · 방향: Radix Dialog 도입 + 보고서 느낌 디자인 + 메모↔할일 P8 공통 추출
+     · 진입 조건 없음 (B-1만), B-3 진입 시 머지 선행 필수
+     · B-1: PostEditModal POC (단일 파일, 단일 세션)
+     · B-2: CreatePost 전환 + useEscClose 의존 일괄 정리
+     · B-3: TodoItem 3모달 분리 + Radix 전환 (최고 위험, 단일 세션 전체)
+     · 별도 트랙: vaul 모바일 바텀시트는 모바일 우선 최적화 단계까지 보류
+  2. feat/fullcalendar-poc → master 머지 (새 방 권장, git author 일괄 재작성 동반 판단)
+  3. 실작업 복귀: 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
+  4. 요청 댓글 질의응답 — 데이터 모델 변경 + 통합 댓글 스레드 (길 B 재설계와 병합 검토)
+  5. 모달 기반 통합 — ESC/포커스트랩/스크롤락 (shadcn Dialog 기반, R4.9 필수)
+  6. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+- 메모: TODO 1은 설계 대화 단계라 코드 변경 없음. 머지(TODO 2) 선행 없이 진행 가능. 단 TODO 1의 3~4단계(인라인 패턴 + 최종 명세) 진입 시점부터는 머지 선행 필요.
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
@@ -29,9 +39,6 @@
   - 토큰 소비 최적화 — progress.md 현재상태/작업로그 분할 (장기 누적 시 재검토)
     · R4.10-가/나 텍스트 반영 후 1~2세션 관찰 → 개선 불충분 시 훅으로 승격
     · 세션 #18에서 1차 분할 실행 (#1~#12 → archive). 추가 분할 또는 훅 승격 판단 보류 중
-  - 게시물 수정 팝업 3종(요청/할일/메모) 디자인·기능 점검
-    · 요청 타입 댓글 질의 기능 비활성 추정 — 우선 확인 필요
-    · 생성 폼 ↔ 수정 팝업 옵션 일치 여부 (공개범위 규칙) + patterns-modal.md 준수 여부 동반 점검
   - 요청 UI 재설계 (길 B) — Phase 5-C 완료 후 새 방
     · 진입 버튼 카운트 분리(받은 N + 변동 M) / 토스트 다리 / cancel_requested + 통합 댓글 스레드
     · 데이터 모델 변경 동반 → flows + master-schema + todoRequestStore 첨부 필요
@@ -46,6 +53,14 @@
     · 대상: LeaveManager / page.tsx / leave/page.tsx / PostEditModal(잔여) / TodoRequestModal / NoticeArea / PostList / Panel / DeletedTodo / CompletedTodo / login / signup / PostItem / TodoRequestBadge
     · 진입 조건: 머지 완료 후
     · 모바일 리팩터링과 겹치는 파일은 그쪽 세션에 흡수 검토
+  - 기능별 색상 일치화 (설계 세션 필요)
+    · 목적: 같은 기능은 같은 색으로 통일 → 색만 보고 기능 즉시 인지
+    · 대상: patterns.md P2 좌측 띠 + uxui.md 4번 색상 의미 시스템 +
+      게시물 모달 / 달력 모달 / 달력 이벤트 / 할일 / 요청 전반
+    · 성격: 기계적 치환 아님. 설계 세션 필요
+    · 진입 조건: 길 B 시리즈 완료 + 머지 완료 후
+    · 선행 작업: Claude가 "어느 기능이 어디서 어떤 색으로 나오는지"
+      현황 스캔표 작성 → 오너가 통일 기준 결정 → 토큰 조정
   - 에러 페이지 색상 교체 (#81D8D0 / #6BC4BB)
     · error.tsx 버튼 색이 히찌보드 톤과 불일치 — 토큰 승격이 아닌 색 교체 대상
     · 단일 세션 짬 작업
@@ -248,3 +263,38 @@ Phase 5 시리즈 완료 판정
 - 조치: close-session.md + session.md [4] 문구 보강 (프리셋 실행 체크리스트)
 - 스크립트 자체 결함 없음 (_staging 비우기 + 복사 + 에러 핸들링 정상)
 - 교훈: 증상 3종(잔존/구버전/빈파일) 공통 뿌리 = 절차 누락. 스크립트 결함 아님
+
+### [2026-04-15] 세션 #21 — 수정 팝업 3종 재설계 1단계 + 모달 인프라 R4.9 조사
+
+현황 매트릭스
+- 메모/할일/요청 3종 매트릭스 작성 (progress.md "게시물" 표기 오류 → 3종으로 정리)
+- 발견: 메모(PostEditModal) ↔ 할일(TodoItem.showDetailModal) P8 코드 90% 중복
+- 발견: TodoItem.tsx 580+ 라인, 2모달 내장 상태
+- 발견: 모달 인프라 직접구현 — focus trap·body scroll lock 없음, ESC 처리 3가지 패턴 파편화
+- 발견: PostEditModal 토큰화 미완 (Phase 5-C 3차 pass 대상에서 누락)
+
+R4.9 라이브러리 조사 (Claude Code 수행)
+- 후보: @radix-ui/react-dialog 1.1.15 + vaul 1.1.2
+- 8개 필수 항목 매핑: 자동 5 (ESC/오버레이/Portal/focus trap/scroll lock/autoFocus)
+  + 옵션 1 (다중 모달 중첩) + 직접 2 (z-index/우선순위)
+- 디자인 토큰 호환성 6/6 PASS (Headless 특성)
+- 마이그레이션 비용: PostEditModal ~40라인 / TodoItem ~120라인 / 공통 추출 ~200라인
+- 미확인 2건: 번들 사이즈 실측 (bundlephobia 502) / 최신 배포일 정확치
+- 결론: (A) Radix 도입 권장. vaul은 모바일 전환 시점까지 보류
+
+길 B 로드맵 확정 (3세션 분할)
+- B-1: PostEditModal POC (단일 파일, 다음 세션 진입 예정)
+- B-2: CreatePost 전환 + useEscClose 의존 일괄 정리
+- B-3: TodoItem 3모달 분리 + Radix 전환 (최고 위험)
+- 별도 트랙: 요청 UI 재설계 (flows + master-schema) / vaul 모바일
+
+R4.10 3축 (조사 세션)
+- 가동: 코드 변경 0, 검증 대상 없음
+- 기능: 8개 필수 항목 매핑 전건 채움
+- 디자인: 토큰 호환성 6/6 PASS
+
+교훈
+- progress.md "게시물" 표기 오류 → 메모/할일/요청 3종으로 단일화
+- Claude Code 보고서가 사전 계획보다 안전한 진입 순서 제시 → 수용 (TodoItem 분리는 별도 세션)
+- 길 B 단일 세션 욕심 → 3세션 분할이 정답 (#20 "좁게 닫기" 교훈 적용)
+- 미확인 플래그 2건 정직 표기 → R4.9/R4.10 정신 작동 확인
