@@ -4,26 +4,25 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-15 세션 #23 (종료)
-- 작업 브랜치: feat/fullcalendar-poc (c8de177 — 길 B-2 + 에러 색상 교체)
-- 진행 중: 길 B-2 완료. master 머지 → 길 B-3 순서.
+- 마지막 세션: 2026-04-15 세션 #24 (종료)
+- 작업 브랜치: master (13df313 — feat/fullcalendar-poc FF 머지 완료)
+- 진행 중: master 머지 완료. 길 B-3 진입 대기.
 - 다음 TODO:
-  1. feat/fullcalendar-poc → master 머지 (새 방 권장, git author 일괄 재작성 동반 판단)
-  2. 수정 팝업 3종 재설계 — 길 B-3 (TodoItem 3모달 분리 + Radix 전환)
-     · B-1: ✅ 완료 (commit bb21291)
-     · B-2: ✅ 완료 (commit a82ed49)
-     · B-3: TodoItem 3모달 분리 + Radix 전환 (최고 위험, 머지 선행 필수) ← 다음 진입
+  1. 수정 팝업 3종 재설계 — 길 B-3 (TodoItem 3모달 분리 + Radix 전환)
+     · B-1: ✅ 완료 (commit bb21291 → 재작성 후 15a3caa)
+     · B-2: ✅ 완료 (commit a82ed49 → 재작성 후 dc9fc37)
+     · B-3: TodoItem 3모달 분리 + Radix 전환 (최고 위험) ← 다음 진입
      · 별도 트랙: vaul 모바일 바텀시트는 모바일 우선 최적화 단계까지 보류
-  3. 실작업 복귀: 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
-  4. 요청 댓글 질의응답 — 데이터 모델 변경 + 통합 댓글 스레드 (길 B 재설계와 병합 검토)
-  5. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+  2. 실작업 복귀: 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
+  3. 요청 댓글 질의응답 — 데이터 모델 변경 + 통합 댓글 스레드 (길 B 재설계와 병합 검토)
+  4. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
   - src/components/ImageViewer.tsx 루트/common 중복 (경미, 별도 세션)
   - src/components/TodoItem.tsx 상세/편집 모달 내장 (유지)
   - Vercel Hobby 플랜 Preview 자동 SSO 정책 (Deployment Protection Disabled 필요)
-  - git author dev@hizzi-board.local 구커밋 잔존 (master 머지 시 일괄 재작성 검토)
+  - filter-branch refs/original/ + backup 브랜치 2개 로컬 잔존 (정리 대상)
 - 참고: 프리셋 시스템 단일화 완료. `프리셋` 한 단어로 current 엔트리 실행.
 - 검토 후보 (조건부 진입):
   - FullCalendar 미활용 기능 7건 (master 머지 + 디자인 통일 완료 후)
@@ -56,6 +55,10 @@
     · 진입 조건: 길 B 시리즈 완료 + 머지 완료 후
     · 선행 작업: Claude가 "어느 기능이 어디서 어떤 색으로 나오는지"
       현황 스캔표 작성 → 오너가 통일 기준 결정 → 토큰 조정
+  - 백업 브랜치 + refs/original/ 정리 (2026-04-22 이후)
+    · backup/before-author-rewrite-20260415 + -master (2개)
+    · refs/original/ 6개 ref (filter-branch 백업)
+    · 일주일 경과 후 문제 없으면 삭제
 
 ---
 
@@ -337,3 +340,29 @@ R4.10 3축
 - 정찰 단계 분리가 정답. progress.md "error.tsx만"으로 적혀있던 항목에서 Panel.tsx 동일 색 1건 추가 발견
 - 같은 색·같은 의도면 일괄 처리. progress.md 표기 좁게 적혀 있어도 정찰 결과 우선
 - hover 톤 #A86855는 추측값. uxui.md hover 톤 정의 부재 — 향후 토큰 승격 안건 후보
+
+### [2026-04-15] 세션 #24 — feat/fullcalendar-poc → master 머지 + git author 일괄 재작성
+
+준비
+- 길 B-3 선행 조건 해소 목적
+- git author dev@hizzi-board.local 273건 일괄 재작성 동반 결정
+
+실행 (6단계)
+1. 정찰 — feat 51 commits ahead, dev@ author 273건 확인
+2. 백업 — backup/before-author-rewrite-20260415 (b3c87e9) + -master (323586d)
+3. author 재작성 — git filter-branch 사용, 양 브랜치 0건 잔존 ✅
+4. master fast-forward 머지 — 33 files, +3,749 / -1,704
+5. force push — origin master 신규 + feat forced update (b3c87e9 → 13df313)
+   · --force-with-lease 거부 (filter-branch가 remote tracking ref 재작성)
+   · --force 사용. 단독 작업이라 실질 위험 없음
+6. 검증 — 원격/로컬 13df313 일치, author oilpig85@gmail.com 단일
+
+Vercel + GitHub 정리
+- GitHub 기본 브랜치 main → master 변경 (281 commits ahead 상태 해소)
+- Vercel Production Branch 자동 인식 → master 배포 Promote to Production
+- https://hizzi-board.vercel.app 동작 확인 PASS
+
+교훈
+- filter-branch는 remote tracking ref도 재작성 → --force-with-lease 거부 정상 동작
+- GitHub 기본 브랜치 main 잔존 = Vercel production 미트리거 근본 원인. master 머지만으로는 부족했음
+- Vercel Promote 6회 중복 클릭 자국 → 첫 클릭 후 반영 시간 1~2분 대기 안내 필요 (다음 머지 시점 인계)
