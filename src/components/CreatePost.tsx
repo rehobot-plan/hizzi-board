@@ -8,10 +8,11 @@ import { usePanelStore } from '@/store/panelStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
-import { useEscClose } from '@/hooks/useEscClose';
 import { useToastStore } from '@/store/toastStore';
 import { getEventColor } from '@/lib/calendar-helpers';
-import { colors, tagColors, calendarEvent } from '@/styles/tokens';
+import { colors, tagColors, calendarEvent, zIndex } from '@/styles/tokens';
+import * as Dialog from '@radix-ui/react-dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 interface CreatePostProps {
   panelId: string;
@@ -103,8 +104,6 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
   const [requestVisibility, setRequestVisibility] = useState<RequestVisibilityType>('requestOnly');
   const [requestSpecificUsers, setRequestSpecificUsers] = useState<string[]>([]);
   const [requestSubmitting, setRequestSubmitting] = useState(false);
-
-  useEscClose(onClose, true);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -298,8 +297,15 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
     : activeTab === 'todo' ? title.trim().length > 0 : content.trim().length > 0;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: colors.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 6, width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <Dialog.Root open onOpenChange={o => { if (!o) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay style={{ position: 'fixed', inset: 0, background: colors.overlay, zIndex: zIndex.modalOverlay }} />
+        <Dialog.Content
+          style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: 6, width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: zIndex.modalBody }}
+          onOpenAutoFocus={e => e.preventDefault()}
+        >
+          <VisuallyHidden asChild><Dialog.Title>게시물 작성</Dialog.Title></VisuallyHidden>
+          <VisuallyHidden asChild><Dialog.Description>메모, 할일, 요청을 작성합니다</Dialog.Description></VisuallyHidden>
         <div style={{ background: colors.sidebarBg, padding: '15px 20px 13px', flexShrink: 0, minHeight: 52 }}>
           {(() => {
             const titleText = activeTab === 'request' ? requestTitle : activeTab === 'todo' ? title : content;
@@ -663,7 +669,8 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
             </button>
           )}
         </div>
-      </div>
-    </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
