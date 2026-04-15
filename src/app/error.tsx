@@ -20,7 +20,7 @@ export default function Error({
         <p className="text-gray-600 mb-4">문제가 발생했습니다. 다시 시도해 주세요.</p>
         <button
           onClick={() => reset()}
-          className="px-4 py-2 bg-[#81D8D0] text-white rounded hover:bg-[#6BC4BB]"
+          className="px-4 py-2 bg-[#C17B6B] text-white rounded hover:bg-[#A86855]"
         >
           다시 시도
         </button>

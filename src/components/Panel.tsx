@@ -312,7 +312,7 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
               </button>
               <button
                 onClick={handleAddCategory}
-                className="px-2 py-1 bg-[#81D8D0] text-white rounded-md hover:bg-[#6BC4BB] text-xs"
+                className="px-2 py-1 bg-[#C17B6B] text-white rounded-md hover:bg-[#A86855] text-xs"
               >
                 추가
               </button>
