@@ -7,6 +7,7 @@ import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { useUserStore } from '@/store/userStore';
 import ImageViewer from '@/components/common/ImageViewer';
 import TodoDetailModal from '@/components/todo/TodoDetailModal';
+import RequestDetailModal from '@/components/todo/RequestDetailModal';
 import { colors, tagColors } from '@/styles/tokens';
 import { todoLeftBorderColor } from '@/lib/leftBorderColor';
 
@@ -41,7 +42,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 });
   const [showSpecificTooltip, setShowSpecificTooltip] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [isCompleting, setIsCompleting] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
@@ -62,11 +62,10 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (isImageOpen) { setIsImageOpen(false); return; }
-      if (showOrderModal) { setShowOrderModal(false); return; }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [isImageOpen, showOrderModal]);
+  }, [isImageOpen]);
 
   const isWork = post.taskType === 'work';
   const tagLabel = isWork ? '업무' : '개인';
@@ -92,18 +91,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         setChecking(false);
       }
     }, 600);
-  };
-
-  const handleComplete = async () => {
-    if (!canEdit || isCompleting) return;
-    setIsCompleting(true);
-    try {
-      await updatePost(post.id, { completed: true, completedAt: new Date() });
-      if (post.requestId) await completeRequest(post.requestId);
-      setShowOrderModal(false);
-    } finally {
-      setIsCompleting(false);
-    }
   };
 
   const handleStar = async () => {
@@ -327,99 +314,12 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         onClose={() => setShowDetailModal(false)}
       />
 
-      {showOrderModal && post.requestId && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(44,20,16,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-          onClick={() => setShowOrderModal(false)}>
-          <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, width: '100%', maxWidth: 860, zIndex: 1001, display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ background: colors.sidebarBg, padding: '20px 28px', flexShrink: 0 }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: colors.mainBg, lineHeight: 1.4, marginBottom: 12 }}>{post.content}</div>
-              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
-                {post.requestFrom && (
-                  <div style={{ fontSize: 12, color: 'rgba(253,248,244,0.7)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="3" r="2" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/><path d="M1 9c0-2 1.8-3 4-3s4 1 4 3" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/></svg>
-                    {users.find(u => u.email === post.requestFrom)?.name || post.requestFrom.split('@')[0]} → 나
-                  </div>
-                )}
-                <div style={{ fontSize: 12, color: 'rgba(253,248,244,0.7)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><rect x="1" y="1.5" width="8" height="7" rx="1" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/><path d="M3 1v1.5M7 1v1.5M1 4h8" stroke="rgba(253,248,244,0.7)" strokeWidth="1.2"/></svg>
-                  {formatDate(post.createdAt)} 등록
-                </div>
-                {(post.requestDueDate || post.dueDate) && (() => {
-                  const dueDateStr = post.requestDueDate || post.dueDate!;
-                  return (
-                    <div style={{ fontSize: 12, color: tagColors.dueSoonLight, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 600 }}>
-                      <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#F4C0D1" strokeWidth="1.2"/><path d="M5 3v2.2l1.4 1" stroke="#F4C0D1" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                      {new Date(dueDateStr + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })} 까지
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-            <div style={{ background: tagColors.from.bg, padding: '8px 28px', borderBottom: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: tagColors.category.request.fg, display: 'inline-block' }} />
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: tagColors.category.request.fg }}>진행중</span>
-            </div>
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 360 }}>
-              <div style={{ width: 260, flexShrink: 0, borderRight: `1px solid ${colors.border}`, padding: 20, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-                {post.requestContent && (
-                  <div>
-                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 7 }}>상세 내용</div>
-                    <div style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{post.requestContent}</div>
-                  </div>
-                )}
-                <div style={{ height: '0.5px', background: colors.border }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 10, color: colors.textSecondary, width: 36, flexShrink: 0 }}>공개</span>
-                    <span style={{ fontSize: 9, padding: '3px 8px', color: !post.visibleTo || post.visibleTo.length === 0 ? tagColors.visibility.all.fg : post.visibleTo.length > 1 ? tagColors.visibility.specific.fg : tagColors.visibility.meOnly.fg, border: !post.visibleTo || post.visibleTo.length === 0 ? `1px solid ${tagColors.visibility.all.border}` : post.visibleTo.length > 1 ? `1px solid ${tagColors.visibility.specific.border}` : `1px solid ${tagColors.visibility.meOnly.border}` }}>
-                      {!post.visibleTo || post.visibleTo.length === 0 ? '전체' : post.visibleTo.length > 1 ? '특정' : '나만'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 10, color: colors.textSecondary, width: 36, flexShrink: 0 }}>구분</span>
-                    <span style={{ fontSize: 9, padding: '3px 8px', background: post.taskType === 'personal' ? tagColors.category.personal.bg : tagColors.category.work.bg, color: post.taskType === 'personal' ? tagColors.category.personal.fg : tagColors.category.work.fg, border: `1px solid ${post.taskType === 'personal' ? tagColors.category.personal.fg : tagColors.category.work.fg}` }}>
-                      {post.taskType === 'personal' ? '개인' : '업무'}
-                    </span>
-                  </div>
-                </div>
-                <div style={{ height: '0.5px', background: colors.border }} />
-                <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 7 }}>첨부파일</div>
-                  {post.attachment ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', border: `0.5px solid ${colors.border}`, background: colors.cardBg }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 1h6l3 3v9H3V1z" stroke="#C17B6B" strokeWidth="1.2"/><path d="M8 1v3h3" stroke="#C17B6B" strokeWidth="1.2"/></svg>
-                        <span style={{ fontSize: 12, color: colors.textPrimary }}>{post.attachment.name || '첨부파일'}</span>
-                      </div>
-                      <a href={post.attachment.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: colors.accent, textDecoration: 'none' }}>열기</a>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 11, color: colors.textHint }}>없음</div>
-                  )}
-                </div>
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ textAlign: 'center', fontSize: 10, color: colors.textHint }}>댓글 기능은 준비 중입니다</div>
-                </div>
-                <div style={{ borderTop: `1px solid ${colors.border}`, padding: '10px 16px', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-                  <input placeholder="메모를 남겨주세요..." disabled
-                    style={{ flex: 1, border: 'none', borderBottom: `1px solid ${colors.border}`, fontSize: 12, color: colors.textPrimary, outline: 'none', background: 'transparent', padding: '5px 0', fontFamily: 'inherit', opacity: 0.4, cursor: 'not-allowed' }} />
-                  <button disabled style={{ fontSize: 10, padding: '7px 16px', background: colors.border, color: colors.textSecondary, border: 'none', cursor: 'not-allowed' }}>전송</button>
-                </div>
-              </div>
-            </div>
-            <div style={{ padding: '12px 28px', borderTop: `1px solid ${colors.border}`, background: colors.mainBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <button onClick={() => setShowOrderModal(false)} style={{ fontSize: 11, letterSpacing: '0.04em', color: colors.textSecondary, background: 'none', border: 'none', cursor: 'pointer' }}>닫기</button>
-              <button onClick={handleComplete} disabled={isCompleting}
-                style={{ fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '9px 24px', background: colors.textPrimary, color: colors.mainBg, border: 'none', cursor: isCompleting ? 'not-allowed' : 'pointer', opacity: isCompleting ? 0.6 : 1 }}>
-                {isCompleting ? '처리 중...' : '완료 처리'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RequestDetailModal
+        post={post}
+        canEdit={canEdit}
+        isOpen={showOrderModal && !!post.requestId}
+        onClose={() => setShowOrderModal(false)}
+      />
 
       {isImageOpen && post.attachment?.type === 'image' && (
         <ImageViewer
