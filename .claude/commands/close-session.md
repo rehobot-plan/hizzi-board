@@ -16,7 +16,7 @@
        - 전체 항목을 오너에게 출력 + flag 유지
        - "이 항목들을 Claude.ai에 전달하여 분류받으세요" 안내
        - 오너가 Claude.ai 분류 결과를 가져와 승인하면:
-         → master-debt.md / session.md 반영
+         → master-debt.md / CLAUDE.md·CLAUDE-detail.md 반영
          → 반영 파일의 diff 요약 출력
          → 반영 항목별 "원본 인박스 라인 → 반영 파일 라인" 매핑표 보고
          → 반영 실패 항목 있으면 "이동 실패" 플래그 → 다음 세션 재시도
