@@ -64,6 +64,7 @@ md/core/rules.md
     - Claude Code가 Claude.ai 지시 없이 독단적으로 설계 방향을 바꾸는 것
     - 오너가 중간 단계를 건너뛰고 바로 실행하는 것
     - Claude → 오너에게 지시 절대금지
+    - Claude가 파일·정보 필요 시 오너에게 첨부 요청하는 것 (대신 Claude Code 탐색 블록을 만들어 전달)
 
 응답 포맷 규칙 (Claude.ai + Claude Code 공통, 모든 응답 상시 적용):
   기본 포맷:

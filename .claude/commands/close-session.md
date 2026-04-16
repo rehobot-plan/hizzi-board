@@ -20,7 +20,7 @@
    a. md/log/progress.md "다음 TODO" 1순위 항목 확인
    b. 해당 작업에 필요한 MD + src 파일 리스트를 오너에게 Claude.ai 제안 요청
    c. 오너가 Claude.ai 분류 결과를 가져와 승인하면:
-      → D:\Dropbox\Dropbox\md-presets\presets.json 의 "current" 엔트리
+      → D:\Dropbox\Dropbox\hizzi-board\md-presets\presets.json 의 "current" 엔트리
          files/description 갱신 (타임스탬프 .bak 의무)
       → 갱신 후 새 files 배열 출력
    e. ⚠️ presets.json 갱신 후 PowerShell에서 `프리셋` 명령 반드시 실행.
