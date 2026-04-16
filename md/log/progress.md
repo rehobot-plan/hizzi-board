@@ -4,16 +4,17 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-16 세션 #25 (종료)
-- 작업 브랜치: master (b9d3cb6)
-- 진행 중: B-3 재정의 완료. 보고서형 모달 설계 방향 확정.
+- 마지막 세션: 2026-04-16 세션 #26 (종료)
+- 작업 브랜치: master (7ac4bf9)
+- 진행 중: B-3 모달 분리 + 댓글 구현 완료. 디자인 적용 + Radix 전환 미착수.
 - 다음 TODO:
-  1. 보고서형 모달 재설계 + 구현 — 길 B-3 (TodoItem 2모달 분리 + Radix 전환)
-     · dead code 삭제: ✅ 완료 (commit b9d3cb6, 819→752줄)
-     · 설계 방향 확정: 읽기/편집 모드 전환(연필 아이콘), 할일·메모·요청 통일 프레임, 요청만 오른쪽 댓글 Q&A 패널(2단)
-     · 댓글 Q&A = progress.md 기존 "요청 댓글 질의응답" 항목과 병합. 데이터 모델 변경 동반 → flows + master-schema 필요
-     · 다음 진입: 댓글 데이터 모델 설계 → 상세 모달 분리 → 요청 모달 분리+댓글 패널
-  2. 실작업 복귀: 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
+  1. 보고서형 모달 디자인 적용 + Radix 전환 — 길 B-3 후속
+     · 읽기 모드 기본 → 연필 아이콘 클릭 → 편집 모드 전환
+     · 할일·메모·요청 통일 프레임
+     · TodoDetailModal + RequestDetailModal 양쪽 적용
+     · Radix Dialog 전환 (현재 직접 모달 → Radix 기반)
+     · 필요 MD: patterns-modal + uxui
+  2. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
   3. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
@@ -129,3 +130,32 @@ Step 1 실행
 
 교훈
 - 간이 편집은 상세 모달 일원화 과정에서 호출 경로가 제거된 잔재. 코드 추출 전 호출 경로 확인이 선행되어야 함
+
+### [2026-04-16] 세션 #26 — B-3 모달 분리 + 댓글 기능 구현
+
+실행 (3단계)
+1. comments 스키마 설계 — master-schema.md + flows.md 반영 (hard delete 방식)
+2. TodoDetailModal 분리 — TodoItem.tsx 752→433줄, 신규 373줄 (commit eacb61f)
+3. RequestDetailModal 분리 + 댓글 — TodoItem.tsx 433→333줄, 신규 278줄 (commit 7ac4bf9)
+
+댓글 기능
+- Firestore comments 컬렉션 onSnapshot 실시간 구독
+- 작성(addDoc) + 삭제(deleteDoc, 본인만) + 말풍선 UI (본인 오른쪽/상대 왼쪽)
+- Enter 키 전송, 자동 스크롤, 에러 addToast 완비
+
+TodoItem.tsx 축소 결과
+- 원본 819줄 → 333줄 (-59%)
+- 분리: TodoDetailModal(373줄) + RequestDetailModal(278줄)
+- ESC 처리: 각 모달 내부 자체 처리, TodoItem에서 showOrderModal/showDetailModal 분기 제거
+
+인프라
+- ask-claude.js 에스컬레이션 도구 생성 (질문 모드 + 완료보고 모드)
+- session.md [5] 에스컬레이션 규칙 섹션 추가
+- CLAUDE.md 서브에이전트 워크플로우 + 에스컬레이션 규칙 섹션 추가
+- .claude/agents/ explorer.md + implementor.md 생성
+- .claude/settings.json 권한 체계 재구성 (allow 22 / deny 5 / ask 2)
+
+교훈
+- dead code 발견 시 추출보다 삭제가 정답. 호출 경로 확인이 최우선
+- 모달 분리는 state+handler+JSX 세트 단위로 이동하면 깔끔. Props는 최소(post/canEdit/isOpen/onClose)로 유지
+- 댓글 기능은 onSnapshot 실시간 구독 + serverTimestamp 조합이 UX 최적
