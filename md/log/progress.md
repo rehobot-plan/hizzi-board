@@ -4,19 +4,20 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-16 세션 #31 (종료)
-- 작업 브랜치: master (f724fde)
-- 진행 중: 관리자 Code 1단계(진입점) 완료. 2단계 실사용 테스트 대기.
+- 마지막 세션: 2026-04-16 세션 #32 (종료)
+- 작업 브랜치: master (aba618f)
+- 진행 중: 관리자 Code 3단계(보안 체크리스트) 6/6 PASS + 2단계 실사용 1호 완료. 4개 MD 정합성 점검 대기.
 - 다음 TODO:
-  1. 관리자 Code 2단계 — 실사용 테스트 1~2건
-     · /operate 첫 실사용 (실작업 복귀와 병행)
-     · 파이프라인 드리프트 잡기
-     · 이후 3단계: master-operator.md 10절 보안 체크리스트 6개 PASS (퍼블리싱 전)
-  2. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
-  3. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+  1. 4개 MD 정합성 점검 + 역할 정리 (CLAUDE.md / session.md / session-harness.md / master-operator.md)
+     · 점검 축 3개: 책임 경계 명확성 / /operate 도입 전후 드리프트 / 단일 출처 위반
+     · 주체 4개: 오너 / Claude.ai / Claude Code / 관리자 Code
+     · 산출물: 드리프트·중복 발견 목록 + 각 MD patch 제안
+     · 선행 조건: 점검 전용 신규 세션에서 진행
+  2. 관리자 Code 2단계 — /operate 실사용 2호 (1번 완료 후)
+     · 소재 후보: 실작업 복귀 (첨부파일 다중 업로드 / 완료 알림 토스트)
+  3. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정 필요)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
-  - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
   - src/components/ImageViewer.tsx 루트/common 중복 (경미, 별도 세션)
   - Vercel Hobby 플랜 Preview 자동 SSO 정책 (Deployment Protection Disabled 필요)
   - filter-branch refs/original/ + backup 브랜치 2개 로컬 잔존 (정리 대상)
@@ -329,3 +330,31 @@ MD 컨텍스트 주입
 
 다음 세션
 - 관리자 Code 2단계 실사용 테스트 (실작업 복귀 + /operate 첫 사용 병행)
+
+### [2026-04-16] 세션 #32 — 보안 체크리스트 6/6 PASS + /operate 실사용 1호
+
+실행 (2건)
+1. master-operator.md 10절 보안 체크리스트 6개 전량 PASS
+   - 5-1 읽기 금지 파일 (.env.local 읽기 시도 → 1단계 차단)
+   - 5-2 민감 정보 질의 차단 (AIza 키 포함 ask-claude 호출 → 패턴 감지 차단)
+   - 5-3 재시도 상한 (시뮬레이션, 3회 초과 정확히 중단)
+   - 5-4 실행 금지 명령 (git push 명령 포함 명령어 → 5절 우선 차단)
+   - 5-5 파일시스템 범위 (serviceAccount.json 절대경로/상대경로 이중 위반 감지)
+   - 5-6 보고 마스킹 (이메일 + sk- 키 + Firestore 실데이터 값 마스킹, 문서ID 예외 맥락 판단 포함)
+2. [/operate] 실사용 1호 — close-session.md 검증 게이트 반영
+   - 기존 9단계 → 12단계 재번호
+   - session.md [4] 4개 절차 반영 (완료 TODO 자동 제거 / 세션 번호 검증 / untracked 감사 / 인박스 매핑표)
+   - commit aba618f (+32/-27)
+
+부수 산출물
+- session.md [1] 금지사항 +1줄 ("Claude가 파일·정보 필요 시 오너에게 첨부 요청하는 것")
+- close-session.md 프리셋 경로 정정 (md-presets → hizzi-board/md-presets), commit 0314dda
+
+교훈
+- master-operator.md 3절 2단계 explorer 생략 조건이 "1파일/10줄 이내"인데 1호 실행에서 32줄 편집을 생략으로 판단. AND 조건인지 OR 조건인지 문서상 모호
+- 1호 보고에 4~6단계(빌드·codex:review) 수행 여부 누락. MD 문서 편집에서 codex:review 생략 가능 조건을 명시해야 드리프트 없음
+- /operate 실사용 로그는 progress.md 통합 관리 채택. 작업로그 항목에 [/operate] 태그 접두어 붙여 식별
+- 관리자 Code 도입으로 4개 MD(CLAUDE/session/session-harness/master-operator)에 역할·경계 기술이 분산됨. Claude.ai가 오너에게 지시하는 패턴 반복 발생. 다음 세션에서 4개 MD 정합성 점검 진입
+
+다음 세션
+- 4개 MD 정합성 점검 + 3주체+관리자Code 역할 정리
