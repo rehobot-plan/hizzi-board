@@ -67,3 +67,22 @@ npm run build                                              # 기본
 Remove-Item -Recurse -Force .next; npm run build           # 클린
 git add . && git commit -m "..." && npx vercel --prod      # 배포
 ```
+
+---
+
+## 에스컬레이션 규칙
+
+작업 중 아래 상황에서는 오너에게 보고 전에 먼저 Claude 설계자에게 자동 질의한다.
+
+트리거:
+- 빌드 에러가 발생했고 원인을 2회 이상 찾지 못할 때
+- 설계 방향 판단이 필요할 때 (어떤 구조로 짜야 할지 모를 때)
+- 기존 코드와 충돌이 발생했고 해결 방법이 불명확할 때
+
+사용법:
+  질문할 때:   node .claude/commands/ask-claude.js "질문: 질문 내용"
+  완료 보고:   node .claude/commands/ask-claude.js "완료보고: 작업명 / 변경 파일 / 수용 기준 충족 여부"
+
+완료 보고 응답이 "PASS" 면 다음 작업으로 진행한다.
+완료 보고 응답이 "수정 필요:" 면 지시에 따라 재작업 후 다시 완료 보고한다.
+응답에 "오너 결정 필요:" 가 포함된 경우에만 오너에게 보고한다.

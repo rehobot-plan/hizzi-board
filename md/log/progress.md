@@ -4,23 +4,21 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-15 세션 #24 (종료)
-- 작업 브랜치: master (13df313 — feat/fullcalendar-poc FF 머지 완료)
-- 진행 중: master 머지 완료. 길 B-3 진입 대기.
+- 마지막 세션: 2026-04-16 세션 #25 (종료)
+- 작업 브랜치: master (b9d3cb6)
+- 진행 중: B-3 재정의 완료. 보고서형 모달 설계 방향 확정.
 - 다음 TODO:
-  1. 수정 팝업 3종 재설계 — 길 B-3 (TodoItem 3모달 분리 + Radix 전환)
-     · B-1: ✅ 완료 (commit bb21291 → 재작성 후 15a3caa)
-     · B-2: ✅ 완료 (commit a82ed49 → 재작성 후 dc9fc37)
-     · B-3: TodoItem 3모달 분리 + Radix 전환 (최고 위험) ← 다음 진입
-     · 별도 트랙: vaul 모바일 바텀시트는 모바일 우선 최적화 단계까지 보류
+  1. 보고서형 모달 재설계 + 구현 — 길 B-3 (TodoItem 2모달 분리 + Radix 전환)
+     · dead code 삭제: ✅ 완료 (commit b9d3cb6, 819→752줄)
+     · 설계 방향 확정: 읽기/편집 모드 전환(연필 아이콘), 할일·메모·요청 통일 프레임, 요청만 오른쪽 댓글 Q&A 패널(2단)
+     · 댓글 Q&A = progress.md 기존 "요청 댓글 질의응답" 항목과 병합. 데이터 모델 변경 동반 → flows + master-schema 필요
+     · 다음 진입: 댓글 데이터 모델 설계 → 상세 모달 분리 → 요청 모달 분리+댓글 패널
   2. 실작업 복귀: 첨부파일 다중 업로드 / 댓글 기능 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
-  3. 요청 댓글 질의응답 — 데이터 모델 변경 + 통합 댓글 스레드 (길 B 재설계와 병합 검토)
-  4. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+  3. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
   - src/components/ImageViewer.tsx 루트/common 중복 (경미, 별도 세션)
-  - src/components/TodoItem.tsx 상세/편집 모달 내장 (유지)
   - Vercel Hobby 플랜 Preview 자동 SSO 정책 (Deployment Protection Disabled 필요)
   - filter-branch refs/original/ + backup 브랜치 2개 로컬 잔존 (정리 대상)
 - 참고: 프리셋 시스템 단일화 완료. `프리셋` 한 단어로 current 엔트리 실행.
@@ -114,3 +112,20 @@ Vercel + GitHub 정리
 - filter-branch는 remote tracking ref도 재작성 → --force-with-lease 거부 정상 동작
 - GitHub 기본 브랜치 main 잔존 = Vercel production 미트리거 근본 원인. master 머지만으로는 부족했음
 - Vercel Promote 6회 중복 클릭 자국 → 첫 클릭 후 반영 시간 1~2분 대기 안내 필요 (다음 머지 시점 인계)
+
+### [2026-04-16] 세션 #25 — B-3 Step 1 dead code 삭제 + 보고서형 모달 설계
+
+Step 1 실행
+- TodoItem.tsx 간이 편집 dead code 발견 (setIsEditOpen(true) 호출 0건)
+- Claude Code가 dead code 상태 보고 → 오너 판단 → 삭제 결정
+- 삭제: state 9종 + handleEditSave + ESC 분기 + JSX 블록 (-67줄, 819→752)
+- commit b9d3cb6, Vercel 자동 배포
+
+보고서형 모달 설계 확정
+- 기본 프레임: 헤더(#5C1F1F) + 상태바 + 키-값 바디 + 푸터 (할일/메모/요청 공통)
+- 읽기 모드 기본, 연필 아이콘 클릭 → 편집 모드 전환
+- 요청만 오른쪽 댓글 Q&A 패널 추가 (2단 레이아웃, ~780px)
+- B-3 재정의: 3모달→2모달, "요청 댓글 질의응답" TODO와 병합
+
+교훈
+- 간이 편집은 상세 모달 일원화 과정에서 호출 경로가 제거된 잔재. 코드 추출 전 호출 경로 확인이 선행되어야 함
