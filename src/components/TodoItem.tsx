@@ -85,21 +85,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   const [detailRemoveAttachment, setDetailRemoveAttachment] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editContent, setEditContent] = useState(post.content);
-  const [editVisibility, setEditVisibility] = useState<'all' | 'me' | 'specific'>(
-    !post.visibleTo || post.visibleTo.length === 0 ? 'all'
-      : post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? 'me'
-      : 'specific'
-  );
-  const [editSpecificUsers, setEditSpecificUsers] = useState<string[]>(
-    post.visibleTo?.filter(e => e !== post.author) ?? []
-  );
-  const [editTaskType, setEditTaskType] = useState<'work' | 'personal'>(post.taskType || 'work');
-  const [newFile, setNewFile] = useState<File | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const detailFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -108,11 +93,10 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       if (isImageOpen) { setIsImageOpen(false); return; }
       if (showDetailModal) { setShowDetailModal(false); return; }
       if (showOrderModal) { setShowOrderModal(false); return; }
-      if (isEditOpen) { setIsEditOpen(false); return; }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [isImageOpen, showDetailModal, showOrderModal, isEditOpen]);
+  }, [isImageOpen, showDetailModal, showOrderModal]);
 
   const isWork = post.taskType === 'work';
   const tagLabel = isWork ? '업무' : '개인';
@@ -286,37 +270,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       useToastStore.getState().addToast({ message: '저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleEditSave = async () => {
-    if (!editContent.trim()) return;
-    setIsUpdating(true);
-    try {
-      let attachment = post.attachment;
-      if (newFile && post.attachment && (post.attachment.type === 'image' || post.attachment.type === 'file')) {
-        const storageRef = ref(storage, `uploads/${post.panelId}/${Date.now()}_${newFile.name}`);
-        await uploadBytes(storageRef, newFile);
-        const url = await getDownloadURL(storageRef);
-        attachment = { type: post.attachment.type, url, name: newFile.name };
-      }
-      const updates: PostUpdates = {
-        content: editContent.trim(),
-        taskType: editTaskType,
-        visibleTo: editVisibility === 'all' ? []
-          : editVisibility === 'specific' ? [post.author, ...editSpecificUsers.filter(e => e !== post.author)]
-          : [post.author],
-      };
-      if (attachment) updates.attachment = attachment;
-      await updatePost(post.id, updates);
-      setIsEditOpen(false);
-    } catch (e) {
-      console.error(e);
-      const { useToastStore } = await import('@/store/toastStore');
-      useToastStore.getState().addToast({ message: '저장에 실패했습니다. 다시 시도해주세요.', type: 'error' });
-    } finally {
-      setIsUpdating(false);
-      setUploading(false);
     }
   };
 
@@ -794,26 +747,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         />
       )}
 
-      {isEditOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: colors.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: colors.cardBg, border: `1px solid ${colors.border}`, width: '100%', maxWidth: 480, zIndex: 1001 }}>
-            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${colors.border}` }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: colors.textPrimary }}>할일 수정</span>
-            </div>
-            <div style={{ padding: '20px' }}>
-              <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={3}
-                style={{ width: '100%', border: 'none', borderBottom: `1px solid ${colors.border}`, padding: '8px 0', fontSize: 13, color: colors.textPrimary, outline: 'none', background: 'transparent', resize: 'none', fontFamily: 'inherit' }} />
-            </div>
-            <div style={{ padding: '12px 20px', borderTop: `1px solid ${colors.border}`, background: colors.mainBg, display: 'flex', justifyContent: 'space-between' }}>
-              <button onClick={() => setIsEditOpen(false)} style={{ fontSize: 10, color: colors.textSecondary, background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
-              <button onClick={handleEditSave} disabled={isUpdating || uploading}
-                style={{ fontSize: 10, padding: '8px 20px', background: colors.textPrimary, color: colors.mainBg, border: 'none', cursor: isUpdating ? 'not-allowed' : 'pointer' }}>
-                {uploading ? '업로드 중...' : isUpdating ? '저장 중...' : '저장'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
