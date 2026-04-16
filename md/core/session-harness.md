@@ -53,6 +53,18 @@
 
 ---
 
+## 모드별 화살표 주체
+
+수동 모드 (기본):
+  모든 단계 사이 화살표는 오너가 copy-paste로 구동.
+
+/operate 모드:
+  [오너 → Claude.ai → Codex adversarial] 구간: 오너 수동 유지
+  [Codex adversarial PASS → Claude Code → codex:review → ask-claude → commit → 보고] 구간: 관리자 Code 파이프라인 자동 구동 (master-operator.md 3절)
+  오너 개입 지점: 명령 투입(/operate 시점), 최종 보고 수신, 금지·상한 규칙 위반 시 중단 보고.
+
+---
+
 ## 검증 기준 (Playwright 체크리스트)
 
 > 코드 품질 체크는 rules.md 마스터 체크리스트를 단일 출처로 사용.

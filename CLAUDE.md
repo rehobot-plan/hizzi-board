@@ -29,7 +29,7 @@
 ## 세션 훅 & 래퍼
 
 - Preflight: `scripts/preflight.ps1` (매 프롬프트 제출 시 자동)
-- 명령: `/start-session` · `/메모` · `/close-session` · `/handoff`(예정)
+- 명령: `/start-session` · `/메모` · `/close-session` · `/operate` · `/handoff`(예정)
 - 🔒 SSOT: `.harness/locked-files.txt`
 
 ## 협업 역할 정의
@@ -70,19 +70,25 @@ git add . && git commit -m "..." && npx vercel --prod      # 배포
 
 ---
 
+## 서브에이전트 워크플로우
+
+### 오케스트레이션 모드
+- 수동 (기본): 오너가 단계 사이 copy-paste 수행
+- 자동 (/operate): 관리자 Code가 파이프라인 자동 구동 (상세: md/core/master-operator.md)
+
+### 파이프라인 순서 (양 모드 공통)
+1. @explorer — 관련 파일·패턴 탐색 (read-only)
+2. @implementor — 탐색 요약 기반 구현 + 빌드
+3. Codex /codex:review — 2차 검열
+4. ask-claude.js — 완료보고 (수동: 필요 시 / /operate: 자동)
+5. Playwright — E2E 검증 (조건부)
+
+단순 수정(1파일, 10줄 이내)은 @explorer 생략 가능.
+
+---
+
 ## 에스컬레이션 규칙
 
-작업 중 아래 상황에서는 오너에게 보고 전에 먼저 Claude 설계자에게 자동 질의한다.
-
-트리거:
-- 빌드 에러가 발생했고 원인을 2회 이상 찾지 못할 때
-- 설계 방향 판단이 필요할 때 (어떤 구조로 짜야 할지 모를 때)
-- 기존 코드와 충돌이 발생했고 해결 방법이 불명확할 때
-
-사용법:
-  질문할 때:   node .claude/commands/ask-claude.js "질문: 질문 내용"
-  완료 보고:   node .claude/commands/ask-claude.js "완료보고: 작업명 / 변경 파일 / 수용 기준 충족 여부"
-
-완료 보고 응답이 "PASS" 면 다음 작업으로 진행한다.
-완료 보고 응답이 "수정 필요:" 면 지시에 따라 재작업 후 다시 완료 보고한다.
-응답에 "오너 결정 필요:" 가 포함된 경우에만 오너에게 보고한다.
+단일 출처: md/core/session.md [5. 에스컬레이션 규칙]
+구현: .claude/commands/ask-claude.js
+호출 주체 분기: 수동 세션은 Claude Code 직접 호출, /operate 세션은 관리자 Code 자동 호출 (master-operator.md 3절)

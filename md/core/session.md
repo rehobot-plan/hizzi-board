@@ -53,10 +53,11 @@ md/core/rules.md
     - 막히면 /codex:rescue 로 위임
 
   오너 (방향 결정):
-    - Claude.ai ↔ Claude Code 사이의 중개자
-    - 최종 승인권자
-    - Claude.ai 출력을 Claude Code에 붙여넣기
-    - Claude Code 결과를 Claude.ai에 붙여넣기
+    - Claude.ai ↔ Claude Code 중개 + 최종 승인권자
+    - 중개 방식 2가지:
+      · 수동(기본): Claude.ai 출력을 Claude Code에 붙여넣기, 결과를 다시 Claude.ai에
+      · /operate: 관리자 Code가 중개 자동화. 오너는 승인·중단 판단만 수행
+    - 관리자 Code 상세: md/core/master-operator.md
 
   금지 사항:
     - Claude.ai가 완성된 코드 블록을 내놓는 것 (설계 제약만 전달)
@@ -198,6 +199,10 @@ Claude Code의 PASS 보고는 아래 3축을 모두 충족해야 한다.
 ## [5. 에스컬레이션 규칙]
 
 Claude Code가 작업 중 아래 상황에서 오너 개입 전에 Claude 설계자에게 먼저 자동 질의한다.
+
+호출 주체:
+- 수동 세션: Claude Code가 ask-claude.js 직접 호출
+- /operate 세션: 관리자 Code가 파이프라인 내부에서 자동 호출 (master-operator.md 3절 참조)
 
 트리거:
 - 빌드 에러가 2회 이상 해결되지 않을 때
