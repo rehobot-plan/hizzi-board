@@ -4,9 +4,9 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-16 세션 #28 (종료)
-- 작업 브랜치: master (7ac4bf9)
-- 진행 중: 관리자 Code 설계 완료. 구현 진입 대기. 세션 MD 정비 미착수.
+- 마지막 세션: 2026-04-16 세션 #29 (종료)
+- 작업 브랜치: master (06fcdf4)
+- 진행 중: B-3 완료. Radix Dialog 전환 + 읽기/편집 모드 분리 + 댓글 기능 프로덕션 라이브.
 - 다음 TODO:
   1. 세션 MD 정비 — master-operator.md 단일 출처 기준으로 기존 문서 충돌 제거
      · 대상: md/core/session.md / md/core/session-harness.md / CLAUDE.md
@@ -21,20 +21,15 @@
      · .claude/commands/operate.md 또는 operate.js 생성
      · 파이프라인 로직 + 금지·상한·보호 규칙 적용
      · 퍼블리싱 전 10절 보안 체크리스트 6개 항목 전부 PASS
-  3. 보고서형 모달 디자인 적용 + Radix 전환 — 길 B-3 후속
-     · 읽기 모드 기본 → 연필 아이콘 클릭 → 편집 모드 전환
-     · 할일·메모·요청 통일 프레임
-     · TodoDetailModal + RequestDetailModal 양쪽 적용
-     · Radix Dialog 전환 (현재 직접 모달 → Radix 기반)
-     · 필요 MD: patterns-modal + uxui
-  4. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
-  5. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+  3. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
+  4. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
   - src/components/ImageViewer.tsx 루트/common 중복 (경미, 별도 세션)
   - Vercel Hobby 플랜 Preview 자동 SSO 정책 (Deployment Protection Disabled 필요)
   - filter-branch refs/original/ + backup 브랜치 2개 로컬 잔존 (정리 대상)
+  - Vercel Production Branch 설정 확인 이력 (세션 #24 "자동 인식" 보고 오류) — 재발 방지용 체크리스트 필요
 - 참고: 프리셋 시스템 단일화 완료. `프리셋` 한 단어로 current 엔트리 실행.
 - 검토 후보 (조건부 진입):
   - 디자이너 오퍼레이터 도입 (조건부 진입)
@@ -88,6 +83,11 @@
   - untracked md 파일 정리 (10건 누적, 별도 세션)
     · 진입 조건: 어느 파일이 의도된 신규 / 의도되지 않은 잔재인지 분류
     · 영향 범위: md/ 하위 전체
+  - 모달 Playwright spec 설계 (Phase 5-C 정리 때 일괄)
+    · TodoDetailModal 읽기/편집 전환 + 저장 플로우
+    · RequestDetailModal 댓글 작성·삭제 + 완료 처리
+    · 3 방법 닫기 (ESC / 백드롭 / 닫기 버튼)
+    · 진입 조건: Phase 5-C 시작 시점
 
 ---
 
@@ -256,3 +256,29 @@ MD 컨텍스트 주입
 다음 세션
 - 세션 MD 정비 (session.md / session-harness.md / CLAUDE.md) — master-operator.md 단일 출처 기준
 - 관리자 Code 구현 진입 (세션 MD 정비 후)
+
+### [2026-04-16] 세션 #29 — B-3 Radix 전환 완료 + 프로덕션 배포 정상화
+
+실행 (3단계)
+1. Radix Dialog 전환 + 읽기/편집 모드 분리
+   - TodoDetailModal.tsx 373→420줄, RequestDetailModal.tsx 278→271줄
+   - isEditingTitle → isReadMode, 연필 아이콘으로 편집 전환
+   - Dialog.Root/Portal/Overlay/Content 래핑, ESC useEffect 제거
+   - commit 06fcdf4
+2. Vercel Production Branch 수정
+   - Environments 페이지에서 Production이 main 추적 확인
+   - master로 변경 → 이후 master push 자동 프로덕션 배포
+3. Firestore comments 라이브
+   - 보안 규칙 누락 → Firebase Console에서 comments 규칙 직접 게시
+   - 복합 인덱스 누락 (requestId + createdAt asc) → Console 링크로 자동 생성
+   - 로컬 firestore.rules·indexes.json 동기화 커밋
+
+검증
+- R4.10 가동 PASS (로컬 빌드 329kB, TS 에러 0)
+- R4.10 기능·디자인은 Playwright spec 부재로 오너 수동 확인 PASS
+- Playwright 모달 spec 설계는 Phase 5-C 검토 후보로 이동
+
+교훈
+- 세션 #24 "Vercel Production Branch 자동 인식" 보고는 실제로 main 추적 잔존. Environments 페이지 직접 확인이 검증 절차. 재발 방지 체크리스트 미해결 등록
+- Firestore 신규 컬렉션은 스키마 설계와 함께 rules + indexes 동시 반영 필수. 세션 #26에서 comments 스키마만 작성하고 rules·indexes 누락 → 배포 후 에러 발생
+- R4.10 PASS 판정 시 Playwright spec이 없는 변경은 "수동 확인 PASS"로 명시. 자동 검증과 구분
