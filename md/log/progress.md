@@ -4,25 +4,17 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-16 세션 #29 (종료)
-- 작업 브랜치: master (06fcdf4)
-- 진행 중: B-3 완료. Radix Dialog 전환 + 읽기/편집 모드 분리 + 댓글 기능 프로덕션 라이브.
+- 마지막 세션: 2026-04-16 세션 #30 (종료)
+- 작업 브랜치: master (c20069e)
+- 진행 중: 세션 MD 정비 완료. 관리자 Code 구현 진입 대기.
 - 다음 TODO:
-  1. 세션 MD 정비 — master-operator.md 단일 출처 기준으로 기존 문서 충돌 제거
-     · 대상: md/core/session.md / md/core/session-harness.md / CLAUDE.md
-     · 수정 지점 4개:
-       - session.md [1] 역할 정의 ("오너가 중개자" → "/operate 사용 시 관리자 Code가 중개")
-       - session.md [5] 에스컬레이션 ("Claude Code 직접 호출" → "관리자 Code 자동 호출 구간 추가")
-       - session-harness.md 하네스 루프 다이어그램 (화살표 주체 명시)
-       - CLAUDE.md 서브에이전트 워크플로우 (관리자 Code 오케스트레이션 층 추가)
-     · 진입 조건: 없음 (바로 진입 가능)
-  2. 관리자 Code 구현 진입 (세션 MD 정비 후)
+  1. 관리자 Code 구현 진입
      · master-operator.md 기준 실제 구현
      · .claude/commands/operate.md 또는 operate.js 생성
      · 파이프라인 로직 + 금지·상한·보호 규칙 적용
      · 퍼블리싱 전 10절 보안 체크리스트 6개 항목 전부 PASS
-  3. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
-  4. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+  2. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
+  3. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
@@ -282,3 +274,39 @@ MD 컨텍스트 주입
 - 세션 #24 "Vercel Production Branch 자동 인식" 보고는 실제로 main 추적 잔존. Environments 페이지 직접 확인이 검증 절차. 재발 방지 체크리스트 미해결 등록
 - Firestore 신규 컬렉션은 스키마 설계와 함께 rules + indexes 동시 반영 필수. 세션 #26에서 comments 스키마만 작성하고 rules·indexes 누락 → 배포 후 에러 발생
 - R4.10 PASS 판정 시 Playwright spec이 없는 변경은 "수동 확인 PASS"로 명시. 자동 검증과 구분
+
+### [2026-04-16] 세션 #30 — 관리자 Code(/operate) 도입 반영 세션 MD 정비
+
+배경
+- 세션 #28에서 master-operator.md 초안 작성 완료
+- 기존 세션 MD는 수동 중개 전제로만 작성돼 있어 /operate 도입 시 드리프트 위험
+- 두 방 병렬 운용 중. 저쪽 방 세션 #29(B-3 Radix) 선행 완료 상태에서 이쪽 방이 세션 MD 정비 진입
+
+스코프 결정
+- 초기 TODO: 4개 지점 (session.md [1]/[5], session-harness.md 다이어그램, CLAUDE.md 서브에이전트)
+- 발견: CLAUDE.md 하단 에스컬레이션 섹션이 session.md [5]와 중복 / CLAUDE.md 명령 목록에 /operate 누락
+- close-session.md ↔ session.md [4] 드리프트 3건 전례 근거로 스코프 C 채택 (4개 + /operate 한 줄 + 에스컬레이션 단일 출처화)
+
+실행 (3파일 6편집, 단일 블록 str_replace)
+1. session.md [1] 오너 역할에 /operate 중개 방식 2가지 명시
+2. session.md [5] 도입부에 "호출 주체" 블록 삽입 (수동 vs /operate 분기)
+3. session-harness.md 다이어그램 아래 "모드별 화살표 주체" 섹션 신설
+4. CLAUDE.md 서브에이전트 워크플로우에 오케스트레이션 모드 섹션 추가
+5. CLAUDE.md 세션 훅 & 래퍼 명령 목록에 /operate 추가
+6. CLAUDE.md 하단 에스컬레이션 섹션을 session.md [5] 참조로 압축
+
+검증
+- OLD 문자열 잔존 0건, NEW 문자열 6건 존재, git status 변경 파일 정확히 3개
+- commit c20069e (+40/-17), origin master push 완료
+- ask-claude.js 완료보고 PASS
+
+병렬 운용 판정
+- 두 방 동시 운용 중 세션 번호 충돌 발생 (이쪽이 #29로 시작했으나 저쪽이 #29를 먼저 로그에 박음)
+- 절차: git log --all --oneline --graph로 히스토리 검증 → c20069e 생존 + 선형 히스토리 확인 → 이쪽을 #30으로 재번호
+- 규약 근거: session.md [4] "직전 세션 번호 + 1 = 이번 세션 번호"
+
+교훈
+- 중복 구간은 도입 시점에 단일 출처화가 가장 저렴. 도입 후 드리프트 누적되면 정비 비용 급증
+- "호출 주체" 분기를 도입부 맨 앞 블록으로 명시하면 후속 편집자가 분기 인지 실패할 여지 차단
+- 두 방 병렬 운용 시 progress.md 저쪽 반영분(세션 번호 / TODO / 미해결 / 검토 후보)을 먼저 파악한 뒤 이쪽 업데이트를 덮지 않도록 보존 플로우 설계 필요
+- 세션 번호 충돌 방지책 후보: 세션 시작 시 origin master HEAD commit 메시지에서 세션 번호 추출 → 충돌 경고. 인박스 등록 고려 사안
