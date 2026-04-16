@@ -4,18 +4,31 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-16 세션 #26 (종료)
+- 마지막 세션: 2026-04-16 세션 #28 (종료)
 - 작업 브랜치: master (7ac4bf9)
-- 진행 중: B-3 모달 분리 + 댓글 구현 완료. 디자인 적용 + Radix 전환 미착수.
+- 진행 중: 관리자 Code 설계 완료. 구현 진입 대기. 세션 MD 정비 미착수.
 - 다음 TODO:
-  1. 보고서형 모달 디자인 적용 + Radix 전환 — 길 B-3 후속
+  1. 세션 MD 정비 — master-operator.md 단일 출처 기준으로 기존 문서 충돌 제거
+     · 대상: md/core/session.md / md/core/session-harness.md / CLAUDE.md
+     · 수정 지점 4개:
+       - session.md [1] 역할 정의 ("오너가 중개자" → "/operate 사용 시 관리자 Code가 중개")
+       - session.md [5] 에스컬레이션 ("Claude Code 직접 호출" → "관리자 Code 자동 호출 구간 추가")
+       - session-harness.md 하네스 루프 다이어그램 (화살표 주체 명시)
+       - CLAUDE.md 서브에이전트 워크플로우 (관리자 Code 오케스트레이션 층 추가)
+     · 진입 조건: 없음 (바로 진입 가능)
+  2. 관리자 Code 구현 진입 (세션 MD 정비 후)
+     · master-operator.md 기준 실제 구현
+     · .claude/commands/operate.md 또는 operate.js 생성
+     · 파이프라인 로직 + 금지·상한·보호 규칙 적용
+     · 퍼블리싱 전 10절 보안 체크리스트 6개 항목 전부 PASS
+  3. 보고서형 모달 디자인 적용 + Radix 전환 — 길 B-3 후속
      · 읽기 모드 기본 → 연필 아이콘 클릭 → 편집 모드 전환
      · 할일·메모·요청 통일 프레임
      · TodoDetailModal + RequestDetailModal 양쪽 적용
      · Radix Dialog 전환 (현재 직접 모달 → Radix 기반)
      · 필요 MD: patterns-modal + uxui
-  2. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
-  3. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
+  4. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정)
+  5. close-session 인박스 강제 검증 게이트 추가 (인프라, 짬 작업)
 - 미해결:
   - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
   - close-session.md ↔ session.md [4] 드리프트 3건 (인박스 등록)
@@ -24,6 +37,10 @@
   - filter-branch refs/original/ + backup 브랜치 2개 로컬 잔존 (정리 대상)
 - 참고: 프리셋 시스템 단일화 완료. `프리셋` 한 단어로 current 엔트리 실행.
 - 검토 후보 (조건부 진입):
+  - 디자이너 오퍼레이터 도입 (조건부 진입)
+    · 진입 조건: 디자인 작업 비중이 코드 작업을 넘어서거나, /operate가 디자인 명령을 처리하기에 부적절해지는 시점
+    · 설계 방향: /designer 슬래시 커맨드로 분리. /operate와 독립된 파이프라인.
+    · 관리자 Code 아키텍처는 이 확장을 염두에 두고 설계됨 (master-operator.md 구조 재사용 가능)
   - FullCalendar 미활용 기능 7건 (master 머지 + 디자인 통일 완료 후)
     · 추천 순서: iCal 공휴일 피드 → 드래그 → 리사이즈 → rrule → 주간 뷰 → 검색 → 타임존
     · 각 후보 R4.9+R4.10 순서, 단일 세션 1건씩
@@ -159,3 +176,83 @@ TodoItem.tsx 축소 결과
 - dead code 발견 시 추출보다 삭제가 정답. 호출 경로 확인이 최우선
 - 모달 분리는 state+handler+JSX 세트 단위로 이동하면 깔끔. Props는 최소(post/canEdit/isOpen/onClose)로 유지
 - 댓글 기능은 onSnapshot 실시간 구독 + serverTimestamp 조합이 UX 최적
+
+### [2026-04-16] 세션 #27 — 에스컬레이션 고도화 + 서브에이전트 파이프라인 + 관리자 Code 기획
+
+에스컬레이션 고도화
+- ask-claude.js 2모드 시스템 완성 (질문 모드 / 완료보고 모드)
+- 완료보고 모드: PASS / 수정 필요 / 오너 결정 필요 3분기 자동 처리
+- API 키 .env.local 안전 저장 + 이중 prefix 버그 수정
+
+서브에이전트 파이프라인
+- .claude/agents/explorer.md — Haiku 기반 read-only 탐색 전담
+- .claude/agents/implementor.md — Opus 기반 구현 + 빌드 + codex:review + 완료보고
+- 파이프라인 전 단계 가시화 테스트 PASS
+  · explorer(7초) → implementor(빌드 PASS) → codex:review PASS → ask-claude PASS
+  · 수정 필요 → 재보고 사이클 자연 발생 확인
+- implementor.md에 /codex:review --wait 5단계 추가 (누락 보완)
+
+권한 체계
+- .claude/settings.json 재구성 — allow 22 / deny 5 / ask 2
+- 파일 생성/수정 팝업 대폭 감소
+
+관리자 Code 기획 확정
+- 범위: 파이프라인 + 재시도 + ask-claude 질문까지 완전 자동 (3번)
+- 판단 경계선 3단계: 자동진행 / ask-claude 질문 / 대표님 중단
+- 지시서 표준 형식: 작업명 / 목표 / 범위 / 제약 / 완료조건 5개 필드
+- 보안 검토 전용 세션 필수 (퍼블리싱 전)
+- 설계 문서 신규 생성 예정: md/core/master-operator.md
+
+교훈
+- 에이전트는 MD 파일이 아니라 독립 Claude 인스턴스. 각자 컨텍스트 분리로 토큰 절약
+- 탐색/구현 분리가 핵심 — Haiku로 탐색, Opus로 구현하면 비용 최적화
+- 관리자 Code 설계 시 판단 경계선이 가장 중요. 흐릿하면 과감하거나 매번 멈춤
+
+### [2026-04-16] 세션 #28 — 관리자 Code 설계 (master-operator.md 초안 작성)
+
+설계 전용 세션 — 제로 베이스에서 시작
+
+핵심 원칙 확정
+- "공장장을 똑똑하게 만들지 말고 지시서를 똑똑히 만든다"
+- 관리자 Code는 공장 설계자가 아니라 공장 가동 담당
+- 도메인 판단은 Claude.ai + 대표님 기획 세션에서, 공장장은 그 결과를 해석만 수행
+
+판단 경계선 재설계 (3단계 → 2단계)
+- 세션 #27 초안: 자동진행 / ask-claude 질문 / 대표님 중단 (3단계)
+- 세션 #28 확정: 자동진행 / 대표님 중단 (2단계)
+- 근거: ask-claude 질문 구간은 사실상 자동진행에 흡수 가능. 대표님이 중간에 낄 필요 없음 (복사-붙여넣기 병목일 뿐 실질 판단 아님)
+
+진입 방식 `/operate` 확정
+- 명령어 본문은 기존 인간 언어 스타일 유지
+- 맨 앞 `/operate` 한 줄로 관리자 Code 발동
+- 미붙이면 Claude Code 단독 실행 (기존 방식 보존)
+
+디자인 감지 방식 확정
+- 초기 후보: (가) 파일 경로 기반 / (나) diff 검사 / (다) 명령어 키워드 / (가)+(나) 하이브리드
+- 최종 확정: 위 전부 폐기. 공장장은 감지 로직 보유 안 함.
+- 대신 Claude.ai가 매 기획 세션마다 명령어에 자연어로 디자인 범위 명시 (session.md [1] 명령어 작성 규약 추가 필요)
+
+MD 컨텍스트 주입
+- 도메인 MD(rules/flows/master/patterns 등): 주입 안 함. CLAUDE.md 경유로 Claude Code가 이미 접근.
+- 프로세스 매뉴얼: master-operator.md 하나로 관리자 Code에 주입
+
+보안 방어 6개 카테고리 확정
+1. 읽기 금지 파일 (.env.local, serviceAccount.json, .claude/settings.json 등)
+2. 민감 정보 질의 차단 (API 키 패턴 감지 시 ask-claude 중단)
+3. 재시도·시간 상한 (재시도 3회 / implementor 10회 / 30분)
+4. 실행 금지 명령 (git push, vercel deploy, Firestore 배포, 신규 패키지 설치 등)
+5. 파일시스템 범위 고정 (D:\Dropbox\Dropbox\hizzi-board 이탈 금지)
+6. 보고 시 민감정보 마스킹 (이메일, API 키, Firestore 실데이터 값)
+
+산출물
+- md/core/master-operator.md 초안 작성 (10개 절)
+- 재사용 템플릿 구조 — 미래 /designer 등 추가 시 master-{분야}.md를 같은 골격으로 작성
+
+메타 교훈
+- Claude.ai가 판단을 대표님께 떠넘기는 패턴 발견 ("이건 어떻게 보세요?" 남발)
+- 대표님 지적: "난 너에게 책임 범위를 주고 있는데 책임을 다시 나한테 미루지 마. 넌 전문가야. 내가 한마디씩 거드는 건 널 도와주는 거지 내 책임이 아니야."
+- 교정: 설계 판단은 Claude.ai가 완결하고, 대표님은 큰 흐름 인사이트로 체크. 세부 검토 부담 떠넘기지 않음.
+
+다음 세션
+- 세션 MD 정비 (session.md / session-harness.md / CLAUDE.md) — master-operator.md 단일 출처 기준
+- 관리자 Code 구현 진입 (세션 MD 정비 후)
