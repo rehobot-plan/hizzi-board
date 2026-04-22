@@ -1,9 +1,10 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Post, usePostStore } from '@/store/postStore';
 import TodoItem from './TodoItem';
-import CompletedTodo from './CompletedTodo';
-import DeletedTodo from './DeletedTodo';
+import RecordModal, { RecordTab } from './RecordModal';
+import { selectRecentlyCompleted, selectRecentlyDeleted } from '@/lib/postSelectors';
 
 interface TodoListProps {
   panelId: string;
@@ -15,12 +16,26 @@ interface TodoListProps {
 
 export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFilter = ['업무', '요청'] }: TodoListProps) {
   const { posts: allPosts } = usePostStore();
-  const todoAll = posts.filter(p =>
-    p.panelId === panelId && p.category === '할일' && !p.deleted
+  const [recordOpen, setRecordOpen] = useState(false);
+  const [recordTab, setRecordTab] = useState<RecordTab>('completed');
+
+  const scopedPosts = useMemo(
+    () => allPosts.filter(p => p.panelId === panelId && p.category === '할일'),
+    [allPosts, panelId]
   );
-  const deletedTodos = allPosts.filter(p =>
-    p.panelId === panelId && p.category === '할일' && p.deleted === true
+
+  const recentCompletedCount = useMemo(
+    () => selectRecentlyCompleted(scopedPosts).length,
+    [scopedPosts]
   );
+  const recentDeletedCount = useMemo(
+    () => selectRecentlyDeleted(scopedPosts).length,
+    [scopedPosts]
+  );
+
+  // Codex #60 P2 가드: 링크 카운트(scopedPosts)와 메인 리스트(todoAll)를 단일 소스(allPosts)에서 파생.
+  // posts prop은 Panel 인터페이스 호환용으로만 유지 — 내부 필터는 scopedPosts 기준.
+  const todoAll = scopedPosts.filter(p => !p.deleted);
 
   const activeTodos = todoAll
       .filter(p => {
@@ -43,13 +58,10 @@ export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFi
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-  const completedTodos = todoAll
-    .filter(p => p.completed)
-    .sort((a, b) => {
-      const aT = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-      const bT = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-      return bT - aT;
-    });
+  const openRecord = (tab: RecordTab) => {
+    setRecordTab(tab);
+    setRecordOpen(true);
+  };
 
   return (
     <>
@@ -59,8 +71,41 @@ export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFi
       {activeTodos.map(post => (
         <TodoItem key={post.id} post={post} canEdit={canEdit} />
       ))}
-      <CompletedTodo completedTodos={completedTodos} canEdit={canEdit} />
-      <DeletedTodo deletedTodos={deletedTodos} canEdit={canEdit} />
+
+      {(recentCompletedCount > 0 || recentDeletedCount > 0) && (
+        <div style={{ display: 'flex', gap: 12, padding: '10px 0 4px', borderTop: '1px solid #EDE5DC', marginTop: 8 }}>
+          {recentCompletedCount > 0 && (
+            <button
+              onClick={() => openRecord('completed')}
+              style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '0.04em', transition: 'color 0.15s ease' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#5C1F1F')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#9E8880')}
+            >
+              최근 완료 {recentCompletedCount}개 →
+            </button>
+          )}
+          {recentDeletedCount > 0 && (
+            <button
+              onClick={() => openRecord('deleted')}
+              style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '0.04em', transition: 'color 0.15s ease' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#5C1F1F')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#9E8880')}
+            >
+              최근 삭제 {recentDeletedCount}개 →
+            </button>
+          )}
+        </div>
+      )}
+
+      <RecordModal
+        isOpen={recordOpen}
+        onClose={() => setRecordOpen(false)}
+        panelId={panelId}
+        category="할일"
+        defaultTab={recordTab}
+        windowFilter="recent"
+        canEdit={canEdit}
+      />
     </>
   );
 }

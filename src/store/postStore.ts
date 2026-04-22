@@ -44,8 +44,8 @@ interface PostState {
   addPost: (post: Omit<Post, 'id' | 'createdAt'>) => Promise<void>;
   updatePost: (postId: string, updates: Partial<Omit<Post, 'id' | 'createdAt'>>) => Promise<void>;
   deletePost: (postId: string) => Promise<void>;
-  restorePost: (postId: string) => Promise<void>;
-  uncompletePost: (postId: string) => Promise<void>;
+  restorePost: (postId: string) => Promise<boolean>;
+  uncompletePost: (postId: string) => Promise<boolean>;
   hardDeletePost: (postId: string) => Promise<void>;
 }
 
@@ -109,8 +109,8 @@ export const usePostStore = create<PostState>((set) => ({
   },
 
   // soft delete 복구 — 1층 토스트 실행취소 / 2·3층 회수 공통 경로
+  // 성공/실패 반환: 호출부(cascade 포함 경로)에서 체크 가능. void 컨텍스트 호출은 무시해도 안전.
   restorePost: async (postId) => {
-    // 낙관적 업데이트
     set(state => ({
       posts: state.posts.map(p =>
         p.id === postId ? { ...p, deleted: false, deletedAt: null } : p
@@ -121,8 +121,8 @@ export const usePostStore = create<PostState>((set) => ({
         deleted: false,
         deletedAt: null,
       });
+      return true;
     } catch (error) {
-      // 롤백
       set(state => ({
         posts: state.posts.map(p =>
           p.id === postId ? { ...p, deleted: true, deletedAt: new Date() } : p
@@ -130,10 +130,11 @@ export const usePostStore = create<PostState>((set) => ({
       }));
       console.error('Error restoring post:', error);
       useToastStore.getState().addToast({ message: '복구에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+      return false;
     }
   },
 
-  // 완료 취소 — 1층 토스트 되돌리기 / CompletedTodo 재활성 공통 경로
+  // 완료 취소 — 1층 토스트 되돌리기 / RecordModal 복구 공통 경로
   uncompletePost: async (postId) => {
     set(state => ({
       posts: state.posts.map(p =>
@@ -145,6 +146,7 @@ export const usePostStore = create<PostState>((set) => ({
         completed: false,
         completedAt: null,
       });
+      return true;
     } catch (error) {
       set(state => ({
         posts: state.posts.map(p =>
@@ -153,6 +155,7 @@ export const usePostStore = create<PostState>((set) => ({
       }));
       console.error('Error uncompleting post:', error);
       useToastStore.getState().addToast({ message: '되돌리기에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+      return false;
     }
   },
 
