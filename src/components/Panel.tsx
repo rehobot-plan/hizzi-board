@@ -157,8 +157,8 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
       data-panel-variant={variant}
       style={{
         ...(variant === 'grid'
-          ? { maxHeight: panelTokens.height.max, minHeight: panelTokens.height.min }
-          : { height: '100%' }),
+          ? { maxHeight: panelTokens.height.max, minHeight: panelTokens.height.min, overflow: 'hidden', minWidth: 0 }
+          : { height: '100%', overflow: 'hidden', minWidth: 0 }),
         transition: "background 0.2s, border 0.2s",
       }}
     >
