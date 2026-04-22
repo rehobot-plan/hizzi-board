@@ -147,9 +147,26 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     setIsExpanded(false);
   }, [activeCategory]);
 
-  // 펼쳐보기 토글 — 접힘 시 scrollTop 0 복귀 + 페이지 scroll 위치 보존(rAF 2회 복원)
+  // 펼쳐보기 토글 — 접힘 시 scrollTop 0 복귀 + 페이지 scroll 위치 보존
   const toggleExpand = () => {
-    const savedScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+    if (typeof window === 'undefined') {
+      setIsExpanded((prev) => !prev);
+      return;
+    }
+    const savedScrollY = window.scrollY;
+    // 400ms 동안 window scroll 발생 시마다 원위치 복원.
+    // rAF 2회만으론 브라우저 scroll anchor·focus·layout 재조정 시점을 놓칠 수 있어
+    // scroll event listener로 모든 위치 변화를 포착해 intercept.
+    let active = true;
+    const restore = () => {
+      if (!active) return;
+      if (Math.abs(window.scrollY - savedScrollY) > 1) {
+        window.scrollTo({ top: savedScrollY, behavior: 'auto' });
+      }
+    };
+    const onScroll = () => restore();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     setIsExpanded((prev) => {
       const next = !prev;
       if (!next) {
@@ -159,17 +176,17 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
       }
       return next;
     });
-    // setState 이후 React commit → 브라우저 layout → scroll anchor·focus 재조정이 여기 끼어들 수 있어
-    // rAF 2회(commit + paint 이후)에 window.scrollY를 원래대로 복원. viewport jump 차단.
-    if (typeof window !== 'undefined') {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (Math.abs(window.scrollY - savedScrollY) > 1) {
-            window.scrollTo({ top: savedScrollY, behavior: 'auto' });
-          }
-        });
-      });
-    }
+
+    // commit + paint 각 시점에도 한번씩 직접 복원 (scroll event 안 생길 때 대비)
+    requestAnimationFrame(() => {
+      restore();
+      requestAnimationFrame(restore);
+    });
+
+    window.setTimeout(() => {
+      active = false;
+      window.removeEventListener('scroll', onScroll);
+    }, 400);
   };
 
   const isOwner = user && ownerEmail === user?.email;
