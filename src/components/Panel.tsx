@@ -147,8 +147,9 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     setIsExpanded(false);
   }, [activeCategory]);
 
-  // 펼쳐보기 토글 — 접힘 시 scrollTop 0 복귀
+  // 펼쳐보기 토글 — 접힘 시 scrollTop 0 복귀 + 페이지 scroll 위치 보존(rAF 2회 복원)
   const toggleExpand = () => {
+    const savedScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
     setIsExpanded((prev) => {
       const next = !prev;
       if (!next) {
@@ -158,6 +159,17 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
       }
       return next;
     });
+    // setState 이후 React commit → 브라우저 layout → scroll anchor·focus 재조정이 여기 끼어들 수 있어
+    // rAF 2회(commit + paint 이후)에 window.scrollY를 원래대로 복원. viewport jump 차단.
+    if (typeof window !== 'undefined') {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (Math.abs(window.scrollY - savedScrollY) > 1) {
+            window.scrollTo({ top: savedScrollY, behavior: 'auto' });
+          }
+        });
+      });
+    }
   };
 
   const isOwner = user && ownerEmail === user?.email;
@@ -216,6 +228,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
               maxHeight: isExpanded ? 'none' : panelTokens.height.max,
               minHeight: panelTokens.height.min,
               overflow: 'hidden',
+              overflowAnchor: 'none',
               minWidth: 0,
             }
           : { position: 'relative', height: '100%', overflow: 'hidden', minWidth: 0 }),
@@ -517,6 +530,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
         <button
           type="button"
           onClick={toggleExpand}
+          onMouseDown={(e) => e.preventDefault()}
           aria-expanded={isExpanded}
           aria-label={isExpanded ? '접기' : '펼쳐보기'}
           title={isExpanded ? '접기' : '펼쳐보기'}

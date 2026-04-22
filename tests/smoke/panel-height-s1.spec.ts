@@ -71,6 +71,49 @@ test.describe('메인 UX §1 — 패널 높이 제어 (세션 #54)', () => {
     expect(overflowFound, 'overflow 상태 패널 0건 — 레이아웃 회귀 의심').toBeGreaterThanOrEqual(1);
   });
 
+  test('시나리오 6 (세션 #61): handle 클릭 시 페이지 scrollY 유지 (viewport jump 차단)', async ({ page }) => {
+    // overflow 상태 패널 하나 찾기
+    const panels = page.locator('[data-testid="panel-container"]');
+    const count = await panels.count();
+    let targetIdx = -1;
+    for (let i = 0; i < count; i++) {
+      const overflowed = await panels.nth(i).locator('[data-testid="panel-scroll"]').evaluate((el) => {
+        const e = el as HTMLElement;
+        return e.scrollHeight > e.clientHeight + 1;
+      });
+      if (overflowed) { targetIdx = i; break; }
+    }
+    expect(targetIdx, 'overflow 패널 없음 — 시나리오 6 데이터 전제 불충족').toBeGreaterThanOrEqual(0);
+
+    const card = panels.nth(targetIdx);
+    const cell = card.locator('xpath=..');
+    const handle = cell.locator('[data-testid="panel-expand-handle"]');
+    await expect(handle).toBeVisible();
+
+    // 페이지 scroll을 중간값으로 — scrollY 변화 감지 가능 상태
+    await page.evaluate(() => window.scrollTo({ top: 200 }));
+    await page.waitForTimeout(120);
+    const baseline = await page.evaluate(() => window.scrollY);
+
+    // 펼침
+    await handle.click();
+    await page.waitForTimeout(200);
+    const afterExpand = await page.evaluate(() => window.scrollY);
+    expect(
+      Math.abs(afterExpand - baseline),
+      `펼침 viewport jump: baseline=${baseline} → after=${afterExpand}`
+    ).toBeLessThan(3);
+
+    // 접힘
+    await handle.click();
+    await page.waitForTimeout(200);
+    const afterCollapse = await page.evaluate(() => window.scrollY);
+    expect(
+      Math.abs(afterCollapse - baseline),
+      `접힘 viewport jump: baseline=${baseline} → after=${afterCollapse}`
+    ).toBeLessThan(3);
+  });
+
   test('시나리오 3: 탭 전환 시 스크롤 위치 독립 기억', async ({ page }) => {
     const panel = page.locator('[data-testid="panel-container"]').first();
     const scroll = panel.locator('[data-testid="panel-scroll"]');
