@@ -278,6 +278,24 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
               </div>
             );
           })}
+          {/* 펼쳐보기 토글 — 탭바 우측에 고정 (스크롤 레이아웃과 독립) · 패널에 콘텐츠 있을 때만 노출 */}
+          {variant === 'grid' && posts.some(p => p.panelId === id) && (
+            <button
+              onClick={() => setIsExpanded(v => !v)}
+              title={isExpanded ? '접기' : '펼쳐보기'}
+              style={{
+                marginLeft: 8, height: 36, padding: '0 10px',
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: isExpanded ? '#C17B6B' : '#9E8880',
+                fontSize: isExpanded ? 11 : 16, letterSpacing: '0.04em',
+                transition: 'color 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#5C1F1F')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = isExpanded ? '#C17B6B' : '#9E8880')}
+            >
+              {isExpanded ? '▲' : '⋯'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -387,24 +405,6 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           />
         )}
       </div>
-      {/* ⋯ 펼쳐보기 / 접기 (오너 제안 · 스크롤 대체) — grid variant 한정 · 항상 노출 (초과 감지 ResizeObserver 불안정 대응) */}
-      {variant === 'grid' && (
-        <button
-          onClick={() => setIsExpanded(v => !v)}
-          title={isExpanded ? '접기' : '펼쳐보기'}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '8px 0', fontSize: 12, color: '#9E8880',
-            background: '#FDF8F4', border: 'none', borderTop: '1px solid #EDE5DC',
-            cursor: 'pointer', letterSpacing: '0.04em',
-            transition: 'color 0.15s ease, background 0.15s ease',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = '#5C1F1F'; e.currentTarget.style.background = '#F5EFE9'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = '#9E8880'; e.currentTarget.style.background = '#FDF8F4'; }}
-        >
-          {isExpanded ? '▲ 접기' : '⋯ 펼쳐보기'}
-        </button>
-      )}
       {/* CreatePost 모달 */}
       {showCreate && (
         <CreatePost
