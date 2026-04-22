@@ -80,6 +80,17 @@ html, body {
   scroll-behavior: auto;
 }
 
+/* Panel 능동 scroll 정렬(Phase 1) — scrollIntoView({block:'start'})가 panel top을 viewport 상단에서
+   80px 떨어진 위치로 맞춤. 헤더/탭바와의 여백 확보. */
+.panel-draggable {
+  scroll-margin-top: 80px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* Panel 내부 스크롤 — uxui.md §6 패널 스크롤 토큰 (main-ux.md §1) */
 .panel-scroll {
   scrollbar-width: thin;

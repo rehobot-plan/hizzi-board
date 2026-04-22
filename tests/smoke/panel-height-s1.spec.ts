@@ -183,6 +183,137 @@ test.describe('메인 UX §1 — 패널 높이 제어 (세션 #54)', () => {
     ).toBeLessThan(3);
   });
 
+  // === Phase 1 능동 scroll 정렬 (세션 #61) ===
+  // 기존 5층 방어는 localStorage 'hizzi:activeScrollDisabled'=true 시 작동 · 기본은 능동 scroll 모드.
+  // 시나리오 11(모바일 skip)은 .hidden md:grid로 Panel 자체가 mobile viewport에서 안 렌더되어 별도 test 불필요.
+
+  test('시나리오 8 (세션 #61 Phase 1): 능동 scroll — 하단 overflow 패널 클릭 시 top 80±20', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.evaluate(() => window.scrollTo({ top: 0 }));
+    await page.waitForTimeout(150);
+
+    const panels = page.locator('[data-testid="panel-container"]');
+    const count = await panels.count();
+    let targetIdx = -1;
+    for (let i = 0; i < count; i++) {
+      const overflowed = await panels.nth(i).locator('[data-testid="panel-scroll"]').evaluate((el) => {
+        const e = el as HTMLElement;
+        return e.scrollHeight > e.clientHeight + 1;
+      });
+      const box = await panels.nth(i).boundingBox();
+      if (overflowed && box && box.y > 100) { targetIdx = i; break; }
+    }
+    expect(targetIdx, 'overflow + top>100 패널 없음 — 데이터 전제 불충족').toBeGreaterThanOrEqual(0);
+
+    const card = panels.nth(targetIdx);
+    const cell = card.locator('xpath=..');
+    const handle = cell.locator('[data-testid="panel-expand-handle"]');
+    // intent scrollY 기록 없이 프로그래매틱 click — 능동 scroll 경로만 검증
+    await handle.evaluate((el) => (el as HTMLButtonElement).click());
+    await page.waitForTimeout(400);
+
+    const afterTop = await card.evaluate((el) => el.getBoundingClientRect().top);
+    expect(
+      Math.abs(afterTop - 80),
+      `능동 scroll 후 panel top=${afterTop} (기대 80±20)`
+    ).toBeLessThan(20);
+  });
+
+  test('시나리오 9 (세션 #61 Phase 1): 가시 패널 클릭 시 scroll 생략 (range no-op)', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    const panels = page.locator('[data-testid="panel-container"]');
+    const count = await panels.count();
+    let targetIdx = -1;
+    for (let i = 0; i < count; i++) {
+      const o = await panels.nth(i).locator('[data-testid="panel-scroll"]').evaluate((el) => {
+        const e = el as HTMLElement;
+        return e.scrollHeight > e.clientHeight + 1;
+      });
+      if (o) { targetIdx = i; break; }
+    }
+    expect(targetIdx).toBeGreaterThanOrEqual(0);
+    const card = panels.nth(targetIdx);
+
+    // 패널 top이 0~100 범위에 들어가도록 능동 scroll 한 번 발동 (실측값 획득)
+    const cell = card.locator('xpath=..');
+    const handle = cell.locator('[data-testid="panel-expand-handle"]');
+    await handle.evaluate((el) => (el as HTMLButtonElement).click());
+    await page.waitForTimeout(400);
+
+    // 이제 top이 80 근처. 가시 범위 내. 다음 click은 scroll 생략해야 (smooth 끝나기 전 lock으로 drop 방지 위해 500ms 대기)
+    await page.waitForTimeout(500);
+    const baseline = await page.evaluate(() => window.scrollY);
+    await handle.evaluate((el) => (el as HTMLButtonElement).click());
+    await page.waitForTimeout(400);
+    const after = await page.evaluate(() => window.scrollY);
+    expect(
+      Math.abs(after - baseline),
+      `가시 상태 재click scrollY 변화: baseline=${baseline} after=${after} (기대 <20)`
+    ).toBeLessThan(20);
+  });
+
+  test('시나리오 10 (세션 #61 Phase 1): reduced-motion 시 instant scroll', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.evaluate(() => window.scrollTo({ top: 0 }));
+    await page.waitForTimeout(150);
+
+    const panels = page.locator('[data-testid="panel-container"]');
+    const count = await panels.count();
+    let targetIdx = -1;
+    for (let i = 0; i < count; i++) {
+      const o = await panels.nth(i).locator('[data-testid="panel-scroll"]').evaluate((el) => {
+        const e = el as HTMLElement;
+        return e.scrollHeight > e.clientHeight + 1;
+      });
+      const box = await panels.nth(i).boundingBox();
+      if (o && box && box.y > 100) { targetIdx = i; break; }
+    }
+    expect(targetIdx).toBeGreaterThanOrEqual(0);
+
+    const card = panels.nth(targetIdx);
+    const cell = card.locator('xpath=..');
+    const handle = cell.locator('[data-testid="panel-expand-handle"]');
+
+    await handle.evaluate((el) => (el as HTMLButtonElement).click());
+    // reduced-motion → instant. rAF 2프레임(~33ms) + scrollIntoView instant 이후 ~80ms면 완료 예상.
+    await page.waitForTimeout(100);
+    const afterTop = await card.evaluate((el) => el.getBoundingClientRect().top);
+    expect(
+      Math.abs(afterTop - 80),
+      `reduced-motion instant scroll 후 top=${afterTop} (기대 80±20)`
+    ).toBeLessThan(20);
+  });
+
+  test('시나리오 12 (세션 #61 Phase 1): 중복 클릭 lock 400ms — 두 번째 click drop', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    const panels = page.locator('[data-testid="panel-container"]');
+    const count = await panels.count();
+    let targetIdx = -1;
+    for (let i = 0; i < count; i++) {
+      const o = await panels.nth(i).locator('[data-testid="panel-scroll"]').evaluate((el) => {
+        const e = el as HTMLElement;
+        return e.scrollHeight > e.clientHeight + 1;
+      });
+      if (o) { targetIdx = i; break; }
+    }
+    expect(targetIdx).toBeGreaterThanOrEqual(0);
+
+    const card = panels.nth(targetIdx);
+    const cell = card.locator('xpath=..');
+    const handle = cell.locator('[data-testid="panel-expand-handle"]');
+
+    // 첫 click — 펼침 → aria-expanded=true
+    await handle.evaluate((el) => (el as HTMLButtonElement).click());
+    await page.waitForTimeout(50);
+    // 두 번째 click (lock 400ms 내) — drop되어야 → 여전히 펼친 상태
+    await handle.evaluate((el) => (el as HTMLButtonElement).click());
+    await page.waitForTimeout(100);
+    const expanded = await handle.evaluate((el) => el.getAttribute('aria-expanded'));
+    expect(expanded, 'lock 중 두 번째 click이 drop되지 않고 반영됨 (접힘)').toBe('true');
+  });
+
   test('시나리오 3: 탭 전환 시 스크롤 위치 독립 기억', async ({ page }) => {
     const panel = page.locator('[data-testid="panel-container"]').first();
     const scroll = panel.locator('[data-testid="panel-scroll"]');

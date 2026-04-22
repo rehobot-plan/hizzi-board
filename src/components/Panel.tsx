@@ -157,29 +157,55 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     }
   };
 
-  // 펼쳐보기 토글 — 접힘 시 scrollTop 0 복귀 + 페이지 scroll 위치 보존(의도 scrollY 기반 복원)
+  // 능동 scroll 정렬용 ref — 패널 card 측정 + 중복 실행 lock
+  const cardRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
+
+  // 펼쳐보기 토글 — Phase 1 능동 scroll 정렬 (+ 데스크탑/토글 조건 미충족 시 기존 5층 방어)
   const toggleExpand = () => {
     if (typeof window === 'undefined') {
       setIsExpanded((prev) => !prev);
       return;
     }
-    // 의도 scrollY 우선, 없으면 현재값 폴백. click 시점은 mousedown 경로에서 이미 jump 발생했을 수 있음.
-    const savedScrollY = intentScrollYRef.current ?? window.scrollY;
-    intentScrollYRef.current = null;
 
-    // 800ms 동안 window scroll 발생 시마다 원위치 복원. (감시 창 이전 400ms → 800ms로 확장)
-    // rAF 2회만으론 브라우저 scroll anchor·focus·layout 재조정 시점을 놓칠 수 있어
-    // scroll event listener로 모든 위치 변화를 포착해 intercept.
-    let active = true;
-    const restore = () => {
-      if (!active) return;
-      if (Math.abs(window.scrollY - savedScrollY) > 1) {
-        // behavior: 'instant' (TS 타입에는 없지만 최신 브라우저 지원 — smooth 상속 방지). 'auto' 폴백 겸용.
-        window.scrollTo({ top: savedScrollY, behavior: 'instant' as ScrollBehavior });
-      }
-    };
-    const onScroll = () => restore();
-    window.addEventListener('scroll', onScroll, { passive: true });
+    // 중복 실행 방지 — smooth scroll 진행 중 재클릭 drop (queue 아님)
+    if (isScrollingRef.current) return;
+    isScrollingRef.current = true;
+    window.setTimeout(() => { isScrollingRef.current = false; }, 400);
+
+    // Internal rollback toggle: localStorage.setItem('hizzi:activeScrollDisabled','true')
+    // DevTools console에서 설정 · UI 노출 없음. 해제: localStorage.removeItem('hizzi:activeScrollDisabled')
+    const activeScrollDisabled =
+      typeof localStorage !== 'undefined' &&
+      localStorage.getItem('hizzi:activeScrollDisabled') === 'true';
+    const isDesktop = window.innerWidth >= 768;
+    const useActiveScroll = !activeScrollDisabled && isDesktop && variant === 'grid';
+
+    // 기존 5층 방어 — 능동 scroll 비활성 조건일 때만 작동. 능동 scroll이 쓰일 땐 방어와 간섭되니 실행 자체 skip.
+    if (!useActiveScroll) {
+      const savedScrollY = intentScrollYRef.current ?? window.scrollY;
+      intentScrollYRef.current = null;
+      let active = true;
+      const restore = () => {
+        if (!active) return;
+        if (Math.abs(window.scrollY - savedScrollY) > 1) {
+          window.scrollTo({ top: savedScrollY, behavior: 'instant' as ScrollBehavior });
+        }
+      };
+      const onScroll = () => restore();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      requestAnimationFrame(() => {
+        restore();
+        requestAnimationFrame(restore);
+      });
+      window.setTimeout(() => {
+        active = false;
+        window.removeEventListener('scroll', onScroll);
+      }, 800);
+    } else {
+      // 능동 scroll 모드에선 intent 기록 리셋만 (복원 로직 미사용)
+      intentScrollYRef.current = null;
+    }
 
     setIsExpanded((prev) => {
       const next = !prev;
@@ -191,16 +217,23 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
       return next;
     });
 
-    // commit + paint 각 시점에도 한번씩 직접 복원 (scroll event 안 생길 때 대비)
-    requestAnimationFrame(() => {
-      restore();
-      requestAnimationFrame(restore);
-    });
-
-    window.setTimeout(() => {
-      active = false;
-      window.removeEventListener('scroll', onScroll);
-    }, 800);
+    // 능동 scroll 정렬 — 레이아웃 안정 후(rAF 2프레임) panel top을 viewport 상단 근처로 정렬
+    if (useActiveScroll) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const cardEl = cardRef.current;
+          if (!cardEl) return;
+          const top = cardEl.getBoundingClientRect().top;
+          // 이미 viewport 상단 근처 → scroll 생략 (rangeless no-op)
+          if (top >= 0 && top <= 100) return;
+          const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          cardEl.scrollIntoView({
+            behavior: reducedMotion ? ('instant' as ScrollBehavior) : 'smooth',
+            block: 'start',
+          });
+        });
+      });
+    }
   };
 
   const isOwner = user && ownerEmail === user?.email;
@@ -247,6 +280,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
   return (
     <>
     <div
+      ref={cardRef}
       className="panel-draggable flex flex-col border border-[#EDE5DC] bg-white rounded-none p-0 shadow-sm"
       draggable="true"
       data-panel-id={id}
