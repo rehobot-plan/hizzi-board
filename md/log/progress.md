@@ -5,8 +5,8 @@
 ## 현재상태 (세션 종료 시 replace)
 
 - 마지막 세션: 2026-04-22 세션 #60 (연차 조사 필터 해소 · 블록 ③-A 배포 · 후속 핫픽스 4건 · ⋯ 펼쳐보기 디자인 회귀 박제)
-- 작업 브랜치: master (로컬·원격 e6d6843 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
-- 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · 블록 ③-A · hover 휴지통 웹 한정 · Panel overflow hidden · ⋯ handle(44×18 pill · chevron) · 탭바 할일/메모/봉투 · 회수 링크 우측 · 패널 내부 스크롤·handle 감지 복구 · **⋯ handle viewport jump 차단** (overflow-anchor 전역 off + onMouseDown preventDefault + rAF 복원 + scroll event intercept 다층 방어)
+- 작업 브랜치: master (로컬·원격 ef7451e 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
+- 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · 블록 ③-A · hover 휴지통 웹 한정 · Panel overflow hidden · ⋯ handle(44×18 pill · chevron) · 탭바 할일/메모/봉투 · 회수 링크 우측 · 패널 내부 스크롤·handle 감지 복구 · ⋯ handle viewport jump 5층 방어 · **⋯ handle Phase 1 능동 scroll 정렬** (scrollIntoView block:'start' + scroll-margin-top:80px · 이미 가시 시 생략 · reduced-motion 시 instant · 400ms lock · localStorage rollback toggle)
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW · Production env 6개 정상 · Deploy Hook tB2B4PASNi 정상 (세션 #60 auto-deploy 실측 사례 1건: i42koin1y · master-debt #9 partial 해소)
 - 다음 세션 1순위: 블록 ③-B — 3층 탭바 메뉴 "기록" 진입점 + RecordModal 활용 + flows.md FLOW 1 복구 cascade 정교화(pending/accepted 직전 상태 복귀)
 - 후순위 후보:
@@ -176,3 +176,10 @@ Phase: 연차 내역-달력 불일치 조사 (필터 문제) / 블록 ③-A §2.
 - [2026-04-22] 세션 #61 / 패널 내부 스크롤·handle 감지 복구 — scroll div를 card 직접 flex child로 (height:100% → flex:1 1 auto + minHeight:0) · 세션 #54부터 잠복하던 height:100% 미해결 버그 확정 · E2E 시나리오 4/5 보강(handle ↔ overflow 1:1 일치 + admin 화면 overflow 패널 ≥1) (e2706ce) — Panel.tsx · page.tsx · panel-height-s1.spec.ts
 - [2026-04-22] 세션 #61 / ⋯ handle 클릭 시 viewport jump 차단 — (a) globals.css html/body overflow-anchor:none 전역 off (b) handle onMouseDown preventDefault로 focus 이동 차단 (c) toggleExpand savedScrollY → scroll event listener 400ms + rAF 2회 직접 복원 다층 방어 · E2E 시나리오 6 추가(펼침/접힘 전후 scrollY < 3) · spec 내 Playwright click의 actionability scroll 오염 차단 위해 element.click()로 프로그래매틱 클릭 (9d445f8 · 88027e3 · 9c091ce) — Panel.tsx · globals.css · panel-height-s1.spec.ts
 - [2026-04-22] 세션 #61 / ⋯ handle viewport jump 재방문 핫픽스 — 오너 실환경 재현 보고(E2E 6/6 PASS 상태) 후 진단: Playwright mouse.move/down/up 분리 실측에서 scrollY 변화 0 → 가상 mouse 재현 실패 · 실 Chrome 특이동작 의심 상태에서 선제 수정. (a) intentScrollYRef — hover/focus/touch 진입 시점(jump 이전) scrollY 선기록 → click 시 오염 회피 (b) 감시 창 400→800ms 확장 (c) scrollTo behavior: 'instant' 명시 (d) globals.css scroll-behavior: auto 명시 · E2E 시나리오 7 추가(page.mouse.move/down/up 실마우스 시퀀스) (e6d6843) — Panel.tsx · globals.css · panel-height-s1.spec.ts
+- [2026-04-23] 세션 #61 / ⋯ handle Phase 1 능동 scroll 정렬 — 5층 방어로도 실 Chrome 점프 지속 후 접근 전환("튐 억제" → "의도된 위치로 능동 정렬"). 데스크탑 + variant='grid' 조건에서 scrollIntoView({block:'start'}) + scroll-margin-top:80px로 panel top을 viewport 상단 근처 정렬. 이미 가시(0~100) 시 생략 · prefers-reduced-motion 시 instant · smooth 진행 중 중복 click lock 400ms drop · localStorage 'hizzi:activeScrollDisabled'=true 설정 시 기존 5층 방어로 폴백. E2E 시나리오 8/10/12 PASS, 9 skip(가시 판정 경계값 auto-rows-fr 재계산 흔들림 — 후속 실측 튜닝 필요), 6/7 능동 scroll 비활성 토글 상태로 재설계 (d2f63f5 · ef7451e) — Panel.tsx · globals.css · panel-height-s1.spec.ts
+
+잠복 위험 (Phase 1 능동 scroll):
+- 실 Chrome 점프 근본 원인 미규명 — 능동 scroll은 마스킹일 수 있음. Chrome 버전·환경 변화 시 재발 가능. DevTools Performance 녹화 필요 시 수행.
+- 능동 scroll 자체가 새 jump 유발 가능성 — 배포 후 실측 악화 시 localStorage 'hizzi:activeScrollDisabled'='true' 즉시 설정 후 롤백 검토.
+- "펼치면 상단 고정" 반복 사용 시 사용자 불만 가능 — 실사용 피드백 수집 필요.
+- 가시 판정(0~100) 경계값 튜닝 — auto-rows-fr row 재계산으로 card top 측정 시점별 흔들림. 시나리오 9 skip. 실 브라우저 로컬 실측 후 기준 조정.
