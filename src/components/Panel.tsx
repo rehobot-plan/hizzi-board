@@ -54,6 +54,9 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollPositionsRef = useRef<Map<string, number>>(new Map());
   const [isAtBottom, setIsAtBottom] = useState(false);
+  // 펼쳐보기 토글 (오너 제안 · 스크롤 대체 — 콘텐츠 초과 시 ⋯ 버튼으로 max-height 해제)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
 
   // 탭 전환 시 현재 스크롤 위치 저장 + 복원 (할일·메모 각 독립)
   useEffect(() => {
@@ -109,6 +112,17 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     setIsAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 1);
   }, [activeCategory, filteredPosts.length, posts.length]);
 
+  // 콘텐츠 초과 감지 — ⋯ 펼쳐보기 버튼 노출 여부
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const check = () => setHasOverflow(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeCategory, filteredPosts.length, posts.length, isExpanded]);
+
   const isOwner = user && ownerEmail === user?.email;
   const canCreate = user && (user.role === "admin" || isOwner);
   const canRename = user && (user.role === "admin" || isOwner);
@@ -157,7 +171,12 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
       data-panel-variant={variant}
       style={{
         ...(variant === 'grid'
-          ? { maxHeight: panelTokens.height.max, minHeight: panelTokens.height.min, overflow: 'hidden', minWidth: 0 }
+          ? {
+              maxHeight: isExpanded ? 'none' : panelTokens.height.max,
+              minHeight: panelTokens.height.min,
+              overflow: 'hidden',
+              minWidth: 0,
+            }
           : { height: '100%', overflow: 'hidden', minWidth: 0 }),
         transition: "background 0.2s, border 0.2s",
       }}
@@ -349,23 +368,43 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
             />
           )}
         </div>
-        {/* 하단 fade-out — 스크롤 끝 도달 시 사라짐 */}
-        <div
-          aria-hidden="true"
-          data-testid="panel-scroll-fade"
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: panelTokens.fadeOut.height,
-            background: panelTokens.fadeOut.gradient,
-            pointerEvents: 'none',
-            opacity: isAtBottom ? 0 : 1,
-            transition: 'opacity 0.15s ease',
-          }}
-        />
+        {/* 하단 fade-out — 스크롤 끝 도달 시 사라짐. 펼친 상태에선 숨김. */}
+        {!isExpanded && (
+          <div
+            aria-hidden="true"
+            data-testid="panel-scroll-fade"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: panelTokens.fadeOut.height,
+              background: panelTokens.fadeOut.gradient,
+              pointerEvents: 'none',
+              opacity: isAtBottom ? 0 : 1,
+              transition: 'opacity 0.15s ease',
+            }}
+          />
+        )}
       </div>
+      {/* ⋯ 펼쳐보기 / 접기 (오너 제안 · 스크롤 대체) — grid variant 한정 · 콘텐츠 초과 시 또는 펼친 상태 */}
+      {variant === 'grid' && (hasOverflow || isExpanded) && (
+        <button
+          onClick={() => setIsExpanded(v => !v)}
+          title={isExpanded ? '접기' : '펼쳐보기'}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '8px 0', fontSize: 12, color: '#9E8880',
+            background: '#FDF8F4', border: 'none', borderTop: '1px solid #EDE5DC',
+            cursor: 'pointer', letterSpacing: '0.04em',
+            transition: 'color 0.15s ease, background 0.15s ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#5C1F1F'; e.currentTarget.style.background = '#F5EFE9'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#9E8880'; e.currentTarget.style.background = '#FDF8F4'; }}
+        >
+          {isExpanded ? '▲ 접기' : '⋯ 펼쳐보기'}
+        </button>
+      )}
       {/* CreatePost 모달 */}
       {showCreate && (
         <CreatePost
