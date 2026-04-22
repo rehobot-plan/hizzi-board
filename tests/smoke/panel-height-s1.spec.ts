@@ -90,27 +90,32 @@ test.describe('메인 UX §1 — 패널 높이 제어 (세션 #54)', () => {
     const handle = cell.locator('[data-testid="panel-expand-handle"]');
     await expect(handle).toBeVisible();
 
-    // 페이지 scroll을 중간값으로 — scrollY 변화 감지 가능 상태
-    await page.evaluate(() => window.scrollTo({ top: 200 }));
-    await page.waitForTimeout(120);
-    const baseline = await page.evaluate(() => window.scrollY);
+    // 각 click 직전 scrollY 측정 → 직후와 비교.
+    // Playwright click의 actionability check(scroll-into-view)가 baseline을 오염시키지 않도록
+    // DOM element.click()으로 프로그래매틱 클릭 (scroll 안 함).
 
     // 펼침
-    await handle.click();
-    await page.waitForTimeout(200);
+    await handle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(120);
+    const beforeExpand = await page.evaluate(() => window.scrollY);
+    await handle.evaluate((el) => (el as HTMLButtonElement).click());
+    await page.waitForTimeout(250);
     const afterExpand = await page.evaluate(() => window.scrollY);
     expect(
-      Math.abs(afterExpand - baseline),
-      `펼침 viewport jump: baseline=${baseline} → after=${afterExpand}`
+      Math.abs(afterExpand - beforeExpand),
+      `펼침 viewport jump: before=${beforeExpand} → after=${afterExpand}`
     ).toBeLessThan(3);
 
     // 접힘
-    await handle.click();
-    await page.waitForTimeout(200);
+    await handle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(120);
+    const beforeCollapse = await page.evaluate(() => window.scrollY);
+    await handle.evaluate((el) => (el as HTMLButtonElement).click());
+    await page.waitForTimeout(250);
     const afterCollapse = await page.evaluate(() => window.scrollY);
     expect(
-      Math.abs(afterCollapse - baseline),
-      `접힘 viewport jump: baseline=${baseline} → after=${afterCollapse}`
+      Math.abs(afterCollapse - beforeCollapse),
+      `접힘 viewport jump: before=${beforeCollapse} → after=${afterCollapse}`
     ).toBeLessThan(3);
   });
 
