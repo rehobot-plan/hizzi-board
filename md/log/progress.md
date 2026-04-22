@@ -5,25 +5,21 @@
 ## 현재상태 (세션 종료 시 replace)
 
 - 마지막 세션: 2026-04-22 세션 #60 (연차 조사 필터 해소 · 블록 ③-A 배포 · 후속 핫픽스 4건 · ⋯ 펼쳐보기 디자인 회귀 박제)
-- 작업 브랜치: master (로컬·원격 ddc8ef3 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
-- 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · 블록 ③-A(RecordModal 2탭 · 2층 복구 링크 · CompletedTodo 재편) 반영 · hover 휴지통 웹 한정 부활 · Panel overflow hidden · ⋯ 펼쳐보기 탭바 우측 배치(디자인 불완전)
+- 작업 브랜치: master (로컬·원격 8655978 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
+- 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · 블록 ③-A(RecordModal 2탭 · 2층 복구 링크 · CompletedTodo 재편) 반영 · hover 휴지통 웹 한정 부활 · Panel overflow hidden · ⋯ handle 하단 경계 이동(#61 재편 — 44×18 pill · chevron · wrapper 분리) · 탭바 순서 할일/메모/봉투 확정 · 회수 링크 우측 정렬
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW · Production env 6개 정상 · Deploy Hook tB2B4PASNi 정상 (세션 #60 auto-deploy 실측 사례 1건: i42koin1y · master-debt #9 partial 해소)
-- 다음 세션 1순위: ⋯ 펼쳐보기 UI Claude.ai 설계 재검토
-  · 증상: 탭바 우측(카테고리 탭 뒤) 배치가 시각 위계·밸런스 흐트러짐. 기능은 작동하나 디자인 미달 (오너 판정 "AI 쪽 진행")
-  · 범위: ⋯ 버튼 위치·아이콘·크기·색상 전반 재설계. main-ux.md §1(패널 높이·펼쳐보기) + ux-principles.md + patterns-modal.md 정합 재점검
-  · 영향 파일: src/components/Panel.tsx (단일) + main-ux.md · patterns.md · ux-principles.md · uxui.md 설계 MD 다수
-  · 선행 조건: Claude.ai가 기획 레벨에서 재설계안 제시 → 오너 승인 → Code 구현
+- 다음 세션 1순위: 블록 ③-B — 3층 탭바 메뉴 "기록" 진입점 + RecordModal 활용 + flows.md FLOW 1 복구 cascade 정교화(pending/accepted 직전 상태 복귀)
 - 후순위 후보:
-  - 블록 ③-B: 3층 탭바 메뉴 "기록" 진입점 + RecordModal 활용 + flows.md FLOW 1 복구 cascade 정교화(pending/accepted 직전 상태 복귀)
   - 메인 UX 블록 ④(FAB) · 블록 ⑤(달력 피어 탭) · 세션 #55 기준 1~6
+  - 기존 Panel.tsx 비과업 transition 정합 (0.2s → 0.15s ease 통일, ease 키워드 누락 보완) · 세션 #61 Codex P3 박제
+  - handle z-index 토큰 정합 (현 3 하드코딩 · tokens.ts zIndex 계층 정렬) · 세션 #61 Codex P3 박제
 - 선처리 큐: #1~#4 (세션 #55 기준) + #5 (세션 #56) + #7 (세션 #58)
   5. tabbar-sticky.spec 전체 smoke 직렬 실행 시 간헐 timeout (세션 #56 · 유지)
   7. Vercel 새 프로젝트 env 환경별 불완전 (세션 #58 · 유지)
      · Production 6개 완비 · Preview 0개 · Development 5개 (API_KEY 누락)
      · Production 배포엔 영향 없음. Preview 배포 트리거 시 Firebase 초기화 실패 가능
 - 미해결:
-  - ⋯ 펼쳐보기 탭바 배치 디자인 회귀 (다음 세션 1순위로 이관 · UI 기능 작동 상태)
-  - Panel CSS flex shrink + overflow hidden 내부 스크롤 근본 원인 미규명 (회피책으로 ⋯ 토글 도입 · Playwright 실측 워크플로우 부재로 blocked · MEMORY #60)
+  - Panel CSS flex shrink + overflow hidden 내부 스크롤 근본 원인 미규명 (회피책으로 ⋯ handle 토글 · 세션 #61 디자인 완결 · Playwright 실측 워크플로우 부재로 blocked · MEMORY #60)
   - post-request cascade 실패 시 divergence 가능성 — master-debt #8
   - serviceAccount.json git history 잔존 — master-debt #10
   - auto-deploy 트리거 검증 공정 편입 — master-debt #9 (partial · #60에서 실측 사례 1건 확보)
@@ -173,3 +169,7 @@ Phase: 연차 내역-달력 불일치 조사 (필터 문제) / 블록 ③-A §2.
 - 블록 ③-A의 "3층 탭바 메뉴 기록 진입점" 범위는 블록 ③-B로 온전히 남음. flows.md FLOW 1 복구 cascade 정교화도 마찬가지. 이번 세션이 설계 원본 계획의 2층까지만 다뤘고, 디자인 회귀로 진행이 깨졌으니 다음 세션 재정비
 
 다음 세션 1순위: ⋯ 펼쳐보기 UI Claude.ai 설계 재검토 — 위치·아이콘·크기·색상 기획 레벨 재설계. 설계 확정 후 Code 구현. 이후 블록 ③-B(3층 탭바 메뉴 + flows.md FLOW 1 정교화) 진입
+
+---
+
+- [2026-04-22] 세션 #61 / 메인 패널 UI 재편 — 탭바 순서 확정(할일/메모/봉투) · ⋯ handle 하단 경계 이동(44×18 pill · chevron · wrapper 분리) · 회수 링크 우측 정렬 (8655978) — Panel.tsx · TodoList.tsx · PostList.tsx
