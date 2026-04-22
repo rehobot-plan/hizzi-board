@@ -112,16 +112,53 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     setIsAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 1);
   }, [activeCategory, filteredPosts.length, posts.length]);
 
-  // 콘텐츠 초과 감지 — ⋯ 펼쳐보기 버튼 노출 여부
+  // 콘텐츠 초과 감지 — handle 노출 여부
+  // ResizeObserver: 컨테이너 자체 크기 변화 (뷰포트·grid fr 변화)
+  // MutationObserver: 자식 subtree 렌더 변화 (todoFilter·selectMode·비동기 데이터 로드 등)
+  // rAF 배치: 동일 tick 내 중복 호출 억제 + 이전값 guard로 state churn 방지
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const check = () => setHasOverflow(el.scrollHeight > el.clientHeight + 1);
+    let rafId = 0;
+    const check = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        const current = scrollRef.current;
+        if (!current) return;
+        const next = current.scrollHeight > current.clientHeight + 1;
+        setHasOverflow((prev) => (prev === next ? prev : next));
+      });
+    };
     check();
     const ro = new ResizeObserver(check);
     ro.observe(el);
-    return () => ro.disconnect();
-  }, [activeCategory, filteredPosts.length, posts.length, isExpanded]);
+    const mo = new MutationObserver(check);
+    mo.observe(el, { childList: true, subtree: true });
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, [activeCategory, isExpanded]);
+
+  // 카테고리 전환 시 펼침 상태 리셋 — 아이템 적은 카테고리에서 handle 잔존 방지
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [activeCategory]);
+
+  // 펼쳐보기 토글 — 접힘 시 scrollTop 0 복귀
+  const toggleExpand = () => {
+    setIsExpanded((prev) => {
+      const next = !prev;
+      if (!next) {
+        const el = scrollRef.current;
+        if (el) el.scrollTop = 0;
+        scrollPositionsRef.current.set(activeCategory, 0);
+      }
+      return next;
+    });
+  };
 
   const isOwner = user && ownerEmail === user?.email;
   const canCreate = user && (user.role === "admin" || isOwner);
@@ -162,7 +199,13 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     await updatePanel(id, { categories: updated });
   };
 
+  const showHandle = variant === 'grid' && (hasOverflow || isExpanded);
+
   return (
+    <div
+      className={variant === 'fullscreen' ? 'h-full flex flex-col' : ''}
+      style={{ position: 'relative', minWidth: 0 }}
+    >
     <div
       className="panel-draggable flex flex-col border border-[#EDE5DC] bg-white rounded-none p-0 shadow-sm"
       draggable="true"
@@ -228,13 +271,8 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
             )}
           </div>
         </div>
-        {/* 탭 행 — 편지봉투 + 탭 중앙정렬, 우측 */}
+        {/* 탭 행 — 카테고리 탭(좌) → 봉투(우) 순서, 우측 정렬 */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', height: 36, paddingRight: 20 }}>
-          {(isOwner || user?.role === 'admin') && ownerEmail && (
-            <div style={{ display: 'flex', alignItems: 'center', height: 36, paddingRight: 8 }}>
-              <TodoRequestBadge panelOwnerEmail={ownerEmail} />
-            </div>
-          )}
           {categoryList.map((cat) => {
             const isBase = BASE_CATEGORIES.includes(cat);
             return (
@@ -278,23 +316,10 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
               </div>
             );
           })}
-          {/* 펼쳐보기 토글 — 탭바 우측에 고정 (스크롤 레이아웃과 독립) · 패널에 콘텐츠 있을 때만 노출 */}
-          {variant === 'grid' && posts.some(p => p.panelId === id) && (
-            <button
-              onClick={() => setIsExpanded(v => !v)}
-              title={isExpanded ? '접기' : '펼쳐보기'}
-              style={{
-                marginLeft: 8, height: 36, padding: '0 10px',
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                color: isExpanded ? '#C17B6B' : '#9E8880',
-                fontSize: isExpanded ? 11 : 16, letterSpacing: '0.04em',
-                transition: 'color 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#5C1F1F')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = isExpanded ? '#C17B6B' : '#9E8880')}
-            >
-              {isExpanded ? '▲' : '⋯'}
-            </button>
+          {(isOwner || user?.role === 'admin') && ownerEmail && (
+            <div style={{ display: 'flex', alignItems: 'center', height: 36, paddingLeft: 12 }}>
+              <TodoRequestBadge panelOwnerEmail={ownerEmail} />
+            </div>
           )}
         </div>
       </div>
@@ -377,6 +402,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
             />
           ) : (
             <PostList
+              key={activeCategory}
               posts={filteredPosts}
               activeCategory={activeCategory}
               panelId={id}
@@ -485,6 +511,58 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
         </div>
       )}
 
+    </div>
+      {showHandle && (
+        <button
+          type="button"
+          onClick={toggleExpand}
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? '접기' : '펼쳐보기'}
+          title={isExpanded ? '접기' : '펼쳐보기'}
+          data-testid="panel-expand-handle"
+          style={{
+            position: 'absolute',
+            bottom: -9,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 44,
+            height: 18,
+            borderRadius: 9,
+            background: '#FFFFFF',
+            border: '1px solid #C4B8B0',
+            color: '#C4B8B0',
+            boxShadow: '0 1px 3px rgba(44,20,16,0.04)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            padding: 0,
+            zIndex: 3,
+            transition: 'color 0.15s ease, border-color 0.15s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#9E8880';
+            e.currentTarget.style.borderColor = '#9E8880';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#C4B8B0';
+            e.currentTarget.style.borderColor = '#C4B8B0';
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            style={{
+              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.15s ease',
+            }}
+          >
+            <path d="M6 9 L12 15 L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

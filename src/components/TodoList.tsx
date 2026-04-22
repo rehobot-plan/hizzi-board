@@ -73,7 +73,7 @@ export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFi
       ))}
 
       {(recentCompletedCount > 0 || recentDeletedCount > 0) && (
-        <div style={{ display: 'flex', gap: 12, padding: '10px 0 4px', borderTop: '1px solid #EDE5DC', marginTop: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 14, padding: '10px 0 4px', borderTop: '1px solid #EDE5DC', marginTop: 8 }}>
           {recentCompletedCount > 0 && (
             <button
               onClick={() => openRecord('completed')}

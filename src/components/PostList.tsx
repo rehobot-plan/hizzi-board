@@ -140,7 +140,7 @@ export default function PostList({ posts, activeCategory, panelId, canEdit, sele
       )}
 
       {canShowRecordLink && (
-        <div style={{ display: 'flex', gap: 12, padding: '10px 0 4px', borderTop: '1px solid #EDE5DC', marginTop: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 14, padding: '10px 0 4px', borderTop: '1px solid #EDE5DC', marginTop: 8 }}>
           <button
             onClick={() => setRecordOpen(true)}
             style={{ fontSize: 10, color: '#9E8880', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '0.04em', transition: 'color 0.15s ease' }}
