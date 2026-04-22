@@ -202,10 +202,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
   const showHandle = variant === 'grid' && (hasOverflow || isExpanded);
 
   return (
-    <div
-      className={variant === 'fullscreen' ? 'h-full flex flex-col' : ''}
-      style={{ position: 'relative', minWidth: 0 }}
-    >
+    <>
     <div
       className="panel-draggable flex flex-col border border-[#EDE5DC] bg-white rounded-none p-0 shadow-sm"
       draggable="true"
@@ -215,12 +212,13 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
       style={{
         ...(variant === 'grid'
           ? {
+              position: 'relative',
               maxHeight: isExpanded ? 'none' : panelTokens.height.max,
               minHeight: panelTokens.height.min,
               overflow: 'hidden',
               minWidth: 0,
             }
-          : { height: '100%', overflow: 'hidden', minWidth: 0 }),
+          : { position: 'relative', height: '100%', overflow: 'hidden', minWidth: 0 }),
         transition: "background 0.2s, border 0.2s",
       }}
     >
@@ -383,54 +381,57 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           </button>
         )}
       </div>
-      {/* 게시물 목록 (main-ux.md §1 — 내부 스크롤 + fade-out) */}
-      <div style={{ position: 'relative', flex: '1 1 auto', minHeight: 0 }}>
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          data-testid="panel-scroll"
-          className="panel-scroll px-5"
-          style={{ height: '100%', overflowY: 'auto' }}
-        >
-          {activeCategory === "할일" ? (
-            <TodoList
-              panelId={id}
-              ownerEmail={ownerEmail}
-              posts={posts}
-              canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
-              activeFilter={todoFilter}
-            />
-          ) : (
-            <PostList
-              key={activeCategory}
-              posts={filteredPosts}
-              activeCategory={activeCategory}
-              panelId={id}
-              canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
-              selectMode={memoSelectMode}
-              onSelectModeChange={setMemoSelectMode}
-            />
-          )}
-        </div>
-        {/* 하단 fade-out — 스크롤 끝 도달 시 사라짐. 펼친 상태에선 숨김. */}
-        {!isExpanded && (
-          <div
-            aria-hidden="true"
-            data-testid="panel-scroll-fade"
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: panelTokens.fadeOut.height,
-              background: panelTokens.fadeOut.gradient,
-              pointerEvents: 'none',
-              opacity: isAtBottom ? 0 : 1,
-              transition: 'opacity 0.15s ease',
-            }}
+      {/* 게시물 목록 — scroll div가 card의 직접 flex child (main-ux.md §1). */}
+      {/* height:100% 체인 대신 flex:1 1 auto + minHeight:0으로 shrink → card max-height 안에서 정확히 남은 공간 차지. */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        data-testid="panel-scroll"
+        className="panel-scroll px-5"
+        style={{
+          flex: '1 1 auto',
+          minHeight: 0,
+          overflowY: 'auto',
+        }}
+      >
+        {activeCategory === "할일" ? (
+          <TodoList
+            panelId={id}
+            ownerEmail={ownerEmail}
+            posts={posts}
+            canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+            activeFilter={todoFilter}
+          />
+        ) : (
+          <PostList
+            key={activeCategory}
+            posts={filteredPosts}
+            activeCategory={activeCategory}
+            panelId={id}
+            canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+            selectMode={memoSelectMode}
+            onSelectModeChange={setMemoSelectMode}
           />
         )}
       </div>
+      {/* 하단 fade-out — card 기준 absolute (panel-draggable position:relative). 스크롤 끝 도달 시 사라짐. 펼친 상태에선 숨김. */}
+      {!isExpanded && (
+        <div
+          aria-hidden="true"
+          data-testid="panel-scroll-fade"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: panelTokens.fadeOut.height,
+            background: panelTokens.fadeOut.gradient,
+            pointerEvents: 'none',
+            opacity: isAtBottom ? 0 : 1,
+            transition: 'opacity 0.15s ease',
+          }}
+        />
+      )}
       {/* CreatePost 모달 */}
       {showCreate && (
         <CreatePost
@@ -563,6 +564,6 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           </svg>
         </button>
       )}
-    </div>
+    </>
   );
 }

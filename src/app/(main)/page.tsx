@@ -316,7 +316,7 @@ export default function Home() {
                     onDragStart={e => handlePanelDragStart(e, panel.id)}
                     onDragOver={handlePanelDragOver}
                     onDrop={e => handlePanelDrop(e, panel.id)}
-                    className="h-full">
+                    className="h-full relative">
                     <Panel id={panel.id} name={panel.name} ownerEmail={panel.ownerEmail} position={panel.position} />
                   </div>
                 ))}

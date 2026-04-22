@@ -37,6 +37,40 @@ test.describe('메인 UX §1 — 패널 높이 제어 (세션 #54)', () => {
     expect(scrollable.scrollHeight).toBeGreaterThanOrEqual(scrollable.clientHeight);
   });
 
+  test('시나리오 4 (세션 #61): handle 노출 ↔ scroll overflow 일치', async ({ page }) => {
+    // scroll sh > ch + 1 이면 handle 존재, 아니면 부재. 역도 성립.
+    const panels = page.locator('[data-testid="panel-container"]');
+    const count = await panels.count();
+    expect(count).toBeGreaterThanOrEqual(1);
+    for (let i = 0; i < count; i++) {
+      const card = panels.nth(i);
+      const scroll = card.locator('[data-testid="panel-scroll"]');
+      const overflowed = await scroll.evaluate((el) => {
+        const e = el as HTMLElement;
+        return e.scrollHeight > e.clientHeight + 1;
+      });
+      const cell = card.locator('xpath=..');
+      const handleCount = await cell.locator('[data-testid="panel-expand-handle"]').count();
+      expect(handleCount, `패널 ${i + 1} handle 노출 상태 불일치 (overflow=${overflowed})`).toBe(overflowed ? 1 : 0);
+    }
+  });
+
+  test('시나리오 5 (세션 #61): overflow 패널의 scroll sh > ch 실제 확인', async ({ page }) => {
+    // 하나라도 overflow 상태인 패널이 없다면 데이터 부족이나 레이아웃 회귀 가능성.
+    const scrolls = page.locator('[data-testid="panel-scroll"]');
+    const count = await scrolls.count();
+    let overflowFound = 0;
+    for (let i = 0; i < count; i++) {
+      const o = await scrolls.nth(i).evaluate((el) => {
+        const e = el as HTMLElement;
+        return { sh: e.scrollHeight, ch: e.clientHeight };
+      });
+      if (o.sh > o.ch + 1) overflowFound++;
+    }
+    // admin 화면엔 최소 1개의 overflow 패널이 있어야 정상 (유미정 케이스)
+    expect(overflowFound, 'overflow 상태 패널 0건 — 레이아웃 회귀 의심').toBeGreaterThanOrEqual(1);
+  });
+
   test('시나리오 3: 탭 전환 시 스크롤 위치 독립 기억', async ({ page }) => {
     const panel = page.locator('[data-testid="panel-container"]').first();
     const scroll = panel.locator('[data-testid="panel-scroll"]');
