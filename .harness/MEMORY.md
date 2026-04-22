@@ -91,6 +91,24 @@
   · 인과 확정 건만 현재 범위에서 처리, 독립 flaky는 선처리 큐로 분리 (R4.11 도메인 분리 원칙과 정합)
   · 옵션 A(진단 → 분리) 패턴을 기본으로. 옵션 B(선배포 후 재측정)는 원인 격리 실패 리스크
 
+## Windows 환경 env 파일 UTF-8 BOM 함정 (세션 #58)
+
+- 현상: `.env.local` 첫 줄 `NEXT_PUBLIC_FIREBASE_API_KEY=...` 의 BOM(`\xEF\xBB\xBF`)이 앞에 붙어 `grep "^KEY="` / `sed -n 's/^KEY=...'` 패턴 매칭을 은밀히 실패. 자동화 loop에서 API_KEY 값만 빈 문자열로 전송돼 Vercel env add가 action_required 응답하며 등록 누락
+- 원인: Windows 에디터(메모장·일부 IDE 기본)가 UTF-8 with BOM으로 저장. Vercel CLI 생성 파일(.env.vercel.local)은 BOM 없음
+- 회피: env 파일 자동화 진입 전 `od -c <file> | head -1`로 BOM 사전 체크. 의심되면 Vercel CLI pull 파일을 2차 소스로 사용. `^\xEF\xBB\xBF?KEY=` 같은 관대 패턴도 대안이지만 진입점에서 BOM 제거가 깔끔
+
+## 문제 레이어 다단 시 세션 분리 인식 (세션 #58)
+
+- 현상: "커밋 원활화" 단일 목표로 세션 시작했으나 해소 시도가 git 이력(부분 기각) → Vercel 프로젝트(재생성) → Env Vars(BOM 해소) → 빌드 에러 1회 표면화 → CLI flaky 회귀 → GitHub Repository Rules 6개 레이어로 계속 이동. 각 레이어 해소가 다음 레이어를 노출하는 구조
+- 교훈: 한 세션 내 완결 시도가 무리였던 게 아니라 **다단 레이어를 단일 세션으로 묶어놓은 프레이밍** 자체가 구조적으로 불가능. 첫 레이어 해소 후 두 번째 레이어가 드러나면 그 시점에 "다음 세션으로 분리" 판단 트리거
+- 적용: 인프라·배포 파이프라인 복구 세션은 진입 시점에 "레이어 1개만 처리, 다음 레이어 발견 시 선처리 큐 + 세션 마감"을 기본값으로 설정. 재시도 누적으로 대신 쌓이는 피로도가 다음 세션 인지 부하를 키움
+
+## .claude/settings.json deny 규칙과 오너 직접 실행 우회 (세션 #58)
+
+- 상황: `git push --force*` 패턴이 `.claude/settings.json` deny에 등록 → `--force-with-lease`까지 차단됨 (와일드카드 매칭). 오너가 채팅에서 "승인" 발화해도 권한 시스템이 하드 블록
+- 해소: 오너가 프롬프트 입력란에 `! git push --force-with-lease origin master`로 직접 실행하면 세션 출력에 결과가 들어옴. Code는 이어서 다음 단계 진행
+- 원칙: deny 규칙은 안전장치 기조와 정합하므로 일회성 force push 때문에 규칙 완화하지 않음. 오너 직접 실행 경로를 우선 제안. 규칙 수정(ask로 이동 등)은 "동일 상황 3회 이상 반복" 트리거에서만 고려
+
 ## 공포 기반 과보정 패턴 (세션 #56)
 
 - 상황: 세션 #56 블록 ② push 시점에 로컬 git missing blob 발견. 실제 해법은 "새 폴더 fresh clone + 워킹 트리 파일 복사 + 단일 누적 commit"으로 30분~1시간 규모

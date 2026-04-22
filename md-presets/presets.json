@@ -1,15 +1,14 @@
 {
   "current": {
-    "name": "session-57-infra-recovery",
-    "description": "세션 #57 — 인프라 복구 전담",
-    "updated": "2026-04-21",
+    "name": "session-59-deployment-recovery",
+    "description": "세션 #59 — Vercel 배포 파이프라인 복구 (CLI flaky + GitHub Rules)",
+    "updated": "2026-04-22",
     "files": [
       "CLAUDE.md",
       "md/core/harness.md",
       "md/core/rules.md",
       "md/core/session.md",
-      "md/log/progress.md",
-      ".harness/patches-session-56/SESSION-56-INFRA-REPORT.md"
+      "md/log/progress.md"
     ]
   }
 }

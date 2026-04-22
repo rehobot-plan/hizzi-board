@@ -85,6 +85,18 @@
    - Panel.tsx 회귀는 세션 #55 2eb2bf6으로 해소, flaky 2건(sidebar.spec.ts·request-badge.spec.ts)은 progress 선처리 큐 #3·#4로 이관
 ```
 
+### #9 harness.md §3 배포 게이트에 auto-deploy 트리거 검증 누락
+
+근거: 세션 #58 실측. push 이후 Vercel이 webhook 수신·배포 트리거에 성공했는지 공정에서 검증하지 않음. 세션 #33~#56 장기 드리프트도 같은 구조적 공백에서 누적됐고, 세션 #58에서도 empty commit push가 GitHub Rules로 거부된 상태에서 auto-deploy 경로 자체를 실측할 수단이 없었음.
+
+현재 처리: §3이 git push + vercel --prod 개별 성공만 체크. GitHub → Vercel webhook 파이프라인 상태는 공정 밖.
+
+해소 방향: 1-6에 "push 후 30~60초 내 `vercel ls --yes`로 신규 배포 Row 생성 확인" 단계 추가. 생성 없으면 webhook 단절로 간주하고 오너 보고. 수동 CLI 배포로 폴백해도 불일치 기록.
+
+영향 범위: md/core/harness.md §3 / md/core/session.md
+연동 MD: harness.md · session.md
+상태: open
+
 ### #8 post-request cascade 실패 시 divergence 가능성
 
 근거: 세션 #56 Codex 리뷰 P2 2건.
