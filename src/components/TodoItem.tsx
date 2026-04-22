@@ -279,6 +279,24 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
       >
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: todoLeftBorderColor(post), pointerEvents: 'none' }} />
 
+        {canEdit && isHovered && !justChecked && !isSwiping && (
+          <button
+            onClick={e => { e.stopPropagation(); handleDelete(); }}
+            title="삭제"
+            style={{
+              position: 'absolute', top: 8, right: 8, zIndex: 3,
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: 4, opacity: 0.25, transition: 'opacity 0.15s ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '0.25')}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 3.5h7M5 5.5v3.5M7 5.5v3.5M3.5 3.5l.5 6h4l.5-6M4.5 3.5v-1.2h3v1.2" stroke="#9E8880" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        )}
+
         {canEdit && (
           <button onClick={e => { e.stopPropagation(); handleCheck(); }} disabled={checking || justChecked}
             style={{ width: 18, height: 18, border: `1.5px solid ${justChecked ? colors.accent : colors.border}`, background: justChecked ? colors.accent : colors.cardBg, cursor: justChecked ? 'default' : 'pointer', flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', position: 'relative', zIndex: 2 }}>
