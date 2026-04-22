@@ -74,8 +74,10 @@ a {
 /* Scroll anchoring 전역 off — 세션 #61 ⋯ handle 펼침/접힘 시 viewport jump 차단 */
 /* Chrome·Firefox·Edge는 기본 overflow-anchor: auto로 DOM 변화 시 viewport anchor를 보존하려 scrollY 재조정 */
 /* Panel 확장으로 레이아웃 변할 때 이 기능이 오작동 → 완전 off */
+/* scroll-behavior: auto 명시 — 어느 상위 규칙에서 smooth가 상속돼 복원 scrollTo가 애니메이션되는 것 방지 */
 html, body {
   overflow-anchor: none;
+  scroll-behavior: auto;
 }
 
 /* Panel 내부 스크롤 — uxui.md §6 패널 스크롤 토큰 (main-ux.md §1) */

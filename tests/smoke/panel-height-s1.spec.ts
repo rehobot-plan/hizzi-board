@@ -119,6 +119,70 @@ test.describe('메인 UX §1 — 패널 높이 제어 (세션 #54)', () => {
     ).toBeLessThan(3);
   });
 
+  test('시나리오 7 (세션 #61): 실 마우스 시퀀스 handle 클릭 scrollY 유지', async ({ page }) => {
+    // page.mouse.move + down + up 분리. mousedown→click 사이 모든 phase에서 scrollY 추적.
+    // Playwright element.click()과 달리 actionability scroll도 없고 실제 user mousedown 경로 시뮬.
+    const panels = page.locator('[data-testid="panel-container"]');
+    const count = await panels.count();
+    let targetIdx = -1;
+    for (let i = 0; i < count; i++) {
+      const o = await panels.nth(i).locator('[data-testid="panel-scroll"]').evaluate((el) => {
+        const e = el as HTMLElement;
+        return e.scrollHeight > e.clientHeight + 1;
+      });
+      if (o) { targetIdx = i; break; }
+    }
+    expect(targetIdx, 'overflow 패널 없음').toBeGreaterThanOrEqual(0);
+
+    const card = panels.nth(targetIdx);
+    const cell = card.locator('xpath=..');
+    const handle = cell.locator('[data-testid="panel-expand-handle"]');
+    await handle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(150);
+
+    const box = await handle.boundingBox();
+    if (!box) throw new Error('handle box null');
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    // 펼침 — 진입 후 down/up 분리
+    const beforeExpand = await page.evaluate(() => window.scrollY);
+    await page.mouse.move(cx, cy);
+    await page.waitForTimeout(50);
+    await page.mouse.down();
+    await page.waitForTimeout(50);
+    const midExpand = await page.evaluate(() => window.scrollY);
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+    const afterExpand = await page.evaluate(() => window.scrollY);
+    expect(
+      Math.abs(afterExpand - beforeExpand),
+      `펼침(실마우스) jump: before=${beforeExpand} mid=${midExpand} after=${afterExpand}`
+    ).toBeLessThan(3);
+
+    // 접힘 — 다시 handle 위로 이동
+    await handle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(150);
+    const box2 = await handle.boundingBox();
+    if (!box2) throw new Error('handle box null (collapse)');
+    const cx2 = box2.x + box2.width / 2;
+    const cy2 = box2.y + box2.height / 2;
+
+    const beforeCollapse = await page.evaluate(() => window.scrollY);
+    await page.mouse.move(cx2, cy2);
+    await page.waitForTimeout(50);
+    await page.mouse.down();
+    await page.waitForTimeout(50);
+    const midCollapse = await page.evaluate(() => window.scrollY);
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+    const afterCollapse = await page.evaluate(() => window.scrollY);
+    expect(
+      Math.abs(afterCollapse - beforeCollapse),
+      `접힘(실마우스) jump: before=${beforeCollapse} mid=${midCollapse} after=${afterCollapse}`
+    ).toBeLessThan(3);
+  });
+
   test('시나리오 3: 탭 전환 시 스크롤 위치 독립 기억', async ({ page }) => {
     const panel = page.locator('[data-testid="panel-container"]').first();
     const scroll = panel.locator('[data-testid="panel-scroll"]');

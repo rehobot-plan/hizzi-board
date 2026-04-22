@@ -147,21 +147,35 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     setIsExpanded(false);
   }, [activeCategory]);
 
-  // 펼쳐보기 토글 — 접힘 시 scrollTop 0 복귀 + 페이지 scroll 위치 보존
+  // click 시점의 scrollY는 mousedown/focus/layout 경로에서 이미 오염됐을 수 있어
+  // hover·focus·touch 진입 시점(jump 이전)에 의도된 scrollY를 선기록한다.
+  // 이 ref가 비어 있을 땐(예: 프로그래매틱 click) click 시점 scrollY로 폴백.
+  const intentScrollYRef = useRef<number | null>(null);
+  const captureIntentScrollY = () => {
+    if (typeof window !== 'undefined') {
+      intentScrollYRef.current = window.scrollY;
+    }
+  };
+
+  // 펼쳐보기 토글 — 접힘 시 scrollTop 0 복귀 + 페이지 scroll 위치 보존(의도 scrollY 기반 복원)
   const toggleExpand = () => {
     if (typeof window === 'undefined') {
       setIsExpanded((prev) => !prev);
       return;
     }
-    const savedScrollY = window.scrollY;
-    // 400ms 동안 window scroll 발생 시마다 원위치 복원.
+    // 의도 scrollY 우선, 없으면 현재값 폴백. click 시점은 mousedown 경로에서 이미 jump 발생했을 수 있음.
+    const savedScrollY = intentScrollYRef.current ?? window.scrollY;
+    intentScrollYRef.current = null;
+
+    // 800ms 동안 window scroll 발생 시마다 원위치 복원. (감시 창 이전 400ms → 800ms로 확장)
     // rAF 2회만으론 브라우저 scroll anchor·focus·layout 재조정 시점을 놓칠 수 있어
     // scroll event listener로 모든 위치 변화를 포착해 intercept.
     let active = true;
     const restore = () => {
       if (!active) return;
       if (Math.abs(window.scrollY - savedScrollY) > 1) {
-        window.scrollTo({ top: savedScrollY, behavior: 'auto' });
+        // behavior: 'instant' (TS 타입에는 없지만 최신 브라우저 지원 — smooth 상속 방지). 'auto' 폴백 겸용.
+        window.scrollTo({ top: savedScrollY, behavior: 'instant' as ScrollBehavior });
       }
     };
     const onScroll = () => restore();
@@ -186,7 +200,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     window.setTimeout(() => {
       active = false;
       window.removeEventListener('scroll', onScroll);
-    }, 400);
+    }, 800);
   };
 
   const isOwner = user && ownerEmail === user?.email;
@@ -548,6 +562,14 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           type="button"
           onClick={toggleExpand}
           onMouseDown={(e) => e.preventDefault()}
+          onMouseEnter={(e) => {
+            captureIntentScrollY();
+            e.currentTarget.style.color = '#9E8880';
+            e.currentTarget.style.borderColor = '#9E8880';
+          }}
+          onPointerEnter={captureIntentScrollY}
+          onFocus={captureIntentScrollY}
+          onTouchStart={captureIntentScrollY}
           aria-expanded={isExpanded}
           aria-label={isExpanded ? '접기' : '펼쳐보기'}
           title={isExpanded ? '접기' : '펼쳐보기'}
@@ -571,10 +593,6 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
             padding: 0,
             zIndex: 3,
             transition: 'color 0.15s ease, border-color 0.15s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#9E8880';
-            e.currentTarget.style.borderColor = '#9E8880';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.color = '#C4B8B0';
