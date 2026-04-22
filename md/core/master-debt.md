@@ -101,7 +101,7 @@
 
 근거: 세션 #58 실측. push 이후 Vercel이 webhook 수신·배포 트리거에 성공했는지 공정에서 검증하지 않음. 세션 #33~#56 장기 드리프트도 같은 구조적 공백에서 누적됐고, 세션 #58에서도 empty commit push가 GitHub Rules로 거부된 상태에서 auto-deploy 경로 자체를 실측할 수단이 없었음.
 
-현재 처리: §3이 git push + vercel --prod 개별 성공만 체크. GitHub → Vercel webhook 파이프라인 상태는 공정 밖. 세션 #59에서 Deploy Hook 생성 및 수동 트리거 경로 확보 → **부분 해소**. 그러나 push 기반 자동 트리거의 실측 절차는 여전히 공정에 없음.
+현재 처리: §3이 git push + vercel --prod 개별 성공만 체크. GitHub → Vercel webhook 파이프라인 상태는 공정 밖. 세션 #59에서 Deploy Hook 생성 및 수동 트리거 경로 확보 → **부분 해소**. 세션 #60에서 push → auto-deploy 실측 사례 1건 확인(`i42koin1y` 자동 빌드 정상, Git 재연결 + Deploy Hook 조합 정상 작동). 그러나 push 기반 자동 트리거의 실측 절차를 공정에 명시 단계로 편입하는 작업은 여전히 미완.
 
 해소 방향: 1-6에 "push 후 30~60초 내 `vercel ls --yes`로 신규 배포 Row 생성 확인" 단계 추가. 생성 없으면 webhook 단절로 간주하고 오너 보고. 수동 CLI 배포로 폴백해도 불일치 기록.
 
