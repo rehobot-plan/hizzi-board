@@ -387,8 +387,8 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           />
         )}
       </div>
-      {/* ⋯ 펼쳐보기 / 접기 (오너 제안 · 스크롤 대체) — grid variant 한정 · 콘텐츠 초과 시 또는 펼친 상태 */}
-      {variant === 'grid' && (hasOverflow || isExpanded) && (
+      {/* ⋯ 펼쳐보기 / 접기 (오너 제안 · 스크롤 대체) — grid variant 한정 · 항상 노출 (초과 감지 ResizeObserver 불안정 대응) */}
+      {variant === 'grid' && (
         <button
           onClick={() => setIsExpanded(v => !v)}
           title={isExpanded ? '접기' : '펼쳐보기'}
