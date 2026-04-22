@@ -85,11 +85,23 @@
    - Panel.tsx 회귀는 세션 #55 2eb2bf6으로 해소, flaky 2건(sidebar.spec.ts·request-badge.spec.ts)은 progress 선처리 큐 #3·#4로 이관
 ```
 
+### #10 serviceAccount.json git history 잔존
+
+근거: 세션 #58 push 시점 GitHub Secret Scanning이 `serviceAccount.json:1`을 감지. 최초 커밋 cceeaba(세션 초기) 이후 master에 평문 tracked 상태로 수개월 존재. 세션 #59에서 키 회전(revoke + 재발급) + `.gitignore` 추가 + `git rm --cached`로 위험 중립화 완료. 그러나 과거 커밋에 구 키는 여전히 평문으로 남음.
+
+현재 처리: 키 회전으로 유출된 구 키는 GCP에서 사용 불가 상태. GitHub Secret Scanning은 오너가 bypass URL 허용 처리 완료. public repo에 과거 이력 남아있어도 실효적 악용 불가.
+
+해소 방향: git-filter-repo 또는 BFG Repo-Cleaner로 과거 커밋에서 파일 완전 제거. 단, rewrite 시 모든 커밋 해시 변경되어 force push 필요 · backup 브랜치들도 재작성 · Vercel 배포 이력 연속성 영향 가능. 위험 중립화된 상태라 당장 급하지 않음. 깔끔함 우선시 시점에만 진행.
+
+영향 범위: 전체 git history · backup/flatten-2026-04-22 브랜치
+연동 MD: 없음
+상태: open (우선순위 낮음)
+
 ### #9 harness.md §3 배포 게이트에 auto-deploy 트리거 검증 누락
 
 근거: 세션 #58 실측. push 이후 Vercel이 webhook 수신·배포 트리거에 성공했는지 공정에서 검증하지 않음. 세션 #33~#56 장기 드리프트도 같은 구조적 공백에서 누적됐고, 세션 #58에서도 empty commit push가 GitHub Rules로 거부된 상태에서 auto-deploy 경로 자체를 실측할 수단이 없었음.
 
-현재 처리: §3이 git push + vercel --prod 개별 성공만 체크. GitHub → Vercel webhook 파이프라인 상태는 공정 밖.
+현재 처리: §3이 git push + vercel --prod 개별 성공만 체크. GitHub → Vercel webhook 파이프라인 상태는 공정 밖. 세션 #59에서 Deploy Hook 생성 및 수동 트리거 경로 확보 → **부분 해소**. 그러나 push 기반 자동 트리거의 실측 절차는 여전히 공정에 없음.
 
 해소 방향: 1-6에 "push 후 30~60초 내 `vercel ls --yes`로 신규 배포 Row 생성 확인" 단계 추가. 생성 없으면 webhook 단절로 간주하고 오너 보고. 수동 CLI 배포로 폴백해도 불일치 기록.
 

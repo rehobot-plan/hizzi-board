@@ -91,6 +91,31 @@
   · 인과 확정 건만 현재 범위에서 처리, 독립 flaky는 선처리 큐로 분리 (R4.11 도메인 분리 원칙과 정합)
   · 옵션 A(진단 → 분리) 패턴을 기본으로. 옵션 B(선배포 후 재측정)는 원인 격리 실패 리스크
 
+## "꼬인 걸 풀기" vs "처음 설정한다는 마음으로 감사" (세션 #59)
+
+- 상황: 세션 #59 중반 · Vercel 프로젝트 재생성 + env 등록 후에도 모든 경로 404. Code는 "어디가 꼬였나" 관점으로 middleware·빌드 output·propagation 등 수정 대상을 좁히려 시도했으나 실마리 못 찾음
+- 전환: 오너가 "처음부터 연결한다고 생각하고 (문제점 찾아서 수정 아니라) 하나씩" 제안. 대시보드 각 섹션(General·Git·Domains·Build and Deployment·Deployment Protection)을 "처음 설정하는 사람처럼" 순차 훑기로 전환
+- 결과: 훑는 과정에서 Git 연결 끊김·Deploy Hook 공란·Framework Preset 미설정·Deployment Protection 켜짐을 차례로 발견. Framework Preset = Next.js 저장이 최종 열쇠였음
+- 적용 원칙: 다단 복구·인프라 이슈에서 "수정 접근"이 막히면 "감사 접근"으로 전환. 꼬인 지점 찾기보다 "처음 설정 상태 아닌 게 뭔가" 관점이 경로 최단. "꼬였을 것" 전제 자체가 수정 범위를 좁혀 시야 가림
+
+## Vercel 프로젝트 신규 생성 시 UI 기본값 함정 (세션 #59)
+
+- 상황: 세션 #58 Phase A에서 hizzi-board 프로젝트 신규 생성. CLI·대시보드 모두 "정상 생성" 응답이었으나 Settings 페이지 세부값들이 프로덕션 서비스와 맞지 않는 기본값으로 초기화
+- 발견된 기본값 4건: (a) Deployment Protection Standard 켜짐 (b) Git 연결이 UI에선 연결된 것처럼 보였으나 실제 webhook 미작동 (c) Deploy Hooks 공란 (d) Framework Preset 미지정 (5번 열쇠)
+- 적용 원칙: Vercel 프로젝트 신규 생성 직후 Settings 전체 페이지(General · Build and Deployment · Domains · Environment Variables · Git · Deployment Protection · Deploy Hooks) 한 번씩 열어 확인 체크리스트 표준화. "생성됐다 = 작동한다"라는 가정 금지
+
+## 환경변수 오타 검증 = 빌드 output 교차 대조 (세션 #59)
+
+- 관찰: Vercel 대시보드 env 목록은 값을 Encrypted로 마스킹 표시 → 대시보드만으로는 오타 감지 불가. 세션 #58에서 .env.vercel.local sed 추출 후 등록했는데 `0O`(숫자 0 + 대문자 O)가 `00`(숫자 0 두 개)으로 변환된 상태가 세션 #59 후반까지 미감지
+- 검증 절차: `curl $URL | grep -oE '/_next/static/chunks/[^"]*\.js'`로 chunk 파일 URL 추출 → 각 chunk에서 `grep -oE "AIzaSy[A-Za-z0-9_-]+"` 패턴 매칭 → `.env.local` BOM 제거 원본과 diff
+- 적용 원칙: NEXT_PUBLIC_* 환경변수 변경·재등록 후 배포 완료되면 반드시 빌드 chunk 실측 검증. Encrypted 마스킹은 진위 보장 아님
+
+## "미완결 박제"의 가치 (세션 #59)
+
+- 상황: 세션 #58이 Vercel 배포 파이프라인 복구 목표 미달성으로 종료. 교훈 란에 "커밋 원활 목표가 세션 내 다단 레이어로 계속 이동 — 한 세션 내 완결 불가"를 박제하고 다음 세션 1순위에 구체 복구 경로 명시
+- 결과: 세션 #59 진입 시점에 "어디서 시작할지" 고민 없이 serviceAccount.json부터 차분히 진행 가능. 박제가 판단 비용 감소 효과
+- 원칙: 어설픈 완결 선언보다 "미완결 · 박제 · 다음 세션 1순위 명시"가 전체 진행 효율 우위. 다단 복구 상황에서 세션 #58처럼 "박제 형 마감" 의도적 선택 허용
+
 ## Windows 환경 env 파일 UTF-8 BOM 함정 (세션 #58)
 
 - 현상: `.env.local` 첫 줄 `NEXT_PUBLIC_FIREBASE_API_KEY=...` 의 BOM(`\xEF\xBB\xBF`)이 앞에 붙어 `grep "^KEY="` / `sed -n 's/^KEY=...'` 패턴 매칭을 은밀히 실패. 자동화 loop에서 API_KEY 값만 빈 문자열로 전송돼 Vercel env add가 action_required 응답하며 등록 누락

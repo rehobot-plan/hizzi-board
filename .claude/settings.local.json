@@ -29,7 +29,8 @@
       "Bash(powershell.exe *)",
       "Bash(git reset *)",
       "Bash(npx vitest *)",
-      "Bash(BASE_URL=https://hizzi-board.vercel.app npx playwright test tests/smoke/panel-height-s1.spec.ts --reporter=list)"
+      "Bash(BASE_URL=https://hizzi-board.vercel.app npx playwright test tests/smoke/panel-height-s1.spec.ts --reporter=list)",
+      "Bash(curl -s https://hizzi-board.vercel.app)"
     ]
   },
   "enabledPlugins": {
