@@ -5,8 +5,8 @@
 ## 현재상태 (세션 종료 시 replace)
 
 - 마지막 세션: 2026-04-22 세션 #60 (연차 조사 필터 해소 · 블록 ③-A 배포 · 후속 핫픽스 4건 · ⋯ 펼쳐보기 디자인 회귀 박제)
-- 작업 브랜치: master (로컬·원격 8655978 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
-- 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · 블록 ③-A(RecordModal 2탭 · 2층 복구 링크 · CompletedTodo 재편) 반영 · hover 휴지통 웹 한정 부활 · Panel overflow hidden · ⋯ handle 하단 경계 이동(#61 재편 — 44×18 pill · chevron · wrapper 분리) · 탭바 순서 할일/메모/봉투 확정 · 회수 링크 우측 정렬
+- 작업 브랜치: master (로컬·원격 e2706ce 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
+- 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · 블록 ③-A(RecordModal 2탭 · 2층 복구 링크 · CompletedTodo 재편) 반영 · hover 휴지통 웹 한정 부활 · Panel overflow hidden · ⋯ handle 하단 경계(44×18 pill · chevron) · 탭바 할일/메모/봉투 · 회수 링크 우측 정렬 · **패널 내부 스크롤·handle 감지 복구** (scroll div를 card 직접 flex child로 · #61 후속 핫픽스)
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW · Production env 6개 정상 · Deploy Hook tB2B4PASNi 정상 (세션 #60 auto-deploy 실측 사례 1건: i42koin1y · master-debt #9 partial 해소)
 - 다음 세션 1순위: 블록 ③-B — 3층 탭바 메뉴 "기록" 진입점 + RecordModal 활용 + flows.md FLOW 1 복구 cascade 정교화(pending/accepted 직전 상태 복귀)
 - 후순위 후보:
@@ -173,3 +173,4 @@ Phase: 연차 내역-달력 불일치 조사 (필터 문제) / 블록 ③-A §2.
 ---
 
 - [2026-04-22] 세션 #61 / 메인 패널 UI 재편 — 탭바 순서 확정(할일/메모/봉투) · ⋯ handle 하단 경계 이동(44×18 pill · chevron · wrapper 분리) · 회수 링크 우측 정렬 (8655978) — Panel.tsx · TodoList.tsx · PostList.tsx
+- [2026-04-22] 세션 #61 / 패널 내부 스크롤·handle 감지 복구 — scroll div를 card 직접 flex child로 (height:100% → flex:1 1 auto + minHeight:0) · 세션 #54부터 잠복하던 height:100% 미해결 버그 확정 · E2E 시나리오 4/5 보강(handle ↔ overflow 1:1 일치 + admin 화면 overflow 패널 ≥1) (e2706ce) — Panel.tsx · page.tsx · panel-height-s1.spec.ts
