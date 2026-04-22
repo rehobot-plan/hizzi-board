@@ -78,7 +78,28 @@
 4. TodoRequestModal 섹션 구조 재편
 5. 댓글 기능 (todoRequests/{id}/comments)
 6. 완료 알림 토스트
+7. (해제됨 · 세션 #55) 1-4 Codex 리뷰 대체 처리 — Codex 가용성 확정
+   - 세션 #55 1순위 A에서 codex-companion.mjs review 서브커맨드 실측 — `/codex:review` 실행 성공, review-mo8myyuk-xguw9o(세션 #54 커밋 대상) + review-mo8npxmv-1k7fx2(세션 #55 Panel 수정 대상) 2회 완료
+   - Panel.tsx P2·P3 지적 → 2eb2bf6 커밋으로 해소 확인. 이후 공장 1-4는 자체 구조 검증 대체 없이 정식 수행
+   - 관찰 (블로커 아님, 이후 세션 확인 대상): Codex sandbox에서 PowerShell command 일부 declined (git grep·Select-String 등 보조 탐색 제한). 기능적 리뷰는 수행됨
+   - Panel.tsx 회귀는 세션 #55 2eb2bf6으로 해소, flaky 2건(sidebar.spec.ts·request-badge.spec.ts)은 progress 선처리 큐 #3·#4로 이관
 ```
+
+### #8 post-request cascade 실패 시 divergence 가능성
+
+근거: 세션 #56 Codex 리뷰 P2 2건.
+  - TodoItem handleCheck — updatePost(completed=true) 성공 후 completeRequest 실패 시 post=완료 / request=accepted 분기 (pre-existing)
+  - TodoItem handleDelete — deletePost 성공 후 cancelRequest 실패 시 post=deleted / request=accepted 분기 (블록 ② 신규)
+
+현재 처리: flows.md 레이어 1 "각각 독립 try/catch + addToast" 원칙 하에 postStore·todoRequestStore 각 함수 내부 catch에서 addToast로 사용자 인지. 1층 토스트 실행 취소 탭 시에만 양쪽 복구 동기화.
+
+위험: cascade 실패 + 사용자가 5초 내 실행 취소 미탭 시 불일치 상태 유지. 6명 팀 규모에선 빈도 낮으나 상대방이 대기 중인 요청 케이스는 체감 가능.
+
+해소 방향: cascade 전면 재설계 시 writeBatch · runTransaction 도입 일괄 전환. 개별 handleCheck/handleDelete 수정은 설계 일관성 훼손으로 지양. flows.md 레이어 1 "연쇄 실패 기본 원칙" 자체의 개정 필요 여부 포함 재검토.
+
+영향 범위: src/components/TodoItem.tsx handleCheck / handleDelete
+연동 MD: flows.md 레이어 1
+상태: open
 
 ### �� 성장 준비
 ```
@@ -87,7 +108,7 @@
     🔲 AttachmentManager — 첨부파일 편집 UI (다중 업로드 전 필수)
     🔲 VisibilitySelector — 범위 선택
     🔲 TaskTypeSelector  — 구분 선택
-    🔲 ModalShell        — P8 모달 껍데기
+    🔲 ModalShell        — M1 모달 껍데기
     🔲 DueTag            — 기한 뱃지
     🔲 TagBadge          — 카테고리·범위 뱃지
     🔲 UserChip          — 팀원 선택 칩
@@ -101,7 +122,14 @@
   - 현재 매번 Yes 눌러야 해서 흐름 끊김
 - 하네스 외부 Codex 검열 루프 실전 테스트
   - /codex:adversarial-review, /codex:review, /codex:rescue 설정만 있고 실제 검열 미적용
-  - session-harness.md Phase 4 "전체 루프 첫 실행 테스트" 연계
+  - harness.md Phase 4 "전체 루프 첫 실행 테스트" 연계
+- users 컬렉션 문서 ID 체계 통일 마이그레이션
+  - 현재 8건 중 5건이 auth.uid와 불일치 (Firestore auto-ID 3건 + orphan_ 2건)
+  - 2026.04.20 rules에 email 기반 허용(옵션 B) 임시 보완, 근본 해결은 ID 재생성 마이그레이션
+  - 영향 범위: users doc 재작성 + page.tsx handleAssignPanel 참조 점검, signUp 경로는 이미 auth.uid 기반이라 신규 가입자는 안전
+- [2026-04-20 #48 재확인] users 컬렉션 문서 ID 체계 3종 공존 (uid 3건 + auto-ID 3건 + orphan_ 2건). email 기반 rules 우회로 동작. 유사 표면화 2건 이상 누적 시 해결 트리거 발동.
+- [2026-04-20 #48] Panel 명함 3분기 분기(둘 다 없음/한쪽만/둘 다) 단위 테스트 미도입. 현재 E2E 시나리오 4는 시드 독립 렌더 존재만 검증. 3분기 로직 검증은 Panel 단위 테스트 신설 세션으로 분리.
+- [2026-04-20 #48] Vitest 러너 도입 시 npm install에서 24 vulnerabilities 감지 (critical 1 / high 5 / moderate 10 / low 8). devDependencies 범위라 프로덕션 번들 영향 없음. critical 1건 내역 확인 미완 — 확인 후 본 항목 갱신 또는 해소.
 ```
 
 ### 🟢 장기 (Rehobot 전)

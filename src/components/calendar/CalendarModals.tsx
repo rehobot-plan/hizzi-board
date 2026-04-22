@@ -171,8 +171,8 @@ export function AddEventModal(props: AddEventModalProps) {
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>구분</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {([
-                    { v: 'work' as const, label: '업무', color: '#3B6D11', bg: calendarEvent.work.rangeBg, border: '#639922' },
-                    { v: 'personal' as const, label: '개인', color: '#185FA5', bg: 'rgba(55,138,221,0.1)', border: '#378ADD' },
+                    { v: 'work' as const, label: '업무', color: calendarEvent.work.all, bg: calendarEvent.work.rangeBg, border: calendarEvent.personal.all.border },
+                    { v: 'personal' as const, label: '개인', color: calendarEvent.work.meOnly, bg: calendarEvent.personal.rangeBg, border: calendarEvent.personal.meOnly.border },
                   ]).map(opt => (
                     <button key={opt.v}
                       onClick={() => setForm(f => ({ ...f, color: getEventColor(opt.v, f._visibility), _taskType: opt.v }))}
@@ -188,9 +188,9 @@ export function AddEventModal(props: AddEventModalProps) {
                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 8 }}>공개 범위</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {([
-                    { v: 'all' as const, label: '전체', solidColor: '#3B6D11', alphaColor: 'rgba(99,153,34,0.15)', border: '#639922' },
-                    { v: 'me' as const, label: '나만', solidColor: '#185FA5', alphaColor: 'rgba(55,138,221,0.15)', border: '#378ADD' },
-                    { v: 'specific' as const, label: '지정', solidColor: '#854F0B', alphaColor: 'rgba(186,117,23,0.15)', border: '#BA7517' },
+                    { v: 'all' as const, label: '전체', solidColor: calendarEvent.work.all, alphaColor: calendarEvent.personal.all.bg, border: calendarEvent.personal.all.border },
+                    { v: 'me' as const, label: '나만', solidColor: calendarEvent.work.meOnly, alphaColor: calendarEvent.personal.meOnly.bg, border: calendarEvent.personal.meOnly.border },
+                    { v: 'specific' as const, label: '지정', solidColor: calendarEvent.work.specific, alphaColor: calendarEvent.personal.specific.bg, border: calendarEvent.personal.specific.border },
                   ]).map(opt => (
                     <button key={opt.v}
                       onClick={() => setForm(f => ({ ...f, color: getEventColor(f._taskType, opt.v), _visibility: opt.v }))}
@@ -210,7 +210,7 @@ export function AddEventModal(props: AddEventModalProps) {
                     const personal = isPersonal(col);
                     const leave = isLeave(col);
                     const bgColor = personal ? (col === calendarEvent.personal.all.border ? calendarEvent.personal.all.bg : col === calendarEvent.personal.meOnly.border ? calendarEvent.personal.meOnly.bg : calendarEvent.personal.specific.bg) : leave ? calendarEvent.leave.bg : col;
-                    const textColor = personal ? (col === calendarEvent.personal.all.border ? calendarEvent.work.all : col === calendarEvent.personal.meOnly.border ? calendarEvent.work.meOnly : calendarEvent.work.specific) : leave ? calendarEvent.leave.text : '#fff';
+                    const textColor = personal ? (col === calendarEvent.personal.all.border ? calendarEvent.work.all : col === calendarEvent.personal.meOnly.border ? calendarEvent.work.meOnly : calendarEvent.work.specific) : leave ? calendarEvent.leave.text : calendarEvent.render.textOnSolid;
                     const borderLeft = personal ? `2px solid ${col}` : leave ? `2px solid ${calendarEvent.leave.border}` : 'none';
                     return (
                       <div style={{ fontSize: 10, color: textColor, background: bgColor, padding: '2px 8px', borderRadius: 3, borderLeft, minWidth: 80, maxWidth: 160, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>

@@ -1,0 +1,63 @@
+﻿param([string]$PresetName)
+
+$root = $PSScriptRoot
+$presetsFile = Join-Path $root "presets.json"
+$staging = Join-Path $root "_staging"
+
+if (-not (Test-Path $presetsFile)) {
+    Write-Host "[ERROR] presets.json 없음: $presetsFile" -ForegroundColor Red
+    exit 1
+}
+
+$presets = Get-Content $presetsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+
+if (-not $PresetName) {
+    Write-Host ""
+    Write-Host "사용 가능한 프리셋:" -ForegroundColor Cyan
+    Write-Host ""
+    foreach ($name in $presets.PSObject.Properties.Name) {
+        $desc = $presets.$name.description
+        $count = $presets.$name.files.Count
+        Write-Host "  $name" -ForegroundColor Yellow -NoNewline
+        Write-Host " ($count개) - $desc"
+    }
+    Write-Host ""
+    Write-Host "사용법: 프리셋 <프리셋이름>" -ForegroundColor Gray
+    Write-Host ""
+    exit 0
+}
+
+if (-not $presets.PSObject.Properties.Name.Contains($PresetName)) {
+    Write-Host "[ERROR] '$PresetName' 프리셋 없음" -ForegroundColor Red
+    Write-Host "사용 가능: $($presets.PSObject.Properties.Name -join ', ')" -ForegroundColor Gray
+    exit 1
+}
+
+$preset = $presets.$PresetName
+
+if (Test-Path $staging) {
+    Remove-Item "$staging\*" -Force -Recurse -ErrorAction SilentlyContinue
+} else {
+    New-Item -ItemType Directory -Path $staging | Out-Null
+}
+
+$missing = @()
+$copied = 0
+foreach ($file in $preset.files) {
+    if (Test-Path $file) {
+        Copy-Item $file -Destination $staging -Force
+        $copied++
+        Write-Host "  복사: $(Split-Path $file -Leaf)" -ForegroundColor Green
+    } else {
+        $missing += $file
+        Write-Host "  누락: $file" -ForegroundColor Red
+    }
+}
+
+Write-Host ""
+Write-Host "완료: $copied개 복사됨" -ForegroundColor Cyan
+if ($missing.Count -gt 0) {
+    Write-Host "경고: $($missing.Count)개 누락" -ForegroundColor Yellow
+}
+
+Start-Process explorer.exe $staging

@@ -1,0 +1,10 @@
+{
+  "sessionName": "2026 중직자 선거 (테스트)",
+  "accessPassword": "hana2026",
+  "totalParticipants": 200,
+  "totalParticipantsByPart": {
+    "장로": 200,
+    "시무권사": 200,
+    "안수집사": 200
+  }
+}

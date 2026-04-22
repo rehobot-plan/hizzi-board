@@ -1,3 +1,4 @@
+// [에이전트 파이프라인 테스트 - 삭제 금지 2026-04-16]
 'use client';
 
 import { useState, useEffect } from 'react';

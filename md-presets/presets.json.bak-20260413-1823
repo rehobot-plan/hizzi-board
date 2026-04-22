@@ -1,0 +1,41 @@
+{
+  "hizzi-session-start": {
+    "description": "히찌보드 세션 시작 3종",
+    "files": [
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\session.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\log\\progress.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\rules.md"
+    ]
+  },
+  "프리셋1": {
+    "description": "캘린더 디자인 통일 + 실작업용 (세션 3종 + 도메인 3종 + 소스 5종)",
+    "files": [
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\session.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\log\\progress.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\rules.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\flows.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\master.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\master-schema.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\Calendar.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\CalendarGrid.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\CalendarModals.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\lib\\calendar-helpers.ts",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\store\\leaveStore.ts"
+    ]
+  },
+  "프리셋2": {
+    "description": "캘린더 디자인 통일 (세션 3종 + UI 3종 + 규칙 상세 + 캘린더 소스 3종)",
+    "files": [
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\session.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\log\\progress.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\rules.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\rules-detail.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\ui\\ux-principles.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\ui\\patterns.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\ui\\uxui.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\CalendarGrid.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\Calendar.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\CalendarModals.tsx"
+    ]
+  }
+}

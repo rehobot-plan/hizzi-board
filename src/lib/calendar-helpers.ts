@@ -268,6 +268,8 @@ export interface CalendarEventDoc {
   requestId?: string;
   requestFrom?: string;
   requestTitle?: string;
+  taskType?: string;
+  visibility?: string;
 }
 
 /** Firestore leaveEvents 문서 최소 인터페이스 */
@@ -369,4 +371,95 @@ export function buildCalendarEventInputs(
   }));
 
   return [...calInputs, ...leaveInputs];
+}
+
+// ─── 필터 (Phase 4-A) ──────────────────────────────────────
+
+export type CalendarCategory = 'work' | 'request' | 'personal';
+
+// ─── 렌더 카테고리 (블록 1 — semantic 분기) ──────────────
+
+export type DisplayCategory = 'leave' | 'request' | 'personal' | 'work';
+
+/**
+ * 이벤트 블록 렌더 시 카테고리 판정 (calendar-visual.md §2.2 우선순위).
+ * filter용 resolveEventCategory와 달리 leave를 별도 분리 (렌더 스타일이 다름).
+ * color hex 매칭 대신 의미 필드 참조. taskType 부재 시 색상 계열 fallback.
+ */
+export function resolveDisplayCategory(ev: CalendarEventInput): DisplayCategory {
+  if (ev.extendedProps.source === 'leave') return 'leave';
+  const raw = ev.extendedProps.rawCalendar;
+  if (!raw) return 'work';
+  if (raw.requestId) return 'request';
+  if (raw.taskType === 'personal') return 'personal';
+  if (raw.taskType === 'work') return 'work';
+  return isPersonal(raw.color || '') ? 'personal' : 'work';
+}
+
+export interface CalendarFilterUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export interface CalendarFilterContext {
+  members: string[];
+  categories: CalendarCategory[];
+  users: CalendarFilterUser[];
+}
+
+function resolveEventMemberEmails(
+  ev: CalendarEventInput,
+  users: CalendarFilterUser[],
+): string[] {
+  if (ev.extendedProps.source === 'leave') {
+    const email = ev.extendedProps.rawLeave?.userEmail;
+    return email ? [email] : [];
+  }
+  const raw = ev.extendedProps.rawCalendar;
+  if (!raw) return [];
+  const result = new Set<string>();
+  if (raw.authorId) {
+    if (raw.authorId.includes('@')) {
+      result.add(raw.authorId);
+    } else {
+      const byId = users.find(u => u.id === raw.authorId);
+      if (byId?.email) result.add(byId.email);
+    }
+  }
+  if (raw.authorName) {
+    if (raw.authorName.includes('@')) {
+      result.add(raw.authorName);
+    } else {
+      const byName = users.find(u => u.name === raw.authorName);
+      if (byName?.email) result.add(byName.email);
+    }
+  }
+  if (raw.requestFrom) {
+    result.add(raw.requestFrom);
+  }
+  return Array.from(result);
+}
+
+function resolveEventCategory(ev: CalendarEventInput): CalendarCategory {
+  if (ev.extendedProps.source === 'leave') return 'personal';
+  const raw = ev.extendedProps.rawCalendar;
+  if (!raw) return 'work';
+  if (raw.requestId) return 'request';
+  if (raw.taskType === 'personal') return 'personal';
+  if (raw.taskType === 'work') return 'work';
+  return isPersonal(raw.color || '') ? 'personal' : 'work';
+}
+
+export function filterCalendarInputs(
+  events: CalendarEventInput[],
+  ctx: CalendarFilterContext,
+): CalendarEventInput[] {
+  const memberSet = new Set(ctx.members);
+  const categorySet = new Set(ctx.categories);
+  return events.filter(ev => {
+    const emails = resolveEventMemberEmails(ev, ctx.users);
+    if (!emails.some(e => memberSet.has(e))) return false;
+    return categorySet.has(resolveEventCategory(ev));
+  });
 }

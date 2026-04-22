@@ -1,0 +1,13 @@
+{
+  "current": {
+    "label": "Phase H-1 공통 Header + AppShell 기본 구조",
+    "files": [
+      "md/plan/designs/header.md",
+      "CLAUDE.md",
+      "md/log/progress.md",
+      "md/core/rules.md",
+      "md/ui/patterns.md",
+      "md/ui/uxui.md"
+    ]
+  }
+}

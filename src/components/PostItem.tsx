@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Post, usePostStore } from '@/store/postStore';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
+import { useSwipeToDelete } from '@/hooks/useSwipeToDelete';
 import PostEditModal from '@/components/PostEditModal';
 import ImageViewer from '@/components/common/ImageViewer';
 
@@ -13,7 +14,7 @@ interface PostItemProps {
 
 export default function PostItem({ post }: PostItemProps) {
   const { user } = useAuthStore();
-  const { deletePost, updatePost } = usePostStore();
+  const { deletePost, updatePost, restorePost } = usePostStore();
   const { addToast } = useToastStore();
 
   const canEdit = !!(user && (user.email === post.author || user.role === 'admin'));
@@ -50,11 +51,24 @@ export default function PostItem({ post }: PostItemProps) {
     if (!canEdit) return;
     try {
       await deletePost(post.id);
+      addToast({
+        message: '삭제됨',
+        action: {
+          label: '실행 취소',
+          onClick: async () => { await restorePost(post.id); },
+        },
+        durationMs: 5000,
+      });
     } catch (e) {
       console.error(e);
       addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     }
   };
+
+  const { translateX, isSwiping, handlers } = useSwipeToDelete({
+    onThresholdReached: handleDelete,
+    disabled: !canEdit,
+  });
 
   const visLabel = !post.visibleTo || post.visibleTo.length === 0 ? '전체'
     : post.visibleTo.length === 1 && post.visibleTo[0] === post.author ? '나만' : '특정';
@@ -119,20 +133,45 @@ export default function PostItem({ post }: PostItemProps) {
   return (
     <>
       <div
+        style={{
+          position: 'relative', overflow: 'hidden', margin: '0 -20px',
+          borderBottom: '1px solid #EDE5DC',
+        }}
+      >
+        {(isSwiping || translateX < 0) && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+              paddingRight: 24,
+              background: '#FBEAF0', color: '#993556',
+              fontSize: 13, fontWeight: 600, letterSpacing: '0.04em',
+              pointerEvents: 'none',
+            }}
+          >
+            삭제
+          </div>
+        )}
+      <div
+        {...handlers}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={canEdit ? () => setIsEditOpen(true) : undefined}
         style={{
           position: 'relative',
           padding: '10px 20px 10px 28px',
-          margin: '0 -20px',
-          borderBottom: '1px solid #EDE5DC',
           display: 'flex',
           alignItems: 'flex-start',
           gap: 8,
           background: isHovered ? '#FDF8F4' : '#fff',
-          transition: 'background 0.15s ease',
+          transform: `translateX(${translateX}px)`,
+          transition: isSwiping
+            ? 'background 0.15s ease'
+            : 'transform 0.15s ease, background 0.15s ease',
           cursor: canEdit ? 'pointer' : 'default',
+          touchAction: 'pan-y',
+          userSelect: 'none',
         }}
       >
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: getLeftBorderColor(), pointerEvents: 'none' }} />
@@ -168,18 +207,7 @@ export default function PostItem({ post }: PostItemProps) {
           </div>
         </div>
 
-        {canEdit && (
-          <span
-            onClick={e => { e.stopPropagation(); handleDelete(); }}
-            style={{ position: 'relative', zIndex: 2, cursor: 'pointer', flexShrink: 0, opacity: 0.2, transition: 'opacity 0.15s', display: 'flex', alignItems: 'center', marginTop: 2 }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '0.2')}
-          >
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M2 4h10M5 4V2.5h4V4M5.5 6v5M8.5 6v5M3 4l.7 7.5h6.6L11 4" stroke="#C17B6B" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-        )}
+      </div>
       </div>
 
       {isEditOpen && (

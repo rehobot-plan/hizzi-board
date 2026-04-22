@@ -1,0 +1,23 @@
+{
+  "current": {
+    "description": "Phase 5-C 1-pass 달력 (기본3 + 규칙·디자인3 + 달력3 + tokens + leftBorder + common5)",
+    "files": [
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\session.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\log\\progress.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\rules.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\rules-detail.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\ui\\patterns.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\ui\\uxui.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\styles\\tokens.ts",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\lib\\calendar-helpers.ts",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\Calendar.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\CalendarGrid.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\calendar\\CalendarModals.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\lib\\leftBorderColor.ts",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\common\\LeftBorderBar.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\common\\CategoryTag.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\common\\RequestTag.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\common\\VisibilityTag.tsx"
+    ]
+  }
+}

@@ -75,7 +75,7 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
 
   const handleReject = async () => {
     if (!rejectId) return;
-    await rejectRequest(rejectId, rejectReason);
+    await rejectRequest(rejectId, rejectReason, { email: user?.email || '', name: myName });
     setRejectId(null);
     setRejectReason('');
   };
@@ -227,7 +227,7 @@ export default function TodoRequestModal({ onClose, panelOwnerEmail }: Props) {
       {/* 요청 취소 버튼 (보낸 요청 + pending만) */}
       {mode === 'sent' && (
         <div style={{ marginTop: 8 }}>
-          <button onClick={() => cancelRequest(r.id)}
+          <button onClick={() => cancelRequest(r.id, { email: user?.email || '', name: myName })}
             style={{ padding: '5px 14px', fontSize: 10, background: 'none', color: '#9E8880', border: '1px solid #EDE5DC', cursor: 'pointer' }}>
             요청 취소
           </button>

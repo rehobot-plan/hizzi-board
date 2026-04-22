@@ -4,11 +4,14 @@ import { useState, useRef, useEffect } from "react";
 import { usePostStore } from "@/store/postStore";
 import { usePanelStore } from "@/store/panelStore";
 import { useAuthStore } from "@/store/authStore";
+import { useUserStore } from "@/store/userStore";
 import { useEscClose } from '@/hooks/useEscClose';
 import CreatePost from "./CreatePost";
 import TodoRequestBadge from "./TodoRequestBadge";
 import TodoList from "./TodoList";
 import PostList from "./PostList";
+import Avatar from "./common/Avatar";
+import { panel as panelTokens } from "@/styles/tokens";
 
 interface PanelProps {
   id: string;
@@ -17,6 +20,12 @@ interface PanelProps {
   position?: number;
   categories?: string[];
   color?: string;
+  /**
+   * 렌더 컨텍스트:
+   * - 'grid' (기본): 데스크탑 6패널 그리드. max-height min(600px, 70vh) 적용
+   * - 'fullscreen': 모바일 상세 모달 등 viewport 전체 차지. max-height 미적용
+   */
+  variant?: 'grid' | 'fullscreen';
 }
 
 // [마이그레이션 필요] 기존 Firestore 카테고리: 결재 → 첨부파일로 변경 필요
@@ -25,7 +34,7 @@ const BASE_CATEGORIES = [...DEFAULT_CATEGORIES];
 
 
 
-export default function Panel({ id, name, ownerEmail, position, categories }: PanelProps) {
+export default function Panel({ id, name, ownerEmail, position, categories, variant = 'grid' }: PanelProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [panelName, setPanelName] = useState(name);
@@ -41,9 +50,34 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
   const [memoSelectMode, setMemoSelectMode] = useState(false);
   const [todoFilter, setTodoFilter] = useState<('업무' | '요청' | '개인')[]>(['업무', '요청']);
 
+  // ─── 스크롤 영역 (main-ux.md §1 패널 높이 + 탭 독립 스크롤) ─
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollPositionsRef = useRef<Map<string, number>>(new Map());
+  const [isAtBottom, setIsAtBottom] = useState(false);
+
+  // 탭 전환 시 현재 스크롤 위치 저장 + 복원 (할일·메모 각 독립)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const saved = scrollPositionsRef.current.get(activeCategory) ?? 0;
+    el.scrollTop = saved;
+  }, [activeCategory]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    scrollPositionsRef.current.set(activeCategory, el.scrollTop);
+    setIsAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 1);
+  };
+
   const { posts, deletePost } = usePostStore();
   const { user } = useAuthStore();
   const { updatePanel } = usePanelStore();
+  const users = useUserStore((s) => s.users);
+  const owner = ownerEmail ? users.find((u) => u.email === ownerEmail) : null;
+  const ownerMeta = owner
+    ? [owner.department, owner.position].filter((s) => s && s.trim()).join(' · ')
+    : '';
 
 
 
@@ -67,6 +101,13 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
     if (visibleTo.includes(userEmail)) return true;
     return false;
   });
+
+  // fade-out 재계산 — 탭 전환 + 콘텐츠 변화(Firestore 실시간·in-place complete/delete)에 연동
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setIsAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 1);
+  }, [activeCategory, filteredPosts.length, posts.length]);
 
   const isOwner = user && ownerEmail === user?.email;
   const canCreate = user && (user.role === "admin" || isOwner);
@@ -109,40 +150,64 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
 
   return (
     <div
-      className="panel-draggable flex flex-col h-full border border-[#EDE5DC] bg-white rounded-none p-0 shadow-sm"
+      className="panel-draggable flex flex-col border border-[#EDE5DC] bg-white rounded-none p-0 shadow-sm"
       draggable="true"
       data-panel-id={id}
-      style={{ transition: "background 0.2s, border 0.2s" }}
+      data-testid="panel-container"
+      data-panel-variant={variant}
+      style={{
+        ...(variant === 'grid'
+          ? { maxHeight: panelTokens.height.max, minHeight: panelTokens.height.min }
+          : { height: '100%' }),
+        transition: "background 0.2s, border 0.2s",
+      }}
     >
       {/* 헤더: 패널명 행 + 탭 행 분리 */}
       <div className="border-b border-[#EDE5DC] bg-[#FDF8F4]">
-        {/* 패널명 행 — 크게 단독 */}
-        <div className="px-5 pt-3 pb-2" style={{ borderBottom: '0.5px solid rgba(237,229,220,0.6)' }}>
-          {!isEditing ? (
-            <span
-              style={{
-                fontSize: 16, fontWeight: 700, color: '#2C1810',
-                letterSpacing: '0.02em', cursor: canRename ? 'pointer' : 'default',
-                transition: 'color 0.15s', display: 'block',
-              }}
-              onClick={() => canRename && setIsEditing(true)}
-              onMouseEnter={e => { if (canRename) (e.currentTarget as HTMLElement).style.color = '#7A2828'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#2C1810'; }}
-              title={canRename ? '클릭하여 이름 변경' : ''}
-            >
-              {panelName}
-            </span>
-          ) : (
-            <input
-              ref={panelNameInputRef}
-              value={panelName}
-              onChange={(e) => setPanelName(e.target.value)}
-              onBlur={savePanelName}
-              onKeyDown={(e) => { if (e.key === 'Enter') savePanelName(); }}
-              style={{ fontSize: 16, fontWeight: 700, border: 'none', borderBottom: '1px solid #EDE5DC', outline: 'none', background: 'transparent', color: '#2C1810', minWidth: 80 }}
-              autoFocus
-            />
+        {/* 패널명 행 — 아바타(40px) + 이름 */}
+        <div
+          data-testid="panel-title-row"
+          className="px-5 pt-3 pb-2 flex items-center gap-3"
+          style={{ borderBottom: '0.5px solid rgba(237,229,220,0.6)' }}
+        >
+          {ownerEmail && (
+            <Avatar photoURL={owner?.photoURL} name={owner?.name || ownerEmail} size={40} />
           )}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            {!isEditing ? (
+              <span
+                style={{
+                  fontSize: 16, fontWeight: 700, color: '#2C1810',
+                  letterSpacing: '0.02em', cursor: canRename ? 'pointer' : 'default',
+                  transition: 'color 0.15s',
+                }}
+                onClick={() => canRename && setIsEditing(true)}
+                onMouseEnter={e => { if (canRename) (e.currentTarget as HTMLElement).style.color = '#7A2828'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#2C1810'; }}
+                title={canRename ? '클릭하여 이름 변경' : ''}
+              >
+                {panelName}
+              </span>
+            ) : (
+              <input
+                ref={panelNameInputRef}
+                value={panelName}
+                onChange={(e) => setPanelName(e.target.value)}
+                onBlur={savePanelName}
+                onKeyDown={(e) => { if (e.key === 'Enter') savePanelName(); }}
+                style={{ fontSize: 16, fontWeight: 700, border: 'none', borderBottom: '1px solid #EDE5DC', outline: 'none', background: 'transparent', color: '#2C1810', minWidth: 80 }}
+                autoFocus
+              />
+            )}
+            {ownerMeta && (
+              <span
+                data-testid="panel-owner-meta"
+                style={{ fontSize: 11, fontWeight: 400, color: '#9E8880' }}
+              >
+                {ownerMeta}
+              </span>
+            )}
+          </div>
         </div>
         {/* 탭 행 — 편지봉투 + 탭 중앙정렬, 우측 */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', height: 36, paddingRight: 20 }}>
@@ -256,26 +321,50 @@ export default function Panel({ id, name, ownerEmail, position, categories }: Pa
           </button>
         )}
       </div>
-      {/* 게시물 목록 */}
-      <div className="flex-1 overflow-y-auto px-5">
-        {activeCategory === "할일" ? (
-          <TodoList
-            panelId={id}
-            ownerEmail={ownerEmail}
-            posts={posts}
-            canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
-            activeFilter={todoFilter}
-          />
-        ) : (
-          <PostList
-            posts={filteredPosts}
-            activeCategory={activeCategory}
-            panelId={id}
-            canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
-            selectMode={memoSelectMode}
-            onSelectModeChange={setMemoSelectMode}
-          />
-        )}
+      {/* 게시물 목록 (main-ux.md §1 — 내부 스크롤 + fade-out) */}
+      <div style={{ position: 'relative', flex: '1 1 auto', minHeight: 0 }}>
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          data-testid="panel-scroll"
+          className="panel-scroll px-5"
+          style={{ height: '100%', overflowY: 'auto' }}
+        >
+          {activeCategory === "할일" ? (
+            <TodoList
+              panelId={id}
+              ownerEmail={ownerEmail}
+              posts={posts}
+              canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+              activeFilter={todoFilter}
+            />
+          ) : (
+            <PostList
+              posts={filteredPosts}
+              activeCategory={activeCategory}
+              panelId={id}
+              canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+              selectMode={memoSelectMode}
+              onSelectModeChange={setMemoSelectMode}
+            />
+          )}
+        </div>
+        {/* 하단 fade-out — 스크롤 끝 도달 시 사라짐 */}
+        <div
+          aria-hidden="true"
+          data-testid="panel-scroll-fade"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: panelTokens.fadeOut.height,
+            background: panelTokens.fadeOut.gradient,
+            pointerEvents: 'none',
+            opacity: isAtBottom ? 0 : 1,
+            transition: 'opacity 0.15s ease',
+          }}
+        />
       </div>
       {/* CreatePost 모달 */}
       {showCreate && (

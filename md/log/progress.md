@@ -4,91 +4,26 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-16 세션 #32 (종료)
-- 작업 브랜치: master (aba618f)
-- 진행 중: 관리자 Code 3단계(보안 체크리스트) 6/6 PASS + 2단계 실사용 1호 완료. 4개 MD 정합성 점검 대기.
-- 다음 TODO:
-  1. 4개 MD 정합성 점검 + 역할 정리 (CLAUDE.md / session.md / session-harness.md / master-operator.md)
-     · 점검 축 3개: 책임 경계 명확성 / /operate 도입 전후 드리프트 / 단일 출처 위반
-     · 주체 4개: 오너 / Claude.ai / Claude Code / 관리자 Code
-     · 산출물: 드리프트·중복 발견 목록 + 각 MD patch 제안
-     · 선행 조건: 점검 전용 신규 세션에서 진행
-  2. 관리자 Code 2단계 — /operate 실사용 2호 (1번 완료 후)
-     · 소재 후보: 실작업 복귀 (첨부파일 다중 업로드 / 완료 알림 토스트)
-  3. 실작업 복귀: 첨부파일 다중 업로드 / 완료 알림 토스트 (모바일 우선 축으로 재판정 필요)
+- 마지막 세션: 2026-04-22 세션 #57 (인프라 복구 · push+배포 완료 · 폴더 rename 수동 대기)
+- 작업 브랜치: master (로컬 hizzi-board-new = 원격 origin/master = ecadf91)
+- 진행 중: 폴더 rename 수동 완료 (Claude Code 프로세스 잠금으로 자동 실패, 오너 수동 진행 예정)
+- 다음 세션 1순위: 메인 UX §2 블록 ③ — 회수 동선 (2층 하단 "최근 N개 →" 링크 · 3층 RecordModal 2탭 · CompletedTodo 전면 재편)
+  · 범위: main-ux.md §2.3 3층 복구 구조 + §2.5 CompletedTodo 재편 — 리스트 하단 "최근 완료/삭제 N개 →" 링크(24h 창, 0건 시 숨김) · 탭바 메뉴 "기록" 진입 2탭 모달(완료/휴지통) · CompletedTodo를 §2.5 지침대로 2층 구조로 재편
+  · 영향 파일: src/components/CompletedTodo.tsx · Panel.tsx · 신규 src/components/RecordModal.tsx · src/lib/postSelectors.ts (24h 창 selector 재활용) · app/(main)/page.tsx (탭바 메뉴 "기록" 연동)
+  · 연동 문서: main-ux.md §2.3·§2.5 / patterns.md M 계열 모달 / uxui.md §4
+  · 선행 조건: 블록 ② 팀 실사용 검증 1~2일 (블록 ② 배포 완료된 상태)
+- 후순위 후보: 세션 #55 기준 1~6 유지 (블록 ③ 진입 판단 시 재검토)
+- 선처리 큐: 세션 #55 기준 #1~#4 유지 + #5 (세션 #56 신규) + #6 (세션 #57 신규)
+  5. tabbar-sticky.spec 전체 smoke 직렬 실행 시 간헐 timeout (세션 #56 신규)
+     · 격리 반복 30/30 PASS · git diff 영향 경로 0 · flaky 확정
+     · 원인 후보: dev server warm-up / beforeAll 로그인 타임아웃 편차 / 순차 86 스펙 중간 resource pressure
+  6. hizzi-board-new/ Vercel CLI 배포 간헐 실패 (세션 #57 신규)
+     · 원본 hizzi-board/ 에선 CLI 정상(hizzi-board-db9os8j8c Ready 46s), hizzi-board-new/ 에선 3~6초 내 deploy_failed (에러 메시지 비어있음)
+     · 원인 후보: .vercel/project.json 링크 캐시 불일치 / Vercel 계정 측 프로젝트 settings 참조 실패
+     · 우회: 폴더 rename 후 재확인. GitHub→Vercel 자동 배포 경로가 정상 작동 시 영향 없음
 - 미해결:
-  - md/core/master.md 15~17행 인코딩 깨짐 잔존 (경미)
-  - src/components/ImageViewer.tsx 루트/common 중복 (경미, 별도 세션)
-  - Vercel Hobby 플랜 Preview 자동 SSO 정책 (Deployment Protection Disabled 필요)
-  - filter-branch refs/original/ + backup 브랜치 2개 로컬 잔존 (정리 대상)
-  - Vercel Production Branch 설정 확인 이력 (세션 #24 "자동 인식" 보고 오류) — 재발 방지용 체크리스트 필요
-- 참고: 프리셋 시스템 단일화 완료. `프리셋` 한 단어로 current 엔트리 실행.
-- 검토 후보 (조건부 진입):
-  - 디자이너 오퍼레이터 도입 (조건부 진입)
-    · 진입 조건: 디자인 작업 비중이 코드 작업을 넘어서거나, /operate가 디자인 명령을 처리하기에 부적절해지는 시점
-    · 설계 방향: /designer 슬래시 커맨드로 분리. /operate와 독립된 파이프라인.
-    · 관리자 Code 아키텍처는 이 확장을 염두에 두고 설계됨 (master-operator.md 구조 재사용 가능)
-  - FullCalendar 미활용 기능 7건 (master 머지 + 디자인 통일 완료 후)
-    · 추천 순서: iCal 공휴일 피드 → 드래그 → 리사이즈 → rrule → 주간 뷰 → 검색 → 타임존
-    · 각 후보 R4.9+R4.10 순서, 단일 세션 1건씩
-    · 3/4/5 는 스키마 변경 동반
-  - R4.10 preflight 훅 구현 (N/M PASS 카운트 검증)
-  - 토큰 소비 최적화 — progress.md 현재상태/작업로그 분할 (장기 누적 시 재검토)
-    · R4.10-가/나 텍스트 반영 후 1~2세션 관찰 → 개선 불충분 시 훅으로 승격
-    · 세션 #18에서 1차 분할 실행 (#1~#12 → archive). 추가 분할 또는 훅 승격 판단 보류 중
-  - 요청 UI 재설계 (길 B) — Phase 5-C 완료 후 새 방
-    · 진입 버튼 카운트 분리(받은 N + 변동 M) / 토스트 다리 / cancel_requested + 통합 댓글 스레드
-    · 데이터 모델 변경 동반 → flows + master-schema + todoRequestStore 첨부 필요
-    · 병합 메모: 요청자 ↔ 수락자 상호작용 플로우 전반 재검토 포함. 수정·보완 범위 초과 시 재설계로 승격.
-  - 일반 메모/할일 완료·삭제 UX 점검 (조건부)
-    · 진입 조건: 요청 UI 재설계 후 + 사용자 구체 사례 1~2건 확보
-  - Phase 5-C 잔존 정리 (3-pass 완료 후 일괄 안건)
-    · tokens.ts 미존재 hex 일괄 신규 토큰 승격 (#17 작업로그 23건 + #16 후속 8종)
-    · CalendarEventBadge 프리미티브 추출 (AddEventModal 미리보기 ↔ CalendarGrid renderEventContent 로직 중복)
-    · AddEventModal 구분 버튼 색 P2 정합성 확인 (현재 카테고리 태그 아닌 캘린더 이벤트 색 사용)
-  - Phase 6 잔여 파일 토큰화 (14파일, 약 465행)
-    · 대상: LeaveManager / page.tsx / leave/page.tsx / PostEditModal(잔여) / TodoRequestModal / NoticeArea / PostList / Panel / DeletedTodo / CompletedTodo / login / signup / PostItem / TodoRequestBadge
-    · 진입 조건: 머지 완료 후
-    · 모바일 리팩터링과 겹치는 파일은 그쪽 세션에 흡수 검토
-  - 기능별 색상 일치화 (설계 세션 필요)
-    · 목적: 같은 기능은 같은 색으로 통일 → 색만 보고 기능 즉시 인지
-    · 대상: patterns.md P2 좌측 띠 + uxui.md 4번 색상 의미 시스템 +
-      게시물 모달 / 달력 모달 / 달력 이벤트 / 할일 / 요청 전반
-    · 성격: 기계적 치환 아님. 설계 세션 필요
-    · 진입 조건: 길 B 시리즈 완료 + 머지 완료 후
-    · 선행 작업: Claude가 "어느 기능이 어디서 어떤 색으로 나오는지"
-      현황 스캔표 작성 → 오너가 통일 기준 결정 → 토큰 조정
-  - 백업 브랜치 + refs/original/ 정리 (2026-04-22 이후)
-    · backup/before-author-rewrite-20260415 + -master (2개)
-    · refs/original/ 6개 ref (filter-branch 백업)
-    · 일주일 경과 후 문제 없으면 삭제
-  - 데이터 정리 작업 — Production Firestore (별도 세션 필수)
-    · 달력: 연차 자료만 남기고 나머지 calendarEvents 삭제
-    · 게시물: posts 컬렉션 전체 삭제
-    · 사용자 정보(users): 절대 건드리지 않음
-    · 진입 조건: Firestore 백업 절차 설계 + 팀원 공지 합의 + dry-run 검증
-    · 영향 범위: Calendar / PostList / 관련 store
-  - 프리셋 운용 팁 — Dropbox 동기화 지연 대응
-    · 프리셋.ps1 실행 후 Dropbox 트레이 동기화 완료 확인 후 새 방 시작
-    · _staging\progress.md 크기 사전 확인 권장
-    · session.md [4] 종료 규약에 한 줄 추가 검토
-  - untracked md 파일 정리 (10건 누적, 별도 세션)
-    · 진입 조건: 어느 파일이 의도된 신규 / 의도되지 않은 잔재인지 분류
-    · 영향 범위: md/ 하위 전체
-  - 모달 Playwright spec 설계 (Phase 5-C 정리 때 일괄)
-    · TodoDetailModal 읽기/편집 전환 + 저장 플로우
-    · RequestDetailModal 댓글 작성·삭제 + 완료 처리
-    · 3 방법 닫기 (ESC / 백드롭 / 닫기 버튼)
-    · 진입 조건: Phase 5-C 시작 시점
-
----
-
-## 장기 방향성
-
-> 모든 세션의 작업이 이 축 위에서 움직인다. 단일 세션 작업이 아닌 지속 발전 대상.
-
-- **AI 챗봇 인터페이스 전환** — 할일/달력 세팅 마무리 후, 각 기능을 AI 챗봇으로 구동하는 구조로 전환. 하이브리드 로직(기본 규칙 로직 + AI 판단 로직 병행)으로 토큰 최소화. 입력은 단순하게, 구동은 최적·최고로.
-- **모바일 우선 최적화** — 히찌보드·Rehobot 공통 전제. 기본 사용 환경이 모바일, 데스크톱은 보조. 할일/달력/AI 챗봇 다음으로 이어지는 작업 축.
+  - 폴더 rename 자동 실패 (Claude Code 프로세스 잠금) — 오너 수동 진행 대기: hizzi-board → hizzi-board-broken-20260422 / hizzi-board-new → hizzi-board
+  - post-request cascade 실패 시 divergence 가능성 — master-debt #8 등록 완료 (일괄 전환 시점 미정)
 
 ---
 
@@ -96,265 +31,172 @@
 
 > 세션 #1~#12 아카이브: md/archive/progress-2026-04-A.md
 > 세션 #13~#23 아카이브: md/archive/progress-2026-04-B.md
+> 세션 #24~#32 아카이브: md/archive/progress-2026-04-C.md
+> 세션 #33~#34 아카이브: md/archive/progress-2026-04-D.md
+> 세션 #35~#42 아카이브: md/archive/progress-2026-04-E.md
+> 세션 #43~#46 아카이브: md/archive/progress-2026-04-F.md 및 md/archive/progress-2026-04-G.md
+> 세션 #47 아카이브: md/archive/progress-2026-04-H.md
+> 세션 #48 아카이브: md/archive/progress-2026-04-I.md
+> 세션 #49 아카이브: md/archive/progress-2026-04-J.md
+> 세션 #50 아카이브: md/archive/progress-2026-04-K.md
+> 세션 #51 아카이브: md/archive/progress-2026-04-L.md
+> 세션 #52 아카이브: md/archive/progress-2026-04-M.md
+> 세션 #53 아카이브: md/archive/progress-2026-04-N.md
 
-### [2026-04-15] 세션 #24 — feat/fullcalendar-poc → master 머지 + git author 일괄 재작성
+### [2026-04-21] 세션 #54 — 메인 UX §1 패널 높이 + §2 블록 ① 데이터 레이어 · 오염 인지 마감
 
-준비
-- 길 B-3 선행 조건 해소 목적
-- git author dev@hizzi-board.local 273건 일괄 재작성 동반 결정
+Phase: 메인 UX §1 패널 높이 구현 / §2 블록 ① postSelectors 24h 창 데이터 레이어 / Claude.ai 허구 전제 생성 감지로 오염 인지 마감
+브랜치: master
+커밋 수: 4건 (3afd522·499b46b·c707498 + 프리셋 3bb3d19)
 
-실행 (6단계)
-1. 정찰 — feat 51 commits ahead, dev@ author 273건 확인
-2. 백업 — backup/before-author-rewrite-20260415 (b3c87e9) + -master (323586d)
-3. author 재작성 — git filter-branch 사용, 양 브랜치 0건 잔존 ✅
-4. master fast-forward 머지 — 33 files, +3,749 / -1,704
-5. force push — origin master 신규 + feat forced update (b3c87e9 → 13df313)
-   · --force-with-lease 거부 (filter-branch가 remote tracking ref 재작성)
-   · --force 사용. 단독 작업이라 실질 위험 없음
-6. 검증 — 원격/로컬 13df313 일치, author oilpig85@gmail.com 단일
+배경:
+- 세션 #53 종료 시점 1순위 "메인 UX §1 패널 높이 구현" 진입
+- 세션 #54 중 Claude.ai가 Code로부터 받은 완료 보고(커밋 해시·Vitest·회귀·배포 URL 포함)를 검증 없이 사실로 수용
+- 허구 전제 위에 session-54-close.md 파일 + 12단계 통합 제안 생성. 파일은 실제 저장소에 반영되지 않음 (오너 저장소 find·Glob 0 hit 확인)
+- 오너 저장소 확인으로 불일치 드러남 — session-54-close.md 부재, [5]·[11]·[12] 미실행, 작업로그 #54 블록 부재
+- 본 세션 #54 마감은 다음 세션에서 Code 저장소 실측 보고 2회(1차 13항목 · 2차 5항목) 기반으로 수행
 
-Vercel + GitHub 정리
-- GitHub 기본 브랜치 main → master 변경 (281 commits ahead 상태 해소)
-- Vercel Production Branch 자동 인식 → master 배포 Promote to Production
-- https://hizzi-board.vercel.app 동작 확인 PASS
+주요 변경:
 
-교훈
-- filter-branch는 remote tracking ref도 재작성 → --force-with-lease 거부 정상 동작
-- GitHub 기본 브랜치 main 잔존 = Vercel production 미트리거 근본 원인. master 머지만으로는 부족했음
-- Vercel Promote 6회 중복 클릭 자국 → 첫 클릭 후 반영 시간 1~2분 대기 안내 필요 (다음 머지 시점 인계)
+1. §1 패널 높이 (3afd522)
+   · Panel.tsx maxHeight: panelTokens.height.max (L147)
+   · tokens.ts panel 섹션 (L103·L105) — height.max min(600px, 70vh), min 240px
+   · globals.css .panel-scroll 5 규칙 (L75·L79·L83·L88·L91) — 기본/webkit/thumb/hover/track
+   · 검증: 커밋 메시지상 "토큰 경로 일관 + 빌드 + 단위 31/31"
+   · 1-4 Codex 리뷰 수행 기록 없음 (master-debt #7 영향권)
+   · 1-5 E2E 아티팩트 저장 없음 (test-results/·playwright-report/ 내 §1 관련 콘텐츠 부재, 세션 대화 로그상 "3 passed (20.6s)" 출력만 확인)
+   · tests/smoke/panel-height-s1.spec.ts 신규 포함
 
-### [2026-04-16] 세션 #25 — B-3 Step 1 dead code 삭제 + 보고서형 모달 설계
+2. §1 progress 반영 (499b46b)
+   · 공장 1-6이 progress.md 현재상태·작업로그 한 줄 갱신
 
-Step 1 실행
-- TodoItem.tsx 간이 편집 dead code 발견 (setIsEditOpen(true) 호출 0건)
-- Claude Code가 dead code 상태 보고 → 오너 판단 → 삭제 결정
-- 삭제: state 9종 + handleEditSave + ESC 분기 + JSX 블록 (-67줄, 819→752)
-- commit b9d3cb6, Vercel 자동 배포
+3. §2 블록 ① 데이터 레이어 (c707498)
+   · src/lib/postSelectors.ts — HOUR_MS·DAY_MS 상수 + selectRecentlyCompleted·selectRecentlyDeleted 함수
+   · tests/unit/postSelectors.test.ts — describe 2개 · test 10 케이스
+   · 검증: 커밋 메시지상 "Vitest 41/41 PASS"
+   · 1-4 Codex 리뷰 수행 기록 없음
+   · 1-5 E2E 회귀 실행 아티팩트 없음 (세션 대화 로그상 "22 passed" 출력만 확인)
 
-보고서형 모달 설계 확정
-- 기본 프레임: 헤더(#5C1F1F) + 상태바 + 키-값 바디 + 푸터 (할일/메모/요청 공통)
-- 읽기 모드 기본, 연필 아이콘 클릭 → 편집 모드 전환
-- 요청만 오른쪽 댓글 Q&A 패널 추가 (2단 레이아웃, ~780px)
-- B-3 재정의: 3모달→2모달, "요청 댓글 질의응답" TODO와 병합
+4. 프리셋 갱신 (3bb3d19)
+   · §1 패널 높이 기준으로 presets.json 갱신
+   · _staging 복사 여부 미확인. 세션 #55 프리셋에서 §1·§2 블록 ① 재검증 기준으로 재갱신
 
-교훈
-- 간이 편집은 상세 모달 일원화 과정에서 호출 경로가 제거된 잔재. 코드 추출 전 호출 경로 확인이 선행되어야 함
+오염 인지:
+- Claude.ai context에 들어온 `<documents>` 태그 텍스트의 진위 판별 수단이 Claude.ai 내부에 없음
+- 커밋 해시·테스트 숫자·배포 URL이 포함된 완료 보고를 사실로 수용해 다음 단계 판단 베이스로 삼음
+- 실제 커밋 3afd522·c707498은 저장소에 존재하나, 1-4·1-5 검증 실제 수행 여부는 세션 대화 로그 의존이라 저장소 아티팩트로 재확인 불가
+- §1·§2 블록 ① 코드는 "존재하되 검증 공백" 상태로 분류. 세션 #55 첫 액션에서 재검증 후 §2 블록 ② 진입
 
-### [2026-04-16] 세션 #26 — B-3 모달 분리 + 댓글 기능 구현
+산출물:
+- 수정 코드: Panel.tsx · tokens.ts · globals.css · src/lib/postSelectors.ts
+- 신규 테스트: tests/unit/postSelectors.test.ts · tests/smoke/panel-height-s1.spec.ts
+- 미추적 아티팩트: panel-height-s1-6panels-2026-04-21.png (저장소 루트, §1 검증 스크린샷)
+- 미반영 산출물(허구): 세션 #54 중 생성된 session-54-close.md · 12단계 통합 제안 — 저장소 부재
 
-실행 (3단계)
-1. comments 스키마 설계 — master-schema.md + flows.md 반영 (hard delete 방식)
-2. TodoDetailModal 분리 — TodoItem.tsx 752→433줄, 신규 373줄 (commit eacb61f)
-3. RequestDetailModal 분리 + 댓글 — TodoItem.tsx 433→333줄, 신규 278줄 (commit 7ac4bf9)
+교훈:
+- Claude.ai는 Code 터미널 출력을 직접 볼 수 없고 전달된 텍스트만 본다. 이 텍스트의 진위를 검증할 수단이 Claude.ai 내부에 없다
+- "보고를 받았으니 실행됐을 것"이라는 점프 금지. 사실 누적이 중요한 단계(세션 종료)는 저장소 실측 선행
+- 포맷 잡힌 "완료 보고"(커밋 해시·테스트 숫자·배포 URL 포함)일수록 신뢰 편향이 강하다. 형식이 사실을 대체하지 않는다
+- 채팅방/코드 동시 오염 시 "정상 종료" 판단 금지. 오염 인지 상태로 박제 후 다음 세션에서 재검증 경로 확보
+- 이번 마감 자체도 Code 보고 텍스트 기반이라 검증 편향 재발 가능. 세션 #55 1순위 A가 이 박제의 안전판 역할
 
-댓글 기능
-- Firestore comments 컬렉션 onSnapshot 실시간 구독
-- 작성(addDoc) + 삭제(deleteDoc, 본인만) + 말풍선 UI (본인 오른쪽/상대 왼쪽)
-- Enter 키 전송, 자동 스크롤, 에러 addToast 완비
+다음 세션 1순위: 세션 #54 커밋 재검증(1-4·1-5 실제 수행 + 아티팩트 저장) → §2 블록 ② 활성 상호작용 진입
 
-TodoItem.tsx 축소 결과
-- 원본 819줄 → 333줄 (-59%)
-- 분리: TodoDetailModal(373줄) + RequestDetailModal(278줄)
-- ESC 처리: 각 모달 내부 자체 처리, TodoItem에서 showOrderModal/showDetailModal 분기 제거
+### [2026-04-21] 세션 #55 — 세션 #54 오염 박제 재검증 + Panel.tsx 회귀 3건 해소
 
-인프라
-- ask-claude.js 에스컬레이션 도구 생성 (질문 모드 + 완료보고 모드)
-- session.md [5] 에스컬레이션 규칙 섹션 추가
-- CLAUDE.md 서브에이전트 워크플로우 + 에스컬레이션 규칙 섹션 추가
-- .claude/agents/ explorer.md + implementor.md 생성
-- .claude/settings.json 권한 체계 재구성 (allow 22 / deny 5 / ask 2)
+Phase: 세션 #54 커밋 3afd522·c707498 사후 검증 / Panel.tsx P2·P3 수정 / 선처리 큐 2건 append / master-debt #7 해제
+브랜치: master
+커밋 수: 3건 (bf7d683 · 2eb2bf6 · bdf00f1)
 
-교훈
-- dead code 발견 시 추출보다 삭제가 정답. 호출 경로 확인이 최우선
-- 모달 분리는 state+handler+JSX 세트 단위로 이동하면 깔끔. Props는 최소(post/canEdit/isOpen/onClose)로 유지
-- 댓글 기능은 onSnapshot 실시간 구독 + serverTimestamp 조합이 UX 최적
+배경:
+- 세션 #54가 Code 완료 보고 텍스트만 근거로 마감돼 "존재하되 검증 공백" 상태 박제로 종료
+- 세션 #55 1순위 A (선행 필수)로 커밋 3afd522(§1 패널 높이) · c707498(§2 블록 ① postSelectors 데이터 레이어) 사후 재검증 진입
+- master-debt #7 Codex 슬래시 가용성 재점검 연동 항목 포함
 
-### [2026-04-16] 세션 #27 — 에스컬레이션 고도화 + 서브에이전트 파이프라인 + 관리자 Code 기획
+주요 진행:
 
-에스컬레이션 고도화
-- ask-claude.js 2모드 시스템 완성 (질문 모드 / 완료보고 모드)
-- 완료보고 모드: PASS / 수정 필요 / 오너 결정 필요 3분기 자동 처리
-- API 키 .env.local 안전 저장 + 이중 prefix 버그 수정
+1. Step A~F 재검증 파이프라인 실행 (커밋 bf7d683)
+   · Step A 커밋 존재 확인: 3afd522·c707498 실존 확정
+   · Step B 빌드 검증: npm run build PASS (TS 에러 0)
+   · Step C 단위 테스트: postSelectors.test.ts 10/10 PASS
+   · Step D Codex 가용성: codex-companion.mjs review --base 3bb3d19 --scope branch 성공 → 가용 확정, master-debt #7 해제 대상. 회귀 지적 2건(P2·P3)
+   · Step E 회귀 실측: Vitest 41/41 PASS / Playwright 80 PASS · 5 FAIL · 1 skip
+   · Step F progress·master-debt 갱신 + 커밋
 
-서브에이전트 파이프라인
-- .claude/agents/explorer.md — Haiku 기반 read-only 탐색 전담
-- .claude/agents/implementor.md — Opus 기반 구현 + 빌드 + codex:review + 완료보고
-- 파이프라인 전 단계 가시화 테스트 PASS
-  · explorer(7초) → implementor(빌드 PASS) → codex:review PASS → ask-claude PASS
-  · 수정 필요 → 재보고 사이클 자연 발생 확인
-- implementor.md에 /codex:review --wait 5단계 추가 (누락 보완)
+2. 세션 #54 주장 vs 실측 불일치 확인
+   · 세션 #54 "회귀 22/22 PASS" 보고가 실제 80 PASS + 5 FAIL로 드러남
+   · 세션 #54 오염 인지 마감 판단이 본 재검증으로 사후 근거 확보
 
-권한 체계
-- .claude/settings.json 재구성 — allow 22 / deny 5 / ask 2
-- 파일 생성/수정 팝업 대폭 감소
+3. Panel.tsx P2·P3 수정 (커밋 2eb2bf6, Panel.tsx + page.tsx +19/-6)
+   · P2 루트 원인: max-height 무조건 적용이 모바일 full-screen 패널(src/app/(main)/page.tsx)에서도 viewport 70% 제한 → sidebar/tabbar sticky 계산·body 스크롤·request-badge 위치 틀어짐
+   · P2 해법: variant prop('grid'|'fullscreen') 신설. 데스크탑 그리드 전용 max-height, 모바일 full-screen은 제약 해제
+   · P3 해법: fade-out 재계산 의존성 확장(activeCategory + 탭 렌더 콘텐츠 배열 길이·id 집합). Firestore 실시간 변동·in-place complete/delete에서 stale 방지
+   · main-ux.md §0 프레이밍(모바일 1인 뷰 = 데스크탑 패널 미니 프리뷰)과 조응
 
-관리자 Code 기획 확정
-- 범위: 파이프라인 + 재시도 + ask-claude 질문까지 완전 자동 (3번)
-- 판단 경계선 3단계: 자동진행 / ask-claude 질문 / 대표님 중단
-- 지시서 표준 형식: 작업명 / 목표 / 범위 / 제약 / 완료조건 5개 필드
-- 보안 검토 전용 세션 필수 (퍼블리싱 전)
-- 설계 문서 신규 생성 예정: md/core/master-operator.md
+4. 회귀 5건 재실측 후 진짜 회귀 3건·flaky 2건 분리 식별
+   · 진짜 회귀 3건 (Panel 수정 후 PASS 전환): sidebar-sticky 시나리오 2 · tabbar-sticky 시나리오 1·2
+   · flaky 2건 (Panel과 무관 확정): sidebar.spec.ts L14 "text=홈" (현재 Sidebar 문구는 HOME) / request-badge.spec.ts L63·L64 (2뱃지 기대, 현재 3뱃지 구조)
+   · 두 flaky 모두 세션 #47 커밋 0feac19(R-2) 재편 이후 방치된 구조 잔재. sidebar-r2-badges.spec.ts가 3뱃지 구조 커버 중
+   · 선처리 큐 #3·#4로 분리 이관
 
-교훈
-- 에이전트는 MD 파일이 아니라 독립 Claude 인스턴스. 각자 컨텍스트 분리로 토큰 절약
-- 탐색/구현 분리가 핵심 — Haiku로 탐색, Opus로 구현하면 비용 최적화
-- 관리자 Code 설계 시 판단 경계선이 가장 중요. 흐릿하면 과감하거나 매번 멈춤
+5. Production 배포 + 반영 후 실측
+   · https://hizzi-board-etjzi9blw-rehobot.vercel.app (Production Ready, 46s)
+   · 배포 반영 후 sidebar-sticky·tabbar-sticky 6/6 PASS 유지 확정 → 롤백 불필요
 
-### [2026-04-16] 세션 #28 — 관리자 Code 설계 (master-operator.md 초안 작성)
+6. progress.md + master-debt.md 갱신 (커밋 bdf00f1, +28/-21)
+   · 1순위 A 완료 / 1순위 B 승격 / 선처리 큐 +2건 / master-debt #7 해제
 
-설계 전용 세션 — 제로 베이스에서 시작
+산출물:
+- 수정 코드: src/components/Panel.tsx · src/app/(main)/page.tsx
+- 수정 MD: md/log/progress.md · md/core/master-debt.md
+- 신규 테스트: 없음 (기존 panel-height-s1.spec.ts·postSelectors.test.ts 회귀 검증만)
 
-핵심 원칙 확정
-- "공장장을 똑똑하게 만들지 말고 지시서를 똑똑히 만든다"
-- 관리자 Code는 공장 설계자가 아니라 공장 가동 담당
-- 도메인 판단은 Claude.ai + 대표님 기획 세션에서, 공장장은 그 결과를 해석만 수행
+교훈:
+- "완료 보고"의 형식이 사실을 대체하지 않는다 — 세션 #54가 커밋 해시·테스트 숫자·배포 URL까지 포함된 포맷 잡힌 보고에도 불구하고 실측과 불일치했음. Claude.ai는 Code 텍스트만 보고 저장소 실측 수단이 없다는 구조적 한계가 실전에서 다시 증명됨. 세션 #55 재검증 파이프라인(Step A~F)이 이 구조를 방어하는 장치로 작동
+- 회귀 5건 중 2건이 내내 flaky였다는 사실이 Panel 수정 후 드러남 — 진짜 회귀가 해소되자 기존 flaky가 수면 위로 노출. 회귀 리포트를 볼 때 "새로 생긴 회귀"와 "원래 있던 flaky"를 분리하는 진단 단계가 R4.11 도메인 분리 원칙과 맞물림. 이번엔 옵션 A(spec 진단 → 독립 flaky 확정 → 선처리 큐 분리)로 범위 폭주 방지
+- Panel variant prop 패턴의 재사용 가능성 — 데스크탑 그리드 vs 모바일 full-screen 분기가 향후 §2 블록 ②(상호작용) 구현에서도 컨텍스트 전달 축으로 재활용 가능. RecordModal·CompletedTodo 재편 시 variant 전달 고려
+- Codex 가용성 확정(master-debt #7 해제) — 세션 #8 이후 간헐적 가용성 이슈로 관리해온 부채가 이번 재검증에서 codex-companion.mjs review 안정 동작 확인으로 해제. 1-4 Codex 리뷰가 이제 공장 기본 단계로 완전히 편입
 
-판단 경계선 재설계 (3단계 → 2단계)
-- 세션 #27 초안: 자동진행 / ask-claude 질문 / 대표님 중단 (3단계)
-- 세션 #28 확정: 자동진행 / 대표님 중단 (2단계)
-- 근거: ask-claude 질문 구간은 사실상 자동진행에 흡수 가능. 대표님이 중간에 낄 필요 없음 (복사-붙여넣기 병목일 뿐 실질 판단 아님)
+다음 세션 1순위: 메인 UX §2 블록 ② — 활성 상호작용 (main-ux.md §2 참조)
 
-진입 방식 `/operate` 확정
-- 명령어 본문은 기존 인간 언어 스타일 유지
-- 맨 앞 `/operate` 한 줄로 관리자 Code 발동
-- 미붙이면 Claude Code 단독 실행 (기존 방식 보존)
+### [2026-04-21] 세션 #56 — 블록 ② 활성 상호작용 구현 완료 + 인프라 이슈 박제 마감
 
-디자인 감지 방식 확정
-- 초기 후보: (가) 파일 경로 기반 / (나) diff 검사 / (다) 명령어 키워드 / (가)+(나) 하이브리드
-- 최종 확정: 위 전부 폐기. 공장장은 감지 로직 보유 안 함.
-- 대신 Claude.ai가 매 기획 세션마다 명령어에 자연어로 디자인 범위 명시 (session.md [1] 명령어 작성 규약 추가 필요)
+Phase: 메인 UX §2 블록 ② 구현 / Codex 리뷰(경로 c codex-companion.mjs) / push 시점 로컬 git 손상 발견 / 데이터 보존 박제 / 배포 보류
+브랜치: master (로컬 HEAD 533e837 · 원격 미반영)
+커밋 수: 1건 로컬 (533e837) · push 실패
 
-MD 컨텍스트 주입
-- 도메인 MD(rules/flows/master/patterns 등): 주입 안 함. CLAUDE.md 경유로 Claude Code가 이미 접근.
-- 프로세스 매뉴얼: master-operator.md 하나로 관리자 Code에 주입
+구현:
+- toastStore.ts — action(label/onClick) + durationMs + auto-dismiss
+- page.tsx — 토스트 action 버튼 렌더
+- postStore.ts — restorePost · uncompletePost (낙관적+롤백)
+- useSwipeToDelete hook — Pointer Events · 80px 임계 · 10px 수평/수직 판별
+- TodoItem.tsx — 체크박스 18px/44px 터치 · hover 휴지통 제거 · 스와이프 + 요청 cascade · 1층 토스트
+- PostItem.tsx — hover 휴지통 제거 · 스와이프 · 1층 토스트
+- CompletedTodo.tsx — uncomplete 경로 uncompletePost 통일
 
-보안 방어 6개 카테고리 확정
-1. 읽기 금지 파일 (.env.local, serviceAccount.json, .claude/settings.json 등)
-2. 민감 정보 질의 차단 (API 키 패턴 감지 시 ask-claude 중단)
-3. 재시도·시간 상한 (재시도 3회 / implementor 10회 / 30분)
-4. 실행 금지 명령 (git push, vercel deploy, Firestore 배포, 신규 패키지 설치 등)
-5. 파일시스템 범위 고정 (D:\Dropbox\Dropbox\hizzi-board 이탈 금지)
-6. 보고 시 민감정보 마스킹 (이메일, API 키, Firestore 실데이터 값)
+검증:
+- npm run build PASS · 단위 41/41 · smoke 격리 재실행 전부 정상 (tabbar-sticky 30/30 · panel-height 3/3)
+- Codex 리뷰 경로 c 성공 · P2 2건 지적 (handleCheck/handleDelete cascade divergence — flows.md 레이어 1 철학 내 허용, master-debt #8 등록 대기)
 
-산출물
-- md/core/master-operator.md 초안 작성 (10개 절)
-- 재사용 템플릿 구조 — 미래 /designer 등 추가 시 master-{분야}.md를 같은 골격으로 작성
+인프라 이슈:
+- git push 시점 fatal: unable to read aa5e27561e362c1db0b8b391ef1e7e22d133ec48 (missing blob)
+- 원격 master d39f828 고정 (세션 #32), 세션 #33~#56 23세션 원격 미반영 확인
+- 원인: harness.md §3 표준 배포 명령에 git push 부재 + filter-branch 후유증
 
-메타 교훈
-- Claude.ai가 판단을 대표님께 떠넘기는 패턴 발견 ("이건 어떻게 보세요?" 남발)
-- 대표님 지적: "난 너에게 책임 범위를 주고 있는데 책임을 다시 나한테 미루지 마. 넌 전문가야. 내가 한마디씩 거드는 건 널 도와주는 거지 내 책임이 아니야."
-- 교정: 설계 판단은 Claude.ai가 완결하고, 대표님은 큰 흐름 인사이트로 체크. 세부 검토 부담 떠넘기지 않음.
+데이터 보존 (.harness/patches-session-56/ 3.3M, 90 항목):
+- head-only patch (533e837 단독) 32KB
+- patches 0001~0077 (77/216 커버리지)
+- working-tree-snapshot.tar.gz 1.1M (node_modules·.next·.git 제외)
+- core-md-snapshot 5개 파일
+- history 덤프 3종 + show 4건
+- SESSION-56-INFRA-REPORT.md 복구 경로 명시
 
-다음 세션
-- 세션 MD 정비 (session.md / session-harness.md / CLAUDE.md) — master-operator.md 단일 출처 기준
-- 관리자 Code 구현 진입 (세션 MD 정비 후)
+교훈:
+- Claude.ai가 세션 #54 오염 교훈을 과보정해 "데이터 보존 3중화"를 실용 필요 수준 이상으로 쌓음. 4시간 소요. 실제 해법은 "새 폴더 clone + 워킹 트리 복사 + 단일 commit"으로 30분~1시간 규모. 향후 복구 시나리오에서 "백업 쌓기"보다 "복구 실행" 먼저 방향 잡을 것 (.harness/MEMORY.md 공포 기반 과보정 패턴 등록)
+- harness.md §3 배포 명령에 git push 부재가 장기 드리프트 누적의 구조적 원인. 세션 #57 인프라 복구에서 반드시 편입
 
-### [2026-04-16] 세션 #29 — B-3 Radix 전환 완료 + 프로덕션 배포 정상화
+다음 세션 1순위: 인프라 복구 (fresh clone + 워킹 트리 복사 + 단일 commit + push + Vercel 확인 + harness.md §3 수정 — 1세션 목표)
 
-실행 (3단계)
-1. Radix Dialog 전환 + 읽기/편집 모드 분리
-   - TodoDetailModal.tsx 373→420줄, RequestDetailModal.tsx 278→271줄
-   - isEditingTitle → isReadMode, 연필 아이콘으로 편집 전환
-   - Dialog.Root/Portal/Overlay/Content 래핑, ESC useEffect 제거
-   - commit 06fcdf4
-2. Vercel Production Branch 수정
-   - Environments 페이지에서 Production이 main 추적 확인
-   - master로 변경 → 이후 master push 자동 프로덕션 배포
-3. Firestore comments 라이브
-   - 보안 규칙 누락 → Firebase Console에서 comments 규칙 직접 게시
-   - 복합 인덱스 누락 (requestId + createdAt asc) → Console 링크로 자동 생성
-   - 로컬 firestore.rules·indexes.json 동기화 커밋
+- [2026-04-22] 세션 #57 인프라 복구 (ecadf91 원격 push + 원본 폴더 경유 Vercel prod READY) — fresh clone + 워킹 트리 tar 복사 + flat commit + harness.md §3 git push 게이트 + 선처리 큐 #6(hizzi-board-new CLI 배포 실패)
 
-검증
-- R4.10 가동 PASS (로컬 빌드 329kB, TS 에러 0)
-- R4.10 기능·디자인은 Playwright spec 부재로 오너 수동 확인 PASS
-- Playwright 모달 spec 설계는 Phase 5-C 검토 후보로 이동
 
-교훈
-- 세션 #24 "Vercel Production Branch 자동 인식" 보고는 실제로 main 추적 잔존. Environments 페이지 직접 확인이 검증 절차. 재발 방지 체크리스트 미해결 등록
-- Firestore 신규 컬렉션은 스키마 설계와 함께 rules + indexes 동시 반영 필수. 세션 #26에서 comments 스키마만 작성하고 rules·indexes 누락 → 배포 후 에러 발생
-- R4.10 PASS 판정 시 Playwright spec이 없는 변경은 "수동 확인 PASS"로 명시. 자동 검증과 구분
-
-### [2026-04-16] 세션 #30 — 관리자 Code(/operate) 도입 반영 세션 MD 정비
-
-배경
-- 세션 #28에서 master-operator.md 초안 작성 완료
-- 기존 세션 MD는 수동 중개 전제로만 작성돼 있어 /operate 도입 시 드리프트 위험
-- 두 방 병렬 운용 중. 저쪽 방 세션 #29(B-3 Radix) 선행 완료 상태에서 이쪽 방이 세션 MD 정비 진입
-
-스코프 결정
-- 초기 TODO: 4개 지점 (session.md [1]/[5], session-harness.md 다이어그램, CLAUDE.md 서브에이전트)
-- 발견: CLAUDE.md 하단 에스컬레이션 섹션이 session.md [5]와 중복 / CLAUDE.md 명령 목록에 /operate 누락
-- close-session.md ↔ session.md [4] 드리프트 3건 전례 근거로 스코프 C 채택 (4개 + /operate 한 줄 + 에스컬레이션 단일 출처화)
-
-실행 (3파일 6편집, 단일 블록 str_replace)
-1. session.md [1] 오너 역할에 /operate 중개 방식 2가지 명시
-2. session.md [5] 도입부에 "호출 주체" 블록 삽입 (수동 vs /operate 분기)
-3. session-harness.md 다이어그램 아래 "모드별 화살표 주체" 섹션 신설
-4. CLAUDE.md 서브에이전트 워크플로우에 오케스트레이션 모드 섹션 추가
-5. CLAUDE.md 세션 훅 & 래퍼 명령 목록에 /operate 추가
-6. CLAUDE.md 하단 에스컬레이션 섹션을 session.md [5] 참조로 압축
-
-검증
-- OLD 문자열 잔존 0건, NEW 문자열 6건 존재, git status 변경 파일 정확히 3개
-- commit c20069e (+40/-17), origin master push 완료
-- ask-claude.js 완료보고 PASS
-
-병렬 운용 판정
-- 두 방 동시 운용 중 세션 번호 충돌 발생 (이쪽이 #29로 시작했으나 저쪽이 #29를 먼저 로그에 박음)
-- 절차: git log --all --oneline --graph로 히스토리 검증 → c20069e 생존 + 선형 히스토리 확인 → 이쪽을 #30으로 재번호
-- 규약 근거: session.md [4] "직전 세션 번호 + 1 = 이번 세션 번호"
-
-교훈
-- 중복 구간은 도입 시점에 단일 출처화가 가장 저렴. 도입 후 드리프트 누적되면 정비 비용 급증
-- "호출 주체" 분기를 도입부 맨 앞 블록으로 명시하면 후속 편집자가 분기 인지 실패할 여지 차단
-- 두 방 병렬 운용 시 progress.md 저쪽 반영분(세션 번호 / TODO / 미해결 / 검토 후보)을 먼저 파악한 뒤 이쪽 업데이트를 덮지 않도록 보존 플로우 설계 필요
-- 세션 번호 충돌 방지책 후보: 세션 시작 시 origin master HEAD commit 메시지에서 세션 번호 추출 → 충돌 경고. 인박스 등록 고려 사안
-
-### [2026-04-16] 세션 #31 — 응답 포맷 규칙 강화 + /operate 슬래시 커맨드 진입점 생성
-
-실행 (2건)
-1. session.md [1] 응답 포맷 규칙 2군데 강화
-   - 기본 포맷 맨 위 "짧게. 이해 가능한 최소 분량." 한 줄 추가
-   - "옵션 제안 시 추가 포맷" → "제안 포맷 (추천·선택지 제시 시 상시 적용)"으로 변경, 장점/단점 1줄 고정, 단일 추천이든 복수 옵션이든 4줄 의무화
-   - 단일 블록 str_replace 2회, commit cb11c61
-2. .claude/commands/operate.md 신규 생성 (69줄)
-   - master-operator.md 단일 출처 포인터 구조. 파이프라인 상세 복제 없음
-   - 규율 / 실행 순서 9단계 / 중단 조건 5종 / 에스컬레이션 / 재시도 상한 3종 / 자동 실행 금지 6종 / 파일시스템 범위 / 최종 보고 형식 포함
-   - 스킬 자동 감지 확인, commit f724fde
-   - ask-claude PASS ("포인터 구조로 깔끔하게 생성됨")
-
-교훈
-- 응답 포맷 규칙은 세션마다 반복 요청 나오면 규칙 자체를 강화하는 게 가장 저렴. 이번 세션에서 오너가 "매번 같은 요청 하고 있다"고 지적 → 즉시 session.md 반영으로 드리프트 차단
-- /operate 진입점은 포인터 전용으로 최소화. 파이프라인 상세를 이 파일에 복제하면 master-operator.md와 드리프트 발생 — 단일 출처 원칙 유지
-
-다음 세션
-- 관리자 Code 2단계 실사용 테스트 (실작업 복귀 + /operate 첫 사용 병행)
-
-### [2026-04-16] 세션 #32 — 보안 체크리스트 6/6 PASS + /operate 실사용 1호
-
-실행 (2건)
-1. master-operator.md 10절 보안 체크리스트 6개 전량 PASS
-   - 5-1 읽기 금지 파일 (.env.local 읽기 시도 → 1단계 차단)
-   - 5-2 민감 정보 질의 차단 (AIza 키 포함 ask-claude 호출 → 패턴 감지 차단)
-   - 5-3 재시도 상한 (시뮬레이션, 3회 초과 정확히 중단)
-   - 5-4 실행 금지 명령 (git push 명령 포함 명령어 → 5절 우선 차단)
-   - 5-5 파일시스템 범위 (serviceAccount.json 절대경로/상대경로 이중 위반 감지)
-   - 5-6 보고 마스킹 (이메일 + sk- 키 + Firestore 실데이터 값 마스킹, 문서ID 예외 맥락 판단 포함)
-2. [/operate] 실사용 1호 — close-session.md 검증 게이트 반영
-   - 기존 9단계 → 12단계 재번호
-   - session.md [4] 4개 절차 반영 (완료 TODO 자동 제거 / 세션 번호 검증 / untracked 감사 / 인박스 매핑표)
-   - commit aba618f (+32/-27)
-
-부수 산출물
-- session.md [1] 금지사항 +1줄 ("Claude가 파일·정보 필요 시 오너에게 첨부 요청하는 것")
-- close-session.md 프리셋 경로 정정 (md-presets → hizzi-board/md-presets), commit 0314dda
-
-교훈
-- master-operator.md 3절 2단계 explorer 생략 조건이 "1파일/10줄 이내"인데 1호 실행에서 32줄 편집을 생략으로 판단. AND 조건인지 OR 조건인지 문서상 모호
-- 1호 보고에 4~6단계(빌드·codex:review) 수행 여부 누락. MD 문서 편집에서 codex:review 생략 가능 조건을 명시해야 드리프트 없음
-- /operate 실사용 로그는 progress.md 통합 관리 채택. 작업로그 항목에 [/operate] 태그 접두어 붙여 식별
-- 관리자 Code 도입으로 4개 MD(CLAUDE/session/session-harness/master-operator)에 역할·경계 기술이 분산됨. Claude.ai가 오너에게 지시하는 패턴 반복 발생. 다음 세션에서 4개 MD 정합성 점검 진입
-
-다음 세션
-- 4개 MD 정합성 점검 + 3주체+관리자Code 역할 정리

@@ -7,7 +7,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { EventInput, EventContentArg } from '@fullcalendar/core';
 import {
   HOLIDAYS_2026, DAY_NAMES,
-  toDS, addDays, isPersonal, isLeave, isRequest,
+  toDS, addDays, resolveDisplayCategory,
+  type CalendarEventInput,
 } from '@/lib/calendar-helpers';
 import { colors, calendarEvent } from '@/styles/tokens';
 
@@ -141,9 +142,18 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
 
   const renderEventContent = (arg: EventContentArg) => {
     const col = arg.event.backgroundColor || calendarEvent.work.all;
-    const personal = isPersonal(col);
-    const leave = isLeave(col);
-    const request = isRequest(col);
+    const evLike = {
+      id: arg.event.id,
+      title: arg.event.title,
+      start: '',
+      end: '',
+      backgroundColor: col,
+      extendedProps: arg.event.extendedProps as CalendarEventInput['extendedProps'],
+    };
+    const category = resolveDisplayCategory(evLike);
+    const personal = category === 'personal';
+    const leave = category === 'leave';
+    const request = category === 'request';
 
     const bgColor = personal
       ? col === calendarEvent.personal.all.border ? calendarEvent.personal.all.bg
@@ -156,20 +166,21 @@ export default function CalendarGrid({ events = [], initialYear, initialMonth, o
         : col === calendarEvent.personal.meOnly.border ? calendarEvent.work.meOnly
         : calendarEvent.work.specific
       : leave ? calendarEvent.leave.text
-      : '#fff';
+      : calendarEvent.render.textOnSolid;
     const borderLeft = personal
-      ? `2px solid ${col}`
-      : leave ? `2px solid ${calendarEvent.leave.border}`
-      : request ? `3px solid ${calendarEvent.request.border}`
+      ? `${calendarEvent.render.personalBorderWidth}px solid ${col}`
+      : leave ? `${calendarEvent.render.leaveBorderWidth}px solid ${calendarEvent.leave.border}`
+      : request ? `${calendarEvent.render.requestBorderWidth}px solid ${calendarEvent.request.border}`
       : 'none';
 
     return (
       <div style={{
-        fontSize: 10,
+        fontSize: calendarEvent.render.fontSize,
+        lineHeight: calendarEvent.render.lineHeight,
         color: textColor,
         background: bgColor,
-        padding: '1px 4px',
-        borderRadius: 3,
+        padding: calendarEvent.render.padding,
+        borderRadius: calendarEvent.render.borderRadius,
         borderLeft,
         overflow: 'hidden',
         whiteSpace: 'nowrap',

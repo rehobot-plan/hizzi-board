@@ -10,6 +10,9 @@ export interface AppUser {
   role?: "admin" | "user";
   panelId?: string;
   leaveViewPermission?: "none" | "me" | "self" | "all";
+  photoURL?: string;
+  department?: string;
+  position?: string;
 }
 
 interface UserState {

@@ -44,6 +44,8 @@ interface PostState {
   addPost: (post: Omit<Post, 'id' | 'createdAt'>) => Promise<void>;
   updatePost: (postId: string, updates: Partial<Omit<Post, 'id' | 'createdAt'>>) => Promise<void>;
   deletePost: (postId: string) => Promise<void>;
+  restorePost: (postId: string) => Promise<void>;
+  uncompletePost: (postId: string) => Promise<void>;
   hardDeletePost: (postId: string) => Promise<void>;
 }
 
@@ -103,6 +105,54 @@ export const usePostStore = create<PostState>((set) => ({
       }));
       console.error('Error deleting post:', error);
       useToastStore.getState().addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+    }
+  },
+
+  // soft delete 복구 — 1층 토스트 실행취소 / 2·3층 회수 공통 경로
+  restorePost: async (postId) => {
+    // 낙관적 업데이트
+    set(state => ({
+      posts: state.posts.map(p =>
+        p.id === postId ? { ...p, deleted: false, deletedAt: null } : p
+      ),
+    }));
+    try {
+      await updateDoc(doc(db, 'posts', postId), {
+        deleted: false,
+        deletedAt: null,
+      });
+    } catch (error) {
+      // 롤백
+      set(state => ({
+        posts: state.posts.map(p =>
+          p.id === postId ? { ...p, deleted: true, deletedAt: new Date() } : p
+        ),
+      }));
+      console.error('Error restoring post:', error);
+      useToastStore.getState().addToast({ message: '복구에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+    }
+  },
+
+  // 완료 취소 — 1층 토스트 되돌리기 / CompletedTodo 재활성 공통 경로
+  uncompletePost: async (postId) => {
+    set(state => ({
+      posts: state.posts.map(p =>
+        p.id === postId ? { ...p, completed: false, completedAt: null } : p
+      ),
+    }));
+    try {
+      await updateDoc(doc(db, 'posts', postId), {
+        completed: false,
+        completedAt: null,
+      });
+    } catch (error) {
+      set(state => ({
+        posts: state.posts.map(p =>
+          p.id === postId ? { ...p, completed: true, completedAt: new Date() } : p
+        ),
+      }));
+      console.error('Error uncompleting post:', error);
+      useToastStore.getState().addToast({ message: '되돌리기에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     }
   },
 

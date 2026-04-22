@@ -1,0 +1,1058 @@
+{
+  "capturedAt": "2026-04-19T09:35:01.291Z",
+  "sessionId": "current",
+  "parts": {
+    "장로": {
+      "totalParticipants": 740,
+      "threshold": 494,
+      "validCount": 739,
+      "invalidCount": 0,
+      "missingCount": 1,
+      "candidateCount": 34,
+      "electedCount": 34,
+      "rejectedCount": 0,
+      "candidates": [
+        {
+          "name": "이요한",
+          "yes": 718,
+          "no": 21,
+          "invalid": 0,
+          "yesRate": 97.027027,
+          "isElected": true
+        },
+        {
+          "name": "권신",
+          "yes": 708,
+          "no": 31,
+          "invalid": 0,
+          "yesRate": 95.675676,
+          "isElected": true
+        },
+        {
+          "name": "배은영",
+          "yes": 704,
+          "no": 35,
+          "invalid": 0,
+          "yesRate": 95.135135,
+          "isElected": true
+        },
+        {
+          "name": "김용기",
+          "yes": 703,
+          "no": 36,
+          "invalid": 0,
+          "yesRate": 95,
+          "isElected": true
+        },
+        {
+          "name": "김영용",
+          "yes": 702,
+          "no": 37,
+          "invalid": 0,
+          "yesRate": 94.864865,
+          "isElected": true
+        },
+        {
+          "name": "김재원A",
+          "yes": 701,
+          "no": 38,
+          "invalid": 0,
+          "yesRate": 94.72973,
+          "isElected": true
+        },
+        {
+          "name": "정춘식",
+          "yes": 701,
+          "no": 38,
+          "invalid": 0,
+          "yesRate": 94.72973,
+          "isElected": true
+        },
+        {
+          "name": "김현진",
+          "yes": 700,
+          "no": 39,
+          "invalid": 0,
+          "yesRate": 94.594595,
+          "isElected": true
+        },
+        {
+          "name": "김창훈",
+          "yes": 699,
+          "no": 40,
+          "invalid": 0,
+          "yesRate": 94.459459,
+          "isElected": true
+        },
+        {
+          "name": "박도연B",
+          "yes": 699,
+          "no": 40,
+          "invalid": 0,
+          "yesRate": 94.459459,
+          "isElected": true
+        },
+        {
+          "name": "박기덕",
+          "yes": 698,
+          "no": 41,
+          "invalid": 0,
+          "yesRate": 94.324324,
+          "isElected": true
+        },
+        {
+          "name": "박정일",
+          "yes": 698,
+          "no": 41,
+          "invalid": 0,
+          "yesRate": 94.324324,
+          "isElected": true
+        },
+        {
+          "name": "이용호",
+          "yes": 698,
+          "no": 41,
+          "invalid": 0,
+          "yesRate": 94.324324,
+          "isElected": true
+        },
+        {
+          "name": "고병윤",
+          "yes": 697,
+          "no": 42,
+          "invalid": 0,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "권화겸",
+          "yes": 697,
+          "no": 42,
+          "invalid": 0,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "김재익",
+          "yes": 696,
+          "no": 43,
+          "invalid": 0,
+          "yesRate": 94.054054,
+          "isElected": true
+        },
+        {
+          "name": "석태식",
+          "yes": 696,
+          "no": 43,
+          "invalid": 0,
+          "yesRate": 94.054054,
+          "isElected": true
+        },
+        {
+          "name": "조창기",
+          "yes": 696,
+          "no": 43,
+          "invalid": 0,
+          "yesRate": 94.054054,
+          "isElected": true
+        },
+        {
+          "name": "권영남",
+          "yes": 695,
+          "no": 44,
+          "invalid": 0,
+          "yesRate": 93.918919,
+          "isElected": true
+        },
+        {
+          "name": "김명수",
+          "yes": 694,
+          "no": 45,
+          "invalid": 0,
+          "yesRate": 93.783784,
+          "isElected": true
+        },
+        {
+          "name": "문종일",
+          "yes": 693,
+          "no": 46,
+          "invalid": 0,
+          "yesRate": 93.648649,
+          "isElected": true
+        },
+        {
+          "name": "박경헌",
+          "yes": 693,
+          "no": 46,
+          "invalid": 0,
+          "yesRate": 93.648649,
+          "isElected": true
+        },
+        {
+          "name": "정현석A",
+          "yes": 692,
+          "no": 47,
+          "invalid": 0,
+          "yesRate": 93.513514,
+          "isElected": true
+        },
+        {
+          "name": "권오구",
+          "yes": 692,
+          "no": 47,
+          "invalid": 0,
+          "yesRate": 93.513514,
+          "isElected": true
+        },
+        {
+          "name": "남모철",
+          "yes": 691,
+          "no": 48,
+          "invalid": 0,
+          "yesRate": 93.378378,
+          "isElected": true
+        },
+        {
+          "name": "박전배",
+          "yes": 689,
+          "no": 50,
+          "invalid": 0,
+          "yesRate": 93.108108,
+          "isElected": true
+        },
+        {
+          "name": "조용범",
+          "yes": 688,
+          "no": 51,
+          "invalid": 0,
+          "yesRate": 92.972973,
+          "isElected": true
+        },
+        {
+          "name": "임동주",
+          "yes": 686,
+          "no": 53,
+          "invalid": 0,
+          "yesRate": 92.702703,
+          "isElected": true
+        },
+        {
+          "name": "김숙희",
+          "yes": 684,
+          "no": 55,
+          "invalid": 0,
+          "yesRate": 92.432432,
+          "isElected": true
+        },
+        {
+          "name": "민희경",
+          "yes": 684,
+          "no": 55,
+          "invalid": 0,
+          "yesRate": 92.432432,
+          "isElected": true
+        },
+        {
+          "name": "배이종",
+          "yes": 682,
+          "no": 57,
+          "invalid": 0,
+          "yesRate": 92.162162,
+          "isElected": true
+        },
+        {
+          "name": "배대혁",
+          "yes": 681,
+          "no": 58,
+          "invalid": 0,
+          "yesRate": 92.027027,
+          "isElected": true
+        },
+        {
+          "name": "송영남",
+          "yes": 681,
+          "no": 58,
+          "invalid": 0,
+          "yesRate": 92.027027,
+          "isElected": true
+        },
+        {
+          "name": "김미애",
+          "yes": 677,
+          "no": 62,
+          "invalid": 0,
+          "yesRate": 91.486486,
+          "isElected": true
+        }
+      ]
+    },
+    "시무권사": {
+      "totalParticipants": 740,
+      "threshold": 494,
+      "validCount": 732,
+      "invalidCount": 0,
+      "missingCount": 8,
+      "candidateCount": 60,
+      "electedCount": 60,
+      "rejectedCount": 0,
+      "candidates": [
+        {
+          "name": "이헌주",
+          "yes": 711,
+          "no": 21,
+          "invalid": 0,
+          "yesRate": 96.081081,
+          "isElected": true
+        },
+        {
+          "name": "최경미",
+          "yes": 711,
+          "no": 21,
+          "invalid": 0,
+          "yesRate": 96.081081,
+          "isElected": true
+        },
+        {
+          "name": "곽선정",
+          "yes": 708,
+          "no": 24,
+          "invalid": 0,
+          "yesRate": 95.675676,
+          "isElected": true
+        },
+        {
+          "name": "손소정",
+          "yes": 708,
+          "no": 24,
+          "invalid": 0,
+          "yesRate": 95.675676,
+          "isElected": true
+        },
+        {
+          "name": "김정은A",
+          "yes": 705,
+          "no": 27,
+          "invalid": 0,
+          "yesRate": 95.27027,
+          "isElected": true
+        },
+        {
+          "name": "박성주",
+          "yes": 704,
+          "no": 28,
+          "invalid": 0,
+          "yesRate": 95.135135,
+          "isElected": true
+        },
+        {
+          "name": "배진화",
+          "yes": 702,
+          "no": 30,
+          "invalid": 0,
+          "yesRate": 94.864865,
+          "isElected": true
+        },
+        {
+          "name": "김은미",
+          "yes": 701,
+          "no": 31,
+          "invalid": 0,
+          "yesRate": 94.72973,
+          "isElected": true
+        },
+        {
+          "name": "이연정A",
+          "yes": 699,
+          "no": 33,
+          "invalid": 0,
+          "yesRate": 94.459459,
+          "isElected": true
+        },
+        {
+          "name": "김희정A",
+          "yes": 698,
+          "no": 34,
+          "invalid": 0,
+          "yesRate": 94.324324,
+          "isElected": true
+        },
+        {
+          "name": "신은정",
+          "yes": 698,
+          "no": 34,
+          "invalid": 0,
+          "yesRate": 94.324324,
+          "isElected": true
+        },
+        {
+          "name": "조정현",
+          "yes": 698,
+          "no": 34,
+          "invalid": 0,
+          "yesRate": 94.324324,
+          "isElected": true
+        },
+        {
+          "name": "김은아",
+          "yes": 697,
+          "no": 35,
+          "invalid": 0,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "이은선",
+          "yes": 697,
+          "no": 34,
+          "invalid": 1,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "조남미",
+          "yes": 697,
+          "no": 35,
+          "invalid": 0,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "김경진",
+          "yes": 696,
+          "no": 36,
+          "invalid": 0,
+          "yesRate": 94.054054,
+          "isElected": true
+        },
+        {
+          "name": "이미주",
+          "yes": 696,
+          "no": 36,
+          "invalid": 0,
+          "yesRate": 94.054054,
+          "isElected": true
+        },
+        {
+          "name": "마일라",
+          "yes": 695,
+          "no": 37,
+          "invalid": 0,
+          "yesRate": 93.918919,
+          "isElected": true
+        },
+        {
+          "name": "양정화",
+          "yes": 695,
+          "no": 37,
+          "invalid": 0,
+          "yesRate": 93.918919,
+          "isElected": true
+        },
+        {
+          "name": "장혜진",
+          "yes": 695,
+          "no": 37,
+          "invalid": 0,
+          "yesRate": 93.918919,
+          "isElected": true
+        },
+        {
+          "name": "김효숙",
+          "yes": 695,
+          "no": 37,
+          "invalid": 0,
+          "yesRate": 93.918919,
+          "isElected": true
+        },
+        {
+          "name": "이윤희",
+          "yes": 694,
+          "no": 38,
+          "invalid": 0,
+          "yesRate": 93.783784,
+          "isElected": true
+        },
+        {
+          "name": "박현주",
+          "yes": 693,
+          "no": 39,
+          "invalid": 0,
+          "yesRate": 93.648649,
+          "isElected": true
+        },
+        {
+          "name": "이지영",
+          "yes": 693,
+          "no": 39,
+          "invalid": 0,
+          "yesRate": 93.648649,
+          "isElected": true
+        },
+        {
+          "name": "김정하",
+          "yes": 692,
+          "no": 40,
+          "invalid": 0,
+          "yesRate": 93.513514,
+          "isElected": true
+        },
+        {
+          "name": "손지현",
+          "yes": 692,
+          "no": 40,
+          "invalid": 0,
+          "yesRate": 93.513514,
+          "isElected": true
+        },
+        {
+          "name": "정내령",
+          "yes": 692,
+          "no": 40,
+          "invalid": 0,
+          "yesRate": 93.513514,
+          "isElected": true
+        },
+        {
+          "name": "황미정",
+          "yes": 692,
+          "no": 40,
+          "invalid": 0,
+          "yesRate": 93.513514,
+          "isElected": true
+        },
+        {
+          "name": "박미숙",
+          "yes": 691,
+          "no": 41,
+          "invalid": 0,
+          "yesRate": 93.378378,
+          "isElected": true
+        },
+        {
+          "name": "진희숙",
+          "yes": 691,
+          "no": 41,
+          "invalid": 0,
+          "yesRate": 93.378378,
+          "isElected": true
+        },
+        {
+          "name": "권혜숙",
+          "yes": 690,
+          "no": 42,
+          "invalid": 0,
+          "yesRate": 93.243243,
+          "isElected": true
+        },
+        {
+          "name": "권인순",
+          "yes": 690,
+          "no": 42,
+          "invalid": 0,
+          "yesRate": 93.243243,
+          "isElected": true
+        },
+        {
+          "name": "김주영A",
+          "yes": 690,
+          "no": 42,
+          "invalid": 0,
+          "yesRate": 93.243243,
+          "isElected": true
+        },
+        {
+          "name": "이은현",
+          "yes": 689,
+          "no": 43,
+          "invalid": 0,
+          "yesRate": 93.108108,
+          "isElected": true
+        },
+        {
+          "name": "김민정C",
+          "yes": 688,
+          "no": 44,
+          "invalid": 0,
+          "yesRate": 92.972973,
+          "isElected": true
+        },
+        {
+          "name": "석희영",
+          "yes": 688,
+          "no": 44,
+          "invalid": 0,
+          "yesRate": 92.972973,
+          "isElected": true
+        },
+        {
+          "name": "성지민",
+          "yes": 688,
+          "no": 44,
+          "invalid": 0,
+          "yesRate": 92.972973,
+          "isElected": true
+        },
+        {
+          "name": "김명숙B",
+          "yes": 687,
+          "no": 45,
+          "invalid": 0,
+          "yesRate": 92.837838,
+          "isElected": true
+        },
+        {
+          "name": "김혜경",
+          "yes": 686,
+          "no": 46,
+          "invalid": 0,
+          "yesRate": 92.702703,
+          "isElected": true
+        },
+        {
+          "name": "윤선미",
+          "yes": 686,
+          "no": 45,
+          "invalid": 1,
+          "yesRate": 92.702703,
+          "isElected": true
+        },
+        {
+          "name": "김미자",
+          "yes": 686,
+          "no": 46,
+          "invalid": 0,
+          "yesRate": 92.702703,
+          "isElected": true
+        },
+        {
+          "name": "송미애",
+          "yes": 686,
+          "no": 46,
+          "invalid": 0,
+          "yesRate": 92.702703,
+          "isElected": true
+        },
+        {
+          "name": "이점규",
+          "yes": 686,
+          "no": 46,
+          "invalid": 0,
+          "yesRate": 92.702703,
+          "isElected": true
+        },
+        {
+          "name": "조순미",
+          "yes": 685,
+          "no": 47,
+          "invalid": 0,
+          "yesRate": 92.567568,
+          "isElected": true
+        },
+        {
+          "name": "김창숙",
+          "yes": 685,
+          "no": 47,
+          "invalid": 0,
+          "yesRate": 92.567568,
+          "isElected": true
+        },
+        {
+          "name": "배윤정",
+          "yes": 685,
+          "no": 47,
+          "invalid": 0,
+          "yesRate": 92.567568,
+          "isElected": true
+        },
+        {
+          "name": "이순애B",
+          "yes": 684,
+          "no": 48,
+          "invalid": 0,
+          "yesRate": 92.432432,
+          "isElected": true
+        },
+        {
+          "name": "정은하",
+          "yes": 684,
+          "no": 48,
+          "invalid": 0,
+          "yesRate": 92.432432,
+          "isElected": true
+        },
+        {
+          "name": "강경남",
+          "yes": 684,
+          "no": 48,
+          "invalid": 0,
+          "yesRate": 92.432432,
+          "isElected": true
+        },
+        {
+          "name": "김미정B",
+          "yes": 683,
+          "no": 49,
+          "invalid": 0,
+          "yesRate": 92.297297,
+          "isElected": true
+        },
+        {
+          "name": "류미경",
+          "yes": 683,
+          "no": 49,
+          "invalid": 0,
+          "yesRate": 92.297297,
+          "isElected": true
+        },
+        {
+          "name": "안은숙",
+          "yes": 683,
+          "no": 49,
+          "invalid": 0,
+          "yesRate": 92.297297,
+          "isElected": true
+        },
+        {
+          "name": "이경자",
+          "yes": 682,
+          "no": 50,
+          "invalid": 0,
+          "yesRate": 92.162162,
+          "isElected": true
+        },
+        {
+          "name": "이샛별",
+          "yes": 682,
+          "no": 50,
+          "invalid": 0,
+          "yesRate": 92.162162,
+          "isElected": true
+        },
+        {
+          "name": "박은숙",
+          "yes": 681,
+          "no": 51,
+          "invalid": 0,
+          "yesRate": 92.027027,
+          "isElected": true
+        },
+        {
+          "name": "장옥선",
+          "yes": 681,
+          "no": 51,
+          "invalid": 0,
+          "yesRate": 92.027027,
+          "isElected": true
+        },
+        {
+          "name": "김나영B",
+          "yes": 680,
+          "no": 52,
+          "invalid": 0,
+          "yesRate": 91.891892,
+          "isElected": true
+        },
+        {
+          "name": "방정희",
+          "yes": 680,
+          "no": 52,
+          "invalid": 0,
+          "yesRate": 91.891892,
+          "isElected": true
+        },
+        {
+          "name": "양재경",
+          "yes": 679,
+          "no": 53,
+          "invalid": 0,
+          "yesRate": 91.756757,
+          "isElected": true
+        },
+        {
+          "name": "김혜진A",
+          "yes": 678,
+          "no": 54,
+          "invalid": 0,
+          "yesRate": 91.621622,
+          "isElected": true
+        }
+      ]
+    },
+    "안수집사": {
+      "totalParticipants": 740,
+      "threshold": 494,
+      "validCount": 733,
+      "invalidCount": 0,
+      "missingCount": 7,
+      "candidateCount": 33,
+      "electedCount": 33,
+      "rejectedCount": 0,
+      "candidates": [
+        {
+          "name": "김진국",
+          "yes": 712,
+          "no": 19,
+          "invalid": 2,
+          "yesRate": 96.216216,
+          "isElected": true
+        },
+        {
+          "name": "조재호A",
+          "yes": 703,
+          "no": 29,
+          "invalid": 1,
+          "yesRate": 95,
+          "isElected": true
+        },
+        {
+          "name": "이덕규A",
+          "yes": 702,
+          "no": 30,
+          "invalid": 1,
+          "yesRate": 94.864865,
+          "isElected": true
+        },
+        {
+          "name": "김상식",
+          "yes": 701,
+          "no": 31,
+          "invalid": 1,
+          "yesRate": 94.72973,
+          "isElected": true
+        },
+        {
+          "name": "김세호",
+          "yes": 700,
+          "no": 32,
+          "invalid": 1,
+          "yesRate": 94.594595,
+          "isElected": true
+        },
+        {
+          "name": "하재창",
+          "yes": 699,
+          "no": 33,
+          "invalid": 1,
+          "yesRate": 94.459459,
+          "isElected": true
+        },
+        {
+          "name": "이영진A",
+          "yes": 698,
+          "no": 34,
+          "invalid": 1,
+          "yesRate": 94.324324,
+          "isElected": true
+        },
+        {
+          "name": "홍종철",
+          "yes": 698,
+          "no": 34,
+          "invalid": 1,
+          "yesRate": 94.324324,
+          "isElected": true
+        },
+        {
+          "name": "김성훈",
+          "yes": 697,
+          "no": 35,
+          "invalid": 1,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "김진우A",
+          "yes": 697,
+          "no": 35,
+          "invalid": 1,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "박다빈",
+          "yes": 697,
+          "no": 35,
+          "invalid": 1,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "조재호B",
+          "yes": 697,
+          "no": 35,
+          "invalid": 1,
+          "yesRate": 94.189189,
+          "isElected": true
+        },
+        {
+          "name": "황종휘",
+          "yes": 694,
+          "no": 38,
+          "invalid": 1,
+          "yesRate": 93.783784,
+          "isElected": true
+        },
+        {
+          "name": "손정화",
+          "yes": 693,
+          "no": 39,
+          "invalid": 1,
+          "yesRate": 93.648649,
+          "isElected": true
+        },
+        {
+          "name": "김희철",
+          "yes": 691,
+          "no": 41,
+          "invalid": 1,
+          "yesRate": 93.378378,
+          "isElected": true
+        },
+        {
+          "name": "박영서",
+          "yes": 691,
+          "no": 41,
+          "invalid": 1,
+          "yesRate": 93.378378,
+          "isElected": true
+        },
+        {
+          "name": "노우철",
+          "yes": 690,
+          "no": 42,
+          "invalid": 1,
+          "yesRate": 93.243243,
+          "isElected": true
+        },
+        {
+          "name": "김준기",
+          "yes": 689,
+          "no": 43,
+          "invalid": 1,
+          "yesRate": 93.108108,
+          "isElected": true
+        },
+        {
+          "name": "권영래A",
+          "yes": 688,
+          "no": 44,
+          "invalid": 1,
+          "yesRate": 92.972973,
+          "isElected": true
+        },
+        {
+          "name": "박동호",
+          "yes": 688,
+          "no": 44,
+          "invalid": 1,
+          "yesRate": 92.972973,
+          "isElected": true
+        },
+        {
+          "name": "강동훈",
+          "yes": 687,
+          "no": 45,
+          "invalid": 1,
+          "yesRate": 92.837838,
+          "isElected": true
+        },
+        {
+          "name": "정윤석",
+          "yes": 687,
+          "no": 45,
+          "invalid": 1,
+          "yesRate": 92.837838,
+          "isElected": true
+        },
+        {
+          "name": "김인철",
+          "yes": 686,
+          "no": 46,
+          "invalid": 1,
+          "yesRate": 92.702703,
+          "isElected": true
+        },
+        {
+          "name": "김광일",
+          "yes": 685,
+          "no": 47,
+          "invalid": 1,
+          "yesRate": 92.567568,
+          "isElected": true
+        },
+        {
+          "name": "박수열",
+          "yes": 684,
+          "no": 48,
+          "invalid": 1,
+          "yesRate": 92.432432,
+          "isElected": true
+        },
+        {
+          "name": "김현규",
+          "yes": 683,
+          "no": 49,
+          "invalid": 1,
+          "yesRate": 92.297297,
+          "isElected": true
+        },
+        {
+          "name": "이희천",
+          "yes": 683,
+          "no": 49,
+          "invalid": 1,
+          "yesRate": 92.297297,
+          "isElected": true
+        },
+        {
+          "name": "장송남",
+          "yes": 683,
+          "no": 49,
+          "invalid": 1,
+          "yesRate": 92.297297,
+          "isElected": true
+        },
+        {
+          "name": "정호용",
+          "yes": 683,
+          "no": 49,
+          "invalid": 1,
+          "yesRate": 92.297297,
+          "isElected": true
+        },
+        {
+          "name": "진영호A",
+          "yes": 683,
+          "no": 49,
+          "invalid": 1,
+          "yesRate": 92.297297,
+          "isElected": true
+        },
+        {
+          "name": "이훈상",
+          "yes": 682,
+          "no": 50,
+          "invalid": 1,
+          "yesRate": 92.162162,
+          "isElected": true
+        },
+        {
+          "name": "임정섭",
+          "yes": 682,
+          "no": 50,
+          "invalid": 1,
+          "yesRate": 92.162162,
+          "isElected": true
+        },
+        {
+          "name": "조성주",
+          "yes": 680,
+          "no": 52,
+          "invalid": 1,
+          "yesRate": 91.891892,
+          "isElected": true
+        }
+      ]
+    }
+  }
+}

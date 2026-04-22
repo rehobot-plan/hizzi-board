@@ -1,28 +1,41 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls:*)",
-      "Bash(cat:*)",
-      "Bash(type:*)",
-      "Bash(Get-Content:*)",
-      "Bash(Get-ChildItem:*)",
-      "Bash(dir:*)",
-      "Bash(pwd)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git show:*)",
-      "Bash(git branch:*)",
-      "Bash(git remote -v)",
-      "Bash(npm run build:*)",
-      "Bash(npm run lint:*)",
-      "Bash(npm run test:*)",
-      "Bash(npm test:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npx next build:*)",
-      "Bash(node -e:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Read",
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "Glob",
+      "Grep",
+      "LS",
+      "Task",
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm run lint)",
+      "Bash(npm install --save-dev *)",
+      "Bash(npx playwright *)",
+      "Bash(npx vercel *)",
+      "Bash(node .claude/commands/*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git checkout*)",
+      "Bash(git branch*)",
+      "Bash(git merge*)",
+      "Bash(git stash*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(firebase deploy*)",
+      "Bash(rm -rf*)",
+      "Write(.env*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(npm install)",
+      "Bash(npm install *)"
     ]
   },
   "hooks": {

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import { useLeaveStore, LeaveType, LeaveEvent } from '@/store/leaveStore';
@@ -10,17 +10,25 @@ import { initLeaveListener } from '@/store/leaveStore';
 import { useUserStore } from '@/store/userStore';
 import { initUserListener } from '@/store/userStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
+import { useCalendarStore, initCalendarListener } from '@/store/calendarStore';
 import { useEscClose } from '@/hooks/useEscClose';
 import {
   buildCalendarEventInputs, CalendarEventDoc, CalendarEventInput,
   getEventColor, DAY_KEYS, buildRepeatDates, buildDateRange,
+  filterCalendarInputs,
 } from '@/lib/calendar-helpers';
 import { CalendarFormState, CalendarEvent, DeleteConfirmTarget } from './calendar-types';
 import { calendarEvent } from '@/styles/tokens';
 import CalendarGrid from './CalendarGrid';
 import { AddEventModal, DetailModal, LeaveDetailModal, DeleteConfirmModal } from './CalendarModals';
+import CalendarFilter from './CalendarFilter';
+import { useCalendarFilter, type CalendarScope } from '@/hooks/useCalendarFilter';
 
-export default function CalendarContainer() {
+interface CalendarContainerProps {
+  defaultScope?: CalendarScope;
+}
+
+export default function CalendarContainer({ defaultScope = 'team' }: CalendarContainerProps = {}) {
   const { user } = useAuthStore();
   const { addToast } = useToastStore();
   const { events: leaveEvents, addLeaveEvent, updateLeaveEvent, deleteLeaveEvent } = useLeaveStore();
@@ -31,25 +39,31 @@ export default function CalendarContainer() {
   const canSelectLeaveTarget = user?.role === 'admin' || currentAppUser?.leaveViewPermission === 'all';
 
   // ─── Firestore 데이터 ─────────────────────────────────
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEventDoc[]>([]);
+  const calendarEvents = useCalendarStore(s => s.events);
   const [eventInputs, setEventInputs] = useState<CalendarEventInput[]>([]);
 
   useEffect(() => {
     const cleanupUser = initUserListener();
     const cleanupLeave = initLeaveListener();
-    return () => { cleanupUser(); cleanupLeave(); };
-  }, []);
-
-  useEffect(() => {
-    const q = query(collection(db, 'calendarEvents'), orderBy('startDate'));
-    return onSnapshot(q, snap => {
-      setCalendarEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })) as CalendarEventDoc[]);
-    });
+    const cleanupCalendar = initCalendarListener();
+    return () => { cleanupUser(); cleanupLeave(); cleanupCalendar(); };
   }, []);
 
   useEffect(() => {
     setEventInputs(buildCalendarEventInputs(calendarEvents, leaveEvents));
   }, [calendarEvents, leaveEvents]);
+
+  // ─── 필터 (Phase 4-A) ─────────────────────────────────
+  const filter = useCalendarFilter(defaultScope);
+  const filteredInputs = useMemo(
+    () =>
+      filterCalendarInputs(eventInputs, {
+        members: filter.members,
+        categories: filter.categories,
+        users: users.map(u => ({ id: u.id, email: u.email, name: u.name })),
+      }),
+    [eventInputs, filter.members, filter.categories, users],
+  );
 
   // ─── 공통 상태 ────────────────────────────────────────
   const [loading, setLoading] = useState(false);
@@ -259,8 +273,21 @@ export default function CalendarContainer() {
   // ─── 렌더 ─────────────────────────────────────────────
   return (
     <>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 0 8px' }}>
+        <CalendarFilter
+          members={filter.members}
+          onMembersChange={filter.setMembers}
+          categories={filter.categories}
+          onCategoriesChange={filter.setCategories}
+          allMembers={users}
+          scope={defaultScope}
+          myEmail={user?.email || ''}
+          onResetDefaults={filter.resetDefaults}
+          onPersist={filter.persist}
+        />
+      </div>
       <CalendarGrid
-        events={eventInputs}
+        events={filteredInputs}
         onDateClick={ds => openAddModal(ds, ds)}
         onDateRangeSelect={(s, e) => openAddModal(s, e)}
         onEventClick={openDisplayEvent}

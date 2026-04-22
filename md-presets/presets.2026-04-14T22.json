@@ -1,0 +1,15 @@
+{
+  "current": {
+    "description": "Phase 5-C 2차 pass 할일 도메인 토큰화",
+    "files": [
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\session.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\log\\progress.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\rules.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\ui\\patterns.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\ui\\uxui.md",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\components\\TodoItem.tsx",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\styles\\tokens.ts",
+      "D:\\Dropbox\\Dropbox\\hizzi-board\\src\\lib\\leftBorderColor.ts"
+    ]
+  }
+}

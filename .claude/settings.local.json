@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude --version)",
+      "Bash(npx vercel:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/preflight.ps1)",
+      "Bash(npm run:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_evaluate",
+      "Bash(powershell:*)",
+      "Bash(ls -d \"D:/Dropbox/Dropbox/hizzi-board/md\"/*/)",
+      "Bash(where codex:*)",
+      "Bash(ls:*)",
+      "Skill(codex:rescue)",
+      "mcp__playwright__browser_close",
+      "Bash(node:*)",
+      "Bash(npx next:*)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(taskkill /F /IM node.exe /FI \"WINDOWTITLE eq *next*\")",
+      "Bash(npm install:*)",
+      "Bash(npx kill-port:*)",
+      "mcp__playwright__browser_run_code",
+      "Bash(git push *)",
+      "Bash(powershell.exe *)",
+      "Bash(git reset *)",
+      "Bash(npx vitest *)",
+      "Bash(BASE_URL=https://hizzi-board.vercel.app npx playwright test tests/smoke/panel-height-s1.spec.ts --reporter=list)"
+    ]
+  },
+  "enabledPlugins": {
+    "codex@openai-codex": true
+  }
+}

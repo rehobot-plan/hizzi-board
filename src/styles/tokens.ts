@@ -38,13 +38,24 @@ export const calendarEvent = {
     rangeBg: '#EAF3DE',
   },
   personal: {
-    all: { border: '#639922', bg: 'rgba(99,153,34,0.15)' },
-    meOnly: { border: '#378ADD', bg: 'rgba(55,138,221,0.15)' },
-    specific: { border: '#BA7517', bg: 'rgba(186,117,23,0.15)' },
+    all: { border: '#639922', bg: 'rgba(99,153,34,0.25)' },
+    meOnly: { border: '#378ADD', bg: 'rgba(55,138,221,0.25)' },
+    specific: { border: '#BA7517', bg: 'rgba(186,117,23,0.25)' },
+    rangeBg: 'rgba(55,138,221,0.1)',
   },
-  leave: { border: '#534AB7', bg: 'rgba(83,74,183,0.15)', text: '#3C3489' },
+  leave: { border: '#534AB7', bg: 'rgba(83,74,183,0.25)', text: '#3C3489' },
   request: { bg: '#993556', border: '#72243E', bgLight: '#FFF9F7' },
   completed: { bg: '#F0F5F0', fg: '#5C7A5C' },
+  render: {
+    fontSize: 11,
+    padding: '2px 4px',
+    borderRadius: 3,
+    lineHeight: 1.3,
+    textOnSolid: '#fff',
+    personalBorderWidth: 3,
+    leaveBorderWidth: 3,
+    requestBorderWidth: 3,
+  },
 } as const;
 
 // ─── 태그 색상 (uxui.md 할일/메모 태그) ─────────────────
@@ -87,4 +98,23 @@ export const typography = {
   body: { size: 13, weight: 400 },
   meta: { size: 11, weight: 400 },
   hint: { size: 10, weight: 400, tracking: '0.06em' },
+} as const;
+
+// ─── 패널 높이·스크롤 (uxui.md "6. 패널 스크롤") ────────
+
+export const panel = {
+  height: {
+    max: 'min(600px, 70vh)',
+    min: '240px',
+  },
+  scrollbar: {
+    width: 4,
+    thumb: '#C4B8B0',
+    thumbHover: '#9E8880',
+    borderRadius: 2,
+  },
+  fadeOut: {
+    height: 10,
+    gradient: 'linear-gradient(to top, #FDF8F4, rgba(253,248,244,0))',
+  },
 } as const;

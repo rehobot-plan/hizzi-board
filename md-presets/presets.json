@@ -1,13 +1,15 @@
 {
   "current": {
-    "description": "4개 MD 정합성 점검 + 역할 정리",
+    "name": "session-57-infra-recovery",
+    "description": "세션 #57 — 인프라 복구 전담",
+    "updated": "2026-04-21",
     "files": [
-      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\CLAUDE-detail.md",
-      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\session-harness.md",
-      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\master-operator.md",
-      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\log\\progress.md",
-      "D:\\Dropbox\\Dropbox\\hizzi-board\\md\\core\\rules.md",
-      "D:\\Dropbox\\Dropbox\\hizzi-board\\CLAUDE.md"
+      "CLAUDE.md",
+      "md/core/harness.md",
+      "md/core/rules.md",
+      "md/core/session.md",
+      "md/log/progress.md",
+      ".harness/patches-session-56/SESSION-56-INFRA-REPORT.md"
     ]
   }
 }

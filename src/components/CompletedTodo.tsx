@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePostStore, Post } from '@/store/postStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { useToastStore } from '@/store/toastStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface CompletedTodoProps {
   completedTodos: Post[];
@@ -23,6 +24,7 @@ function formatDateTime(d: Date): string {
 export default function CompletedTodo({ completedTodos, canEdit }: CompletedTodoProps) {
   const { reactivateRequest } = useTodoRequestStore();
   const { addToast } = useToastStore();
+  const currentUser = useAuthStore(s => s.user);
   const [showCompleted, setShowCompleted] = useState(false);
   const [showPastCompleted, setShowPastCompleted] = useState(false);
   const [selectedCompleted, setSelectedCompleted] = useState<string[]>([]);
@@ -83,12 +85,9 @@ export default function CompletedTodo({ completedTodos, canEdit }: CompletedTodo
         {!selectMode && canEdit && (
           <button
             onClick={async () => {
-              await usePostStore.getState().updatePost(p.id, {
-                completed: false,
-                completedAt: null,
-              });
+              await usePostStore.getState().uncompletePost(p.id);
               if (p.requestId) {
-                await reactivateRequest(p.requestId);
+                await reactivateRequest(p.requestId, { email: currentUser?.email || '', name: currentUser?.displayName || '' });
               }
             }}
             style={{ fontSize: 10, color: '#C17B6B', flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}

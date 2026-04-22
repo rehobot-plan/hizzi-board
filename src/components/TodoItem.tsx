@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Post, usePostStore } from '@/store/postStore';
 import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { useUserStore } from '@/store/userStore';
+import { useAuthStore } from '@/store/authStore';
+import { useToastStore } from '@/store/toastStore';
+import { useSwipeToDelete } from '@/hooks/useSwipeToDelete';
 import ImageViewer from '@/components/common/ImageViewer';
 import TodoDetailModal from '@/components/todo/TodoDetailModal';
-import RequestDetailModal from '@/components/todo/RequestDetailModal';
+import RequestDetailPopup from '@/components/request/RequestDetailPopup';
 import { colors, tagColors } from '@/styles/tokens';
 import { todoLeftBorderColor } from '@/lib/leftBorderColor';
 
@@ -30,10 +33,18 @@ const CheckIcon = () => (
 );
 
 export default function TodoItem({ post, canEdit }: TodoItemProps) {
-  const { updatePost, deletePost } = usePostStore();
-  const { completeRequest } = useTodoRequestStore();
+  const { updatePost, deletePost, restorePost } = usePostStore();
+  const { completeRequest, cancelRequest, reactivateRequest, requests } = useTodoRequestStore();
   const { users } = useUserStore();
+  const currentUser = useAuthStore(s => s.user);
+
+  const matchedRequest = post.requestId ? requests.find(r => r.id === post.requestId) ?? null : null;
   const nonAdminUsers = users.filter(u => u.role !== 'admin' && u.email !== post.author);
+
+  const actor = useMemo(() => ({
+    email: currentUser?.email || '',
+    name: currentUser?.displayName || currentUser?.email?.split('@')[0] || '',
+  }), [currentUser]);
 
   const [checking, setChecking] = useState(false);
   const [justChecked, setJustChecked] = useState(false);
@@ -79,13 +90,24 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
     if (!canEdit || checking || justChecked) return;
     setJustChecked(true);
     setChecking(true);
+    const requestId = post.requestId;
     setTimeout(async () => {
       try {
         await updatePost(post.id, { completed: true, completedAt: new Date() });
-        if (post.requestId) await completeRequest(post.requestId);
+        if (requestId) await completeRequest(requestId, actor);
+        useToastStore.getState().addToast({
+          message: '완료됨',
+          action: {
+            label: '되돌리기',
+            onClick: async () => {
+              await usePostStore.getState().uncompletePost(post.id);
+              if (requestId) await reactivateRequest(requestId, actor);
+            },
+          },
+          durationMs: 5000,
+        });
       } catch (e) {
         console.error(e);
-        const { useToastStore } = await import('@/store/toastStore');
         useToastStore.getState().addToast({ message: '완료 처리에 실패했습니다. 다시 시도해주세요.', type: 'error' });
       } finally {
         setChecking(false);
@@ -109,19 +131,45 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
 
   const handleDelete = async () => {
     if (!canEdit) return;
+    const requestId = post.requestId;
     try {
       await deletePost(post.id);
+      if (requestId) {
+        await cancelRequest(requestId, actor);
+      }
+      useToastStore.getState().addToast({
+        message: '삭제됨',
+        action: {
+          label: '실행 취소',
+          onClick: async () => {
+            await restorePost(post.id);
+            if (requestId) await reactivateRequest(requestId, actor);
+          },
+        },
+        durationMs: 5000,
+      });
     } catch (e) {
       console.error(e);
-      const { useToastStore } = await import('@/store/toastStore');
       useToastStore.getState().addToast({ message: '삭제에 실패했습니다. 다시 시도해주세요.', type: 'error' });
     }
   };
 
+  const { translateX, isSwiping, handlers } = useSwipeToDelete({
+    onThresholdReached: handleDelete,
+    disabled: !canEdit || justChecked,
+  });
+
   const handleItemClick = () => {
     if (!canEdit || justChecked) return;
-    if (post.requestId) setShowOrderModal(true);
-    else setShowDetailModal(true);
+    if (post.requestId) {
+      if (matchedRequest) {
+        setShowOrderModal(true);
+      } else {
+        setShowDetailModal(true); // fallback: 요청 문서 부재 시 일반 모달
+      }
+    } else {
+      setShowDetailModal(true);
+    }
   };
 
   const renderContent = () => {
@@ -189,26 +237,53 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
   return (
     <>
       <div
+        style={{
+          position: 'relative', overflow: 'hidden', margin: '0 -20px',
+          borderBottom: `1px solid ${colors.border}`,
+        }}
+      >
+        {(isSwiping || translateX < 0) && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+              paddingRight: 24,
+              background: '#FBEAF0', color: '#993556',
+              fontSize: 13, fontWeight: 600, letterSpacing: '0.04em',
+              pointerEvents: 'none',
+            }}
+          >
+            삭제
+          </div>
+        )}
+      <div
+        {...handlers}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleItemClick}
         style={{
           cursor: canEdit && !justChecked ? 'pointer' : 'default',
           display: 'flex', alignItems: 'flex-start', gap: 8,
-          padding: '10px 20px 10px 28px', margin: '0 -20px',
-          borderBottom: `1px solid ${colors.border}`, position: 'relative',
+          padding: '10px 20px 10px 28px',
+          position: 'relative',
           opacity: justChecked ? 0.4 : 1,
-          transition: 'opacity 0.5s ease, transform 0.5s ease, background 0.15s ease',
-          transform: justChecked ? 'translateX(8px)' : 'translateX(0)',
+          transform: justChecked ? 'translateX(8px)' : `translateX(${translateX}px)`,
+          transition: isSwiping
+            ? 'opacity 0.5s ease, background 0.15s ease'
+            : 'opacity 0.5s ease, transform 0.15s ease, background 0.15s ease',
           background: isHovered && !justChecked ? colors.mainBg : colors.cardBg,
+          touchAction: 'pan-y',
+          userSelect: 'none',
         }}
       >
         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 2, background: todoLeftBorderColor(post), pointerEvents: 'none' }} />
 
         {canEdit && (
           <button onClick={e => { e.stopPropagation(); handleCheck(); }} disabled={checking || justChecked}
-            style={{ width: 16, height: 16, border: `1.5px solid ${justChecked ? colors.accent : colors.border}`, background: justChecked ? colors.accent : colors.cardBg, cursor: justChecked ? 'default' : 'pointer', flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', position: 'relative', zIndex: 2 }}>
+            style={{ width: 18, height: 18, border: `1.5px solid ${justChecked ? colors.accent : colors.border}`, background: justChecked ? colors.accent : colors.cardBg, cursor: justChecked ? 'default' : 'pointer', flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', position: 'relative', zIndex: 2 }}>
             {justChecked && <CheckIcon />}
+            <span aria-hidden="true" style={{ position: 'absolute', inset: '-13px -4px -13px -14px' }} />
           </button>
         )}
 
@@ -231,16 +306,6 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
                 <div style={{ fontSize: 11, color: colors.textHint, marginTop: 2, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.requestContent}</div>
               )}
             </div>
-            {canEdit && !post.requestId && !justChecked && (
-              <span onClick={e => { e.stopPropagation(); handleDelete(); }}
-                style={{ cursor: 'pointer', flexShrink: 0, opacity: 0.2, transition: 'opacity 0.15s', position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', marginTop: 2 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0.2')}>
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                  <path d="M2 4h10M5 4V2.5h4V4M5.5 6v5M8.5 6v5M3 4l.7 7.5h6.6L11 4" stroke="#C17B6B" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </span>
-            )}
           </div>
           <div style={{ display: 'flex', gap: 4, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
             {post.requestFrom ? (
@@ -306,6 +371,7 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
           </div>
         </div>
       </div>
+      </div>
 
       <TodoDetailModal
         post={post}
@@ -314,10 +380,9 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
         onClose={() => setShowDetailModal(false)}
       />
 
-      <RequestDetailModal
-        post={post}
-        canEdit={canEdit}
-        isOpen={showOrderModal && !!post.requestId}
+      <RequestDetailPopup
+        request={matchedRequest}
+        isOpen={showOrderModal && !!matchedRequest}
         onClose={() => setShowOrderModal(false)}
       />
 

@@ -7,6 +7,10 @@
 
 # testing
 /coverage
+tests/.auth/
+tests/screenshots/
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
@@ -42,3 +46,12 @@ next-env.d.ts
 # OS
 .DS_Store
 Thumbs.db
+
+# hana-vote (임시 보관, 다음주 재검토 예정)
+md/plan/vote-system.md
+
+# 사문화된 초기 로그북 (progress.md로 대체됨, 2026-04-08 이전 기록 보존용)
+md/log/log.md
+
+# 세션 #56 인프라 박제 아티팩트 (보존용, git 추적 제외)
+.harness/patches-session-56/

@@ -26,8 +26,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Unit tests
+        run: npm run test:unit
+
       - name: Build success
-        run: echo "✅ Build passed"
+        run: echo "✅ Build + unit passed"
 
   e2e:
     needs: build
