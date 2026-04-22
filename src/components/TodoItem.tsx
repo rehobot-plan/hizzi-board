@@ -291,8 +291,8 @@ export default function TodoItem({ post, canEdit }: TodoItemProps) {
             onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '0.25')}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M2.5 3.5h7M5 5.5v3.5M7 5.5v3.5M3.5 3.5l.5 6h4l.5-6M4.5 3.5v-1.2h3v1.2" stroke="#9E8880" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="16" height="16" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 3.5h7M5 5.5v3.5M7 5.5v3.5M3.5 3.5l.5 6h4l.5-6M4.5 3.5v-1.2h3v1.2" stroke="#9E8880" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         )}
