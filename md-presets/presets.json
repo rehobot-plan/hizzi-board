@@ -1,14 +1,19 @@
 {
   "current": {
-    "name": "session-md-보강",
-    "description": "session.md 단계 5·11 보강 (세션 #61 drift 사고 재발 방지 · master-debt #13)",
+    "name": "홈 상단 채팅 입력 A안 구현",
+    "description": "main-ux §6 시나리오 1~3 구현 + 시나리오 4 placeholder",
     "updated": "2026-04-23",
     "files": [
       "CLAUDE.md",
       "md/core/harness.md",
       "md/core/rules.md",
       "md/core/session.md",
-      "md/log/progress.md"
+      "md/log/progress.md",
+      "md/core/master.md",
+      "md/plan/designs/main-ux.md",
+      "md/ui/patterns.md",
+      "md/ui/ux-principles.md",
+      "md/ui/uxui.md"
     ]
   }
 }
