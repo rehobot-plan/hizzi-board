@@ -119,13 +119,13 @@ export async function gotoHome(page: Page): Promise<void> {
   // panelStore onSnapshot이 admin 패널 업데이트 반영할 시간
   await page.waitForTimeout(1500);
 
-  await page.locator('aside').waitFor({ state: 'visible', timeout: 30000 });
-  await page.locator('[data-testid="chat-input"]').waitFor({ state: 'visible', timeout: 10000 });
   const viewportSize = page.viewportSize();
   const isDesktop = viewportSize && viewportSize.width >= 768;
   if (isDesktop) {
+    await page.locator('aside').waitFor({ state: 'visible', timeout: 30000 });
     await page.locator('[data-panel-id="test-s6-admin-panel"]').waitFor({ state: 'visible', timeout: 10000 });
   }
+  await page.locator('[data-testid="chat-input"]').waitFor({ state: 'visible', timeout: 10000 });
 }
 
 // ─── 입력 + 서브밋 버튼 activated 대기 후 programmatic click ───

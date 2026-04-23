@@ -160,9 +160,9 @@ test.describe('§6 홈 채팅 입력 A안 회귀', () => {
     await expect(page.locator('[data-testid="chat-item-0"]')).toBeVisible();
     await expect(page.locator('[data-testid="chat-item-1"]')).toBeVisible();
 
-    // 항목 2에 "To 홍아현" 태그
+    // 항목 2에 수신자 "To we4458"(홍아현 email 로컬 파트) 태그
     const item1 = page.locator('[data-testid="chat-item-1"]');
-    await expect(item1.getByText(/To\s*홍아현/)).toBeVisible();
+    await expect(item1.getByText(/To\s*we4458/)).toBeVisible();
 
     // 좌측 border 색상 — 항목 2는 request(#993556), 항목 1은 work(#C17B6B)
     const item0Color = await page.locator('[data-testid="chat-item-0"]').getAttribute('data-left-border');

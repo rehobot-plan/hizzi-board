@@ -86,6 +86,12 @@ src/
     ├── parseIntent.ts                     AI 캡처 entry (LLM stub)
     ├── parseLocal.ts                      1단 규칙 파서 (4축)
     └── voteCalculator.ts
+
+tests/
+├── e2e/
+│   ├── chat-input-s6.spec.ts              §6 홈 채팅 입력 회귀 스위트 (세션 #65 · 23 시나리오)
+│   └── helpers/chat-input.ts              admin 패널 seed · cleanup · 고정 시간 · programmatic click
+└── smoke/                                 기존 smoke specs
 ```
 
 ---
