@@ -1,17 +1,17 @@
 {
   "current": {
-    "name": "session-61-expand-toggle-redesign",
-    "description": "세션 #61 — ⋯ 펼쳐보기 UI Claude.ai 설계 재검토 + 블록 ③-A 후속 디자인 정리",
-    "updated": "2026-04-22",
+    "name": "chat-input-a",
+    "description": "홈 채팅 입력 A안 인라인 확장 착수 (세션 #62)",
+    "updated": "2026-04-23",
     "files": [
       "CLAUDE.md",
       "md/core/harness.md",
       "md/core/rules.md",
       "md/core/session.md",
       "md/log/progress.md",
-      "md/plan/designs/main-ux.md",
-      "md/ui/patterns-modal.md",
+      "md/main-ux.md",
       "md/ui/ux-principles.md",
+      "md/ui/patterns.md",
       "md/ui/uxui.md"
     ]
   }
