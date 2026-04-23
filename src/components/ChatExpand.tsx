@@ -76,6 +76,8 @@ function PreviewCard({ item, unsetVisibility }: { item: ParsedItem; unsetVisibil
   const typeCol = typeTagColor(item);
   return (
     <div
+      data-testid="chat-preview"
+      data-left-border={leftBorderColor(item)}
       style={{
         background: '#FDFAF8',
         borderLeft: `2px solid ${leftBorderColor(item)}`,
@@ -103,6 +105,8 @@ function ItemCard({ item, index }: { item: ParsedItem; index: number }) {
   const typeCol = typeTagColor(item);
   return (
     <div
+      data-testid={`chat-item-${index}`}
+      data-left-border={leftBorderColor(item)}
       style={{
         background: '#FDFAF8',
         borderLeft: `2px solid ${leftBorderColor(item)}`,
