@@ -79,9 +79,9 @@ function nextWeekdayThisWeek(base: Date, target: number): Date {
 }
 
 function nextWeekWeekday(base: Date, target: number): Date {
-  // "다음주 X요일" — 이번 주 X요일 + 7일
-  const thisWeek = nextWeekdayThisWeek(base, target);
-  return addDays(thisWeek, 7);
+  // "다음주 X요일" — 다음주는 "base 이후 그 요일의 다음 발생".
+  // nextWeekdayThisWeek가 이미 "지나갔으면 다음 주로 넘김" 처리라 그대로 사용.
+  return nextWeekdayThisWeek(base, target);
 }
 
 function parseAbsoluteMD(text: string, base: Date): string | null {

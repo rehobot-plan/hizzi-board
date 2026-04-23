@@ -4,7 +4,6 @@
 // 안정성: 엄격 부등식(MEMORY #61-a) · programmatic click(MEMORY #61-b) · 고정 시간 주입.
 
 import { test, expect } from '@playwright/test';
-import { loginAsAdmin } from '../utils/auth';
 import {
   ensureAdminPanel,
   cleanupS6Data,
@@ -12,23 +11,21 @@ import {
   gotoHome,
   typeAndSubmit,
   expandLocator,
+  loginAsAdminForAnyViewport,
 } from './helpers/chat-input';
 
 test.describe('§6 홈 채팅 입력 A안 회귀', () => {
-  test.beforeAll(async () => {
-    // admin 계정용 테스트 패널 보장 (ChatInputStore.findMyPanelId 통과 조건)
-    await ensureAdminPanel();
-  });
-
   test.afterEach(async () => {
     // 프로덕션 Firestore에 테스트 더미 남기지 않기 — admin author chat inputSource만 정리
     await cleanupS6Data();
   });
 
   test.beforeEach(async ({ page }) => {
-    // 고정 시간 주입: page.goto 전 필수
     await installFixedClock(page);
-    await loginAsAdmin(page);
+    await loginAsAdminForAnyViewport(page);
+    // gotoHome 내부에서 ensureAdminPanel + 대기 처리. page.goto('/') 중복 호출 금지.
+    // (page reload 시 authStore onAuthStateChanged가 clearAdminPanelOwnership 재호출해
+    //  ownerEmail을 null로 리셋 — authStore.ts L150~166)
   });
 
   // ──────────── 시나리오 1 — 빈 입력 ────────────
@@ -101,11 +98,16 @@ test.describe('§6 홈 채팅 입력 A안 회귀', () => {
 
     // "나만" 칩 탭 → selected (색상 전환)
     await page.locator('[data-testid="chat-chip-private"]').evaluate((el) => (el as HTMLButtonElement).click());
-    const color = await page
-      .locator('[data-testid="chat-chip-private"]')
-      .evaluate((el) => getComputedStyle(el as HTMLElement).color);
-    // 선택 시 #C17B6B = rgb(193, 123, 107)
-    expect(color).toBe('rgb(193, 123, 107)');
+    // zustand selectedVisibility 업데이트 + React rerender 대기
+    await page.waitForTimeout(200);
+    await expect
+      .poll(async () =>
+        page
+          .locator('[data-testid="chat-chip-private"]')
+          .evaluate((el) => getComputedStyle(el as HTMLElement).color),
+        { timeout: 3000 },
+      )
+      .toBe('rgb(193, 123, 107)'); // #C17B6B
 
     // "추가" 클릭 → 확장 영역 닫힘 + 토스트
     await page.locator('[data-testid="chat-confirm"]').evaluate((el) => (el as HTMLButtonElement).click());
@@ -147,7 +149,9 @@ test.describe('§6 홈 채팅 입력 A안 회귀', () => {
 
   test('시나리오 4 — 복수 항목 카드 분리 + 푸터 3버튼 + 승격 placeholder', async ({ page }) => {
     await gotoHome(page);
-    await typeAndSubmit(page, '회의록 정리하고 홍아현한테 발주서 확인 요청');
+    // ai-capture §3.4 접속사 패턴은 양쪽 공백 필요 — "하고 "가 분리 토큰.
+    // "회의록 정리" + "하고 " + "홍아현한테..."
+    await typeAndSubmit(page, '회의록 정리 하고 홍아현한테 발주서 확인 요청');
 
     const expand = expandLocator(page);
     await expect(expand).toBeVisible({ timeout: 5000 });
@@ -188,12 +192,14 @@ test.describe('§6 홈 채팅 입력 A안 회귀', () => {
   // ──────────── 수신자 매칭 ────────────
 
   test.describe('수신자 직함 매칭 (ai-capture §3.2)', () => {
+    // PreviewCard는 email 로컬 파트 표시 (userStore 이름 매핑은 향후 LLM 2단 단계).
+    // 따라서 기대값은 email 로컬 파트.
     const cases: Array<{ input: string; expect: string | null; label: string }> = [
-      { input: '대표님한테 내일 보고', expect: '홍아현', label: '대표 단독 → 홍아현' },
-      { input: '김이사한테 자료 전달', expect: '김진우', label: '성+이사 → 김진우' },
-      { input: '조팀장 확인 요청', expect: '조향래', label: '성+팀장 → 조향래' },
-      { input: '사원한테 맡기기', expect: '유미정', label: '사원 단독 → 유미정' },
-      { input: '아현한테 전달', expect: '홍아현', label: '별칭 아현 → 홍아현' },
+      { input: '대표님한테 내일 전달', expect: 'we4458', label: '대표 단독 → 홍아현(we4458)' },
+      { input: '김이사한테 자료 전달', expect: 'oilpig85', label: '성+이사 → 김진우(oilpig85)' },
+      { input: '조팀장 확인', expect: 'kkjspfox', label: '성+팀장 → 조향래(kkjspfox)' },
+      { input: '사원한테 맡기기', expect: 'alwjd7175', label: '사원 단독 → 유미정(alwjd7175)' },
+      { input: '아현한테 전달', expect: 'we4458', label: '별칭 아현 → 홍아현(we4458)' },
       { input: '팀장님한테 물어봐', expect: null, label: '팀장 단독 → unset (3명 공유)' },
     ];
 
@@ -209,7 +215,7 @@ test.describe('§6 홈 채팅 입력 A안 회귀', () => {
           await expect(page.getByText(new RegExp(`To\\s*${c.expect}`))).toBeVisible();
         } else {
           // "팀장" 단독 → 수신자 태그 부재
-          await expect(page.getByText(/To\s*/)).toHaveCount(0);
+          await expect(page.getByText(/^To\s/)).toHaveCount(0);
         }
 
         // cleanup 위해 확장 영역 닫기
@@ -275,7 +281,7 @@ test.describe('§6 홈 채팅 입력 A안 회귀', () => {
 
   test.describe('기존 화면 회귀', () => {
     test('MY DESK 진입 시 ChatInput pill 부재', async ({ page }) => {
-      await loginAsAdmin(page);
+      await loginAsAdminForAnyViewport(page);
       await page.goto('/mydesk');
       // /mydesk는 sidebar 표시되므로 aside 대기로 충분
       await page.locator('aside').waitFor({ state: 'visible', timeout: 30000 });

@@ -27,8 +27,8 @@ export const S6_SEED_TAG = '__test_s6_chat__';
 // admin 계정 이메일 — storageState 대상
 export const ADMIN_EMAIL = 'admin@company.com';
 
-// admin 계정 테스트용 패널 ID (panels 컬렉션). ownerEmail로 조회되므로 id값 자체는 자유.
-const ADMIN_PANEL_DOC_ID = '__test_s6_admin_panel__';
+// admin 계정 테스트용 패널 ID (panels 컬렉션). Firestore reserved ID 패턴(__x__) 회피.
+const ADMIN_PANEL_DOC_ID = 'test-s6-admin-panel';
 
 /**
  * admin 계정용 테스트 패널을 panels 컬렉션에 보장.
@@ -38,16 +38,16 @@ const ADMIN_PANEL_DOC_ID = '__test_s6_admin_panel__';
 export async function ensureAdminPanel(): Promise<string> {
   const db = getAdminDb();
   const ref = db.collection('panels').doc(ADMIN_PANEL_DOC_ID);
-  const snap = await ref.get();
-  if (!snap.exists) {
-    await ref.set({
-      name: '테스트 패널 (S6)',
-      ownerEmail: ADMIN_EMAIL,
-      position: 999,
-      seedTag: S6_SEED_TAG,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-  }
+  // 무조건 set (merge 없음) — 매 테스트 시작 시 ownerEmail·categories 전체 재설정.
+  // 세션 내 어떤 경로로 ownerEmail: null 리셋되는 현상 방어.
+  await ref.set({
+    name: '테스트 패널 (S6)',
+    ownerEmail: ADMIN_EMAIL,
+    position: 999,
+    seedTag: S6_SEED_TAG,
+    categories: ['할일', '메모'],
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
   return ADMIN_PANEL_DOC_ID;
 }
 
@@ -87,27 +87,61 @@ export async function cleanupS6Data(): Promise<void> {
 export const FIXED_NOW_ISO = '2026-04-23T01:00:00.000Z'; // UTC 01:00 = KST 10:00
 
 /**
- * Playwright page.clock 로 고정 시점 주입.
+ * Date.now만 고정 (timers는 자연 진행).
+ * page.clock.install()은 timers까지 freeze해 React 업데이트 hang — setFixedTime 사용.
  * 호출은 page.goto 전에.
  */
 export async function installFixedClock(page: Page): Promise<void> {
-  await page.clock.install({ time: new Date(FIXED_NOW_ISO) });
+  await page.clock.setFixedTime(new Date(FIXED_NOW_ISO));
+}
+
+// ─── 모바일 안전 로그인 ───
+// 기존 loginAsAdmin은 aside(데스크탑 sidebar) visible 대기 — 모바일(`hidden md:flex`)에선 timeout.
+// URL 대기 + Header의 "Hizzi is happy" banner로 대체.
+export async function loginAsAdminForAnyViewport(page: import('@playwright/test').Page): Promise<void> {
+  await page.goto('/login');
+  await page.locator('input[type="email"]').fill('admin@company.com');
+  await page.locator('input[type="password"]').fill('admin1234!');
+  await page.getByRole('button', { name: '로그인' }).click();
+  await page.waitForURL('/', { timeout: 30000 });
+  await page.getByText('Hizzi is happy, and you?').first().waitFor({ state: 'visible', timeout: 15000 });
 }
 
 // ─── 홈 진입 ───
+// 전제: loginAsAdmin이 이미 실행돼 page는 '/'에 있고 authStore 안정화 됨.
+// 중요: 추가 page.goto('/') 호출 금지 — page reload 시 onAuthStateChanged가 다시
+// clearAdminPanelOwnership 호출해 admin 패널 ownerEmail를 null로 리셋함(authStore.ts L150~166).
 export async function gotoHome(page: Page): Promise<void> {
-  await page.goto('/');
-  // ChatInput은 인증 후 홈에서만 렌더. aside는 main layout에 속해있음.
+  // clearAdminPanelOwnership 완료 대기 + Firestore 상태 안정화
+  await page.waitForTimeout(2500);
+  // admin 패널 ownerEmail = admin 재seed (onAuthStateChanged 호출 모두 끝난 후)
+  await ensureAdminPanel();
+  // panelStore onSnapshot이 admin 패널 업데이트 반영할 시간
+  await page.waitForTimeout(1500);
+
   await page.locator('aside').waitFor({ state: 'visible', timeout: 30000 });
   await page.locator('[data-testid="chat-input"]').waitFor({ state: 'visible', timeout: 10000 });
+  const viewportSize = page.viewportSize();
+  const isDesktop = viewportSize && viewportSize.width >= 768;
+  if (isDesktop) {
+    await page.locator('[data-panel-id="test-s6-admin-panel"]').waitFor({ state: 'visible', timeout: 10000 });
+  }
 }
 
-// ─── 입력 + programmatic 서브밋 (actionability scroll 회피, MEMORY #61-b) ───
+// ─── 입력 + 서브밋 버튼 activated 대기 후 programmatic click ───
+// fill 직후 button disabled 해제(zustand inputValue 반영)를 명시적으로 대기.
+// programmatic click로 actionability scroll 회피(MEMORY #61-b).
 export async function typeAndSubmit(page: Page, text: string): Promise<void> {
   const input = page.locator('[data-testid="chat-input"]');
   await input.fill(text);
-  // 서브밋 버튼 DOM click (programmatic) — Playwright click actionability scroll 회피
-  await page.locator('[data-testid="chat-submit"]').evaluate((el) => (el as HTMLButtonElement).click());
+  const submitBtn = page.locator('[data-testid="chat-submit"]');
+  // zustand store 업데이트 후 disabled 풀림까지 대기
+  await submitBtn.waitFor({ state: 'visible' });
+  await submitBtn.evaluate((el) => {
+    const btn = el as HTMLButtonElement;
+    if (btn.disabled) throw new Error('submit button still disabled');
+    btn.click();
+  });
 }
 
 // ─── 확장 영역 ContainerLocator 헬퍼 ───
