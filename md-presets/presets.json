@@ -1,18 +1,14 @@
 {
   "current": {
-    "name": "chat-input-a",
-    "description": "홈 채팅 입력 A안 인라인 확장 착수 (세션 #62)",
+    "name": "session-md-보강",
+    "description": "session.md 단계 5·11 보강 (세션 #61 drift 사고 재발 방지 · master-debt #13)",
     "updated": "2026-04-23",
     "files": [
       "CLAUDE.md",
       "md/core/harness.md",
       "md/core/rules.md",
       "md/core/session.md",
-      "md/log/progress.md",
-      "md/plan/designs/main-ux.md",
-      "md/ui/ux-principles.md",
-      "md/ui/patterns.md",
-      "md/ui/uxui.md"
+      "md/log/progress.md"
     ]
   }
 }

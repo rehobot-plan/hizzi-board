@@ -85,6 +85,26 @@
    - Panel.tsx 회귀는 세션 #55 2eb2bf6으로 해소, flaky 2건(sidebar.spec.ts·request-badge.spec.ts)은 progress 선처리 큐 #3·#4로 이관
 ```
 
+### #13 session.md 단계 5·11 보강 예정 (세션 #62 식별 · 세션 #63 첫 작업)
+
+범위:
+- 단계 5 "수정 MD" 목록 실행 완료분만 포함 조항 추가
+- 단계 11 프리셋 복사 트리거 전 원본 md/ 파일 mtime·말미 확인 조항 추가
+- §2 "제약" 섹션에 연계 조항 2줄 추가
+
+근거:
+- 세션 #61 drift 사고 (progress 산출물 "수정 MD" 기록 ≠ 실제 저장소 반영 · MEMORY #61-c 자기 위반)
+- 세션 #62 3/4 uxui 누락 사고 (복구 세션 중에도 동일 패턴 재연 · MEMORY #62-d Code 교차 검증 첫 사례)
+- 두 사고 모두 "기획 논의 = 완료 기록" 구조 틈에서 발생 · 세션 길이와 무관
+
+이관 사유:
+- 세션 #62에서 사고 복구 완료 후 구조 보강은 self-modification 회피 원칙(MEMORY #62-c)으로 세션 #63 이관
+- 세션 #63 첫 작업으로 처리 예정
+
+영향 범위: md/core/session.md
+연동 MD: session.md · MEMORY #61-c · #61-f · #62-a · #62-d
+상태: open · 세션 #63 첫 작업
+
 ### #12 DevTools Performance 녹화 워크플로우 미수립
 
 근거: 세션 #61 실 Chrome ⋯ handle 클릭 scroll jump 재현 지속 상태에서 Playwright 가상 mouse로는 재현 실패. 실 브라우저 특이 동작 원인 규명이 필요할 때 오너 수동 녹화 외 경로가 공정에 없음.
