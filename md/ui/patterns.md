@@ -131,7 +131,148 @@ if (clickedEvent) return
 
 ---
 
-## P8. FAB 패턴 ⭐
+## P8. ⋯ 펼쳐보기 handle 패턴 ⭐
+
+적용 조건:
+  컨테이너에 max-height 제약이 걸려 내부 스크롤이 발생하고
+  사용자가 전체 내용을 한눈에 보고 싶은 요구가 있을 때
+
+구조 — 필수 2단 wrapper:
+
+```tsx
+<div style={{ position: 'relative' }}>              {/* wrapper: overflow visible */}
+  <div style={{                                       /* card: overflow hidden */
+    position: 'relative',
+    overflow: 'hidden',
+    overflowAnchor: 'none',                           /* 다층 방어 층1·2 */
+    maxHeight: 'min(600px, 70vh)',
+  }}>
+    <div style={{                                     /* scroll: card의 flex child 직접 */
+      flex: '1 1 auto',
+      minHeight: 0,                                   /* ⚠ 핵심 — content 이하 축소 허용 */
+      overflowY: 'auto',
+    }}>
+      {content}
+    </div>
+  </div>
+  <button                                             /* handle: card 경계 걸침 */
+    onMouseDown={e => e.preventDefault()}             /* 다층 방어 층3 */
+    style={{
+      position: 'absolute',
+      bottom: -9,                                     /* 50% 걸침 */
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: 44, height: 18, borderRadius: 9,
+      background: '#FFFFFF',
+      border: '1px solid #C4B8B0',
+      color: '#C4B8B0',
+      boxShadow: '0 1px 3px rgba(44,20,16,0.04)',
+      transition: 'color 0.15s ease, border-color 0.15s ease, transform 0.15s ease',
+      zIndex: 3,
+    }}
+    aria-expanded={isExpanded}
+    aria-label="펼쳐보기"
+  >
+    <ChevronIcon size={14} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }} />
+  </button>
+</div>
+```
+
+핵심 원칙:
+  scroll div에 flex: 1 1 auto + min-height: 0 필수
+  — flex 아이템이 content 이하로 축소되도록 허용.
+  누락 시 scrollHeight === clientHeight 폴백 → hasOverflow 항상 false.
+  (세션 #54~#61 잠복 버그 실측 근본 원인)
+
+hasOverflow 감지:
+  ResizeObserver + MutationObserver(characterData 제외) + rAF 배치 + 이전값 guard
+  scrollHeight > clientHeight 조건으로 표시 · 빈 패널엔 비노출
+
+능동 scroll 정렬 (U13 · main-ux.md §1.2b):
+  펼침·접힘 시 패널 상단 scroll-margin-top 80px로 능동 정렬
+  scrollIntoView({ block: 'start', behavior }) + rAF 2프레임 대기
+  데스크탑(≥768px) 한정 · 이미 가시(0~100px) 생략
+  prefers-reduced-motion 폴백 · localStorage rollback
+
+다층 방어 5층 (원인 미규명 scroll jump 대응 · main-ux.md §1.2c):
+  1. html/body + card 레벨 overflow-anchor: none
+  2. handle onMouseDown preventDefault (focus 이동 차단 · 키보드 Tab 유지)
+  3. intentScrollYRef — 진입 시점 scrollY 선기록 후 click 복원 기준
+  4. 400ms 감시 창 scroll event intercept + rAF 2회 직접 복원
+  5. scrollTo({ behavior: 'instant' }) + globals.css scroll-behavior: auto
+
+접근성:
+  aria-expanded 상태 반영
+  aria-label="펼쳐보기"
+  키보드 Tab 접근 유지 (focus 이동 차단은 mousedown만 · click·키보드는 정상)
+
+E2E assertion 원칙:
+  handle 노출 ↔ scroll overflow 1:1 일치 (sh > ch 엄격)
+  scrollHeight >= clientHeight 같은 자명 부등식 금지 (회귀 감지 실패)
+  Playwright page.click()의 actionability scroll은 baseline 오염
+  → element.click() programmatic 또는 mouse.move/down/up 분리 시퀀스 사용
+
+접힘 복귀:
+  scrollTop 0 재설정
+
+---
+
+## P9. 인라인 확장 대화 패턴 ⭐
+
+적용 조건:
+  · 사용자 입력 → AI 응답 → 확인/수정/확정 흐름
+  · 짧은 확인(1~2턴) 중심 케이스
+  · 확정 후 입력창이 원상 복귀되어야 하는 경우
+  · 모달을 띄우기엔 과하고, 같은 줄에 응답 다는 건 공간 부족할 때
+
+구조:
+
+```
+  [입력 pill]  ← 한 줄 52px · border-radius 26
+       │
+       ▼  (확정 시 margin-top 12px + 상단 꺾쇠로 연결)
+  ┌───────────────────────────────┐
+  │ [AI] 응답 텍스트               │   ← 확장 영역 (card-bg)
+  │                                │       padding 20·24
+  │  [파싱 프리뷰 카드]             │
+  │                                │
+  │  [칩 버튼들]                    │
+  │                                │
+  │  [취소] [자세한 대화로] [확정]  │   ← 푸터
+  └───────────────────────────────┘
+```
+
+시나리오 분기 (시나리오 1은 빈 입력 placeholder 상태 — main-ux.md §6 참조):
+
+  시나리오 2 (명확 입력 · 즉시 저장, 50%+):
+    내용·구분·범위 모두 명확 추론 시 확장 영역 미노출
+    즉시 저장 + 하단 토스트 5초 (3층 복구 동선 1층과 동일)
+
+  시나리오 3 (애매 입력 · AI 확인, 30%):
+    파싱 결과 태그로 먼저 시각화 + 빠진 조각만 칩 버튼으로 질의
+    한 번 탭 + "추가"로 종료 (전체 2초 목표)
+
+  시나리오 4 (복수 항목 · B 승격, 20%):
+    각 항목을 카드로 분리 표시
+    "자세한 대화로" 승격 버튼으로 사이드 패널(B안) 전환
+
+B 승격 임계 (U14 재명시):
+  · 3턴 이상 필요 (명확화 질문 2회째) or
+  · 복수 항목 + 각각 미확정 조각
+
+파싱 프리뷰 원칙:
+  AI가 추론한 결과는 태그로 먼저 시각화.
+  텍스트 응답만으로 "뭐가 맞고 뭐가 틀렸나"를 스캔 비용 크게 만들지 말 것.
+
+접근성:
+  · 확장 영역 열릴 때 첫 focusable 요소로 focus 이동
+  · Esc 키로 확장 영역 닫기 (취소와 동일 동작)
+  · "자세한 대화로" 승격 버튼은 독립 Tab 도달 가능
+  · 애니메이션 0.2s ease-out · prefers-reduced-motion 즉시 펼침 폴백
+
+---
+
+## P10. FAB 패턴 ⭐
 
 위치: 패널 우하단 44px
   엄지 홈 포지션 (오른손 엄지 최적)
@@ -174,7 +315,7 @@ hover: transform scale(1.04) + background #1A0E08
 
 ---
 
-## P9. 스와이프 제스처 패턴 ⭐
+## P11. 스와이프 제스처 패턴 ⭐
 
 적용 대상: 할일·메모 아이템 삭제
   좌←우 드래그 → 삭제 영역 노출 → 놓으면 실행
@@ -206,3 +347,7 @@ hover: transform scale(1.04) + background #1A0E08
 요청 할일 cascade:
   스와이프 삭제 시 post soft delete + todoRequest.status = 'cancelled'
   1층 토스트 실행 취소 시 양쪽 동시 복구 (flows.md FLOW 1, flows-detail.md)
+
+---
+
+*Updated: 2026.04.23 (P8·P9 신규 — ⋯ handle · 인라인 확장 · 기존 P8·P9 → P10·P11 재번호 · 세션 #61 설계, 세션 #62 복구)*
