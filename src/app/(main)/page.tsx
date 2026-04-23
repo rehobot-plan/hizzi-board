@@ -14,6 +14,7 @@ import Panel from '@/components/Panel';
 import Calendar from '@/components/calendar/Calendar';
 import NoticeArea from '@/components/NoticeArea';
 import LeaveManager from '@/components/LeaveManager';
+import ChatInput from '@/components/ChatInput';
 
 export default function Home() {
   const { user, loading: authLoading, recoveryOrphanAccount } = useAuthStore();
@@ -130,6 +131,12 @@ export default function Home() {
   return (
       <div className="flex-1 flex flex-col">
         <div className="flex-1 px-2 md:px-8 py-8" style={{ overflowY: 'auto', overflowX: 'visible' }}>
+          {/* 홈 상단 자연어 입력 — main-ux.md §6 · U14 · P9 · ai-capture-hb.md
+              모바일·데스크탑 공통 노출 (§4.2 모바일 프레이밍 맥락) */}
+          <div style={{ marginBottom: 24 }}>
+            <ChatInput />
+          </div>
+
           {adminMode && (
             <div className="border border-[#EDE5DC] bg-white rounded p-4 mb-4">
               <div className="flex gap-2 mb-3">
