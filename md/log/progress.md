@@ -143,3 +143,5 @@ Phase: 세션 #61 drift 사고 재발 방지 구조 조항 추가 / progress 1-6
 - 세션 목적 단일화: 1순위 완결 후 후순위(기능 구현 규모·주제 이질)를 연결 착수하지 않고 세션 종료로 분리. 체력·맥락 분배 측면에서 유효한 경계 판단. MEMORY #62-c(self-modification 회피)의 연장 원칙으로 작동
 
 다음 세션 1순위: 홈 상단 채팅 기반 입력 A안 구현 (main-ux.md §6 · P9 · U14 · uxui §4 홈 채팅 입력 토큰). 시나리오 1~3 완전 구현 + 시나리오 4(B 승격)는 placeholder UI 골격.
+
+- [2026-04-23] 세션 #64 / 홈 상단 자연어 입력 A안 첫 구현 — ai-capture-hb.md 설계 저장(fe98878) + 구현 배포(15a6ad5) · parseLocal/parseIntent/chatInputStore/ChatInput/ChatExpand/AiBadge 신규 · page.tsx 상단 배치 · firestore.rules chatMessages 블록 추가 + 배포 · Codex P1/P2/P3 전건 반영(schedule→calendarEvents 분기 · "N개 모두 추가" 엄격 판정 · 모바일 노출 · hard delete 차단 · confidence 0.8 tier · region 의미론) · 프로덕션 E2E 10/11 PASS(9 skip 유지) — 신규 6 파일 + page.tsx/firestore.rules/main-ux §6.9·§7/master §4·5·7/master-schema chatMessages

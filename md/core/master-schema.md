@@ -87,6 +87,47 @@ interface PostAttachment {
 }
 ```
 
+### `chatMessages` (2026-04-23 신규 · 세션 #64)
+
+```typescript
+{
+  id: string
+  userId: string                  // 작성자 email (author)
+  rawText: string                 // 원본 입력 보존 (헌법 제1조 · 수정 불가)
+  createdAt: Date
+
+  // 파이프라인 상태 (ai-capture-hb.md §5.1)
+  processingState: 'local_parsed' | 'awaiting_user' | 'finalized'
+  parsedAt_local: Date | null
+  finalizedAt: Date | null
+
+  // 파생 추적 — cascade 실행 취소용
+  derivedIds: Array<{
+    type: 'post' | 'calendarEvent'
+    id: string
+    status: 'active' | 'cancelled'
+  }>
+
+  // 가시성 (posts와 독립 soft delete)
+  deleted: boolean
+  deletedAt: Date | null
+}
+```
+
+### `posts` · `calendarEvents` 4필드 추가 (세션 #64 · 신규 레코드만)
+
+```typescript
+{
+  // ... 기존 필드
+  sourceMessageId?: string | null   // chatMessages.id · manual 경로면 null
+  parseStage?: 'local' | 'user_confirmed'  // 'llm'은 2단 본체 부착 시 추가
+  confidence?: number               // 0~1
+  inputSource?: 'chat' | 'manual'   // chat=ChatInput · manual=FAB·기존 경로
+}
+```
+
+기존 레코드 소급 할당 없음 (ai-capture-hb.md §5.4). 4필드 부재 = `inputSource: 'manual'` 상당.
+
 ### `comments`
 ```typescript
 {

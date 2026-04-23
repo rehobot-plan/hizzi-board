@@ -73,14 +73,18 @@ src/
 │   ├── CreatePost.tsx (모달 컴포넌트), Calendar.tsx, NoticeArea.tsx
 │   ├── LeaveManager.tsx, TodoRequestBadge.tsx, TodoRequestModal.tsx
 │   ├── RecordModal.tsx           완료·휴지통 2탭 회수 모달
+│   ├── ChatInput.tsx, ChatExpand.tsx, AiBadge.tsx   홈 상단 자연어 입력 (§6)
 ├── hooks/
 │   ├── useEscClose.ts, useVisibilityTooltip.ts
 ├── store/
 │   ├── authStore.ts, postStore.ts, panelStore.ts
 │   ├── userStore.ts, leaveStore.ts, toastStore.ts, todoRequestStore.ts
+│   ├── chatInputStore.ts                  홈 채팅 입력 상태·ChatMessage I/O
 │   ├── voteStore.ts, adminVoteStore.ts
 └── lib/
     ├── firebase.ts
+    ├── parseIntent.ts                     AI 캡처 entry (LLM stub)
+    ├── parseLocal.ts                      1단 규칙 파서 (4축)
     └── voteCalculator.ts
 ```
 
@@ -89,6 +93,9 @@ src/
 ## 5. 파일 의존성 맵
 
 ```
+ChatInput.tsx → ChatExpand.tsx → AiBadge.tsx / chatInputStore.ts → parseIntent.ts → parseLocal.ts
+ChatInput.tsx → app/(main)/page.tsx 상단 배치 (§6, U14, P9)
+chatInputStore.ts → chatMessages 컬렉션 + posts/calendarEvents 4필드 (sourceMessageId·parseStage·confidence·inputSource)
 Panel.tsx → TodoList.tsx / PostList.tsx / Calendar.tsx / common/FAB.tsx / RecordModal.tsx
 TodoList.tsx → TodoItem.tsx / CompletedTodo.tsx / postStore.ts
 PostList.tsx → PostItem.tsx / postStore.ts
@@ -127,6 +134,9 @@ admin:   admin@company.com / admin1234!
 ```
 posts / panels / calendarEvents / leaveSettings / leaveEvents / todoRequests:
   읽기/생성/수정/삭제 → request.auth != null
+chatMessages:
+  읽기/생성/수정 → request.auth != null
+  삭제 → 금지 (soft delete — deleted=true / deletedAt 세팅)
 users:
   읽기 → request.auth != null
   쓰기 → 본인 또는 admin만
