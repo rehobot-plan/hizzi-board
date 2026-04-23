@@ -152,6 +152,36 @@
 - 해소: 오너가 프롬프트 입력란에 `! git push --force-with-lease origin master`로 직접 실행하면 세션 출력에 결과가 들어옴. Code는 이어서 다음 단계 진행
 - 원칙: deny 규칙은 안전장치 기조와 정합하므로 일회성 force push 때문에 규칙 완화하지 않음. 오너 직접 실행 경로를 우선 제안. 규칙 수정(ask로 이동 등)은 "동일 상황 3회 이상 반복" 트리거에서만 고려
 
+## #61-a E2E assertion tightness — 자명 부등식 금지 (세션 #61)
+
+- 관찰: 세션 #61 패널 내부 스크롤 비노출 버그. 시나리오 2의 `scrollHeight >= clientHeight`가 content == container일 때도 PASS라 자명 부등식에 가까움. scroll 작동 여부를 실질 검증하지 못함. 세션 #54부터 잠복한 height:100% 버그가 여러 세션 PASS 위장 속에 넘어간 주 원인
+- 원칙: assertion은 감지하려는 현상을 1:1로 좁힐 것. 예시 — "handle 노출 ↔ overflow 1:1 일치"(시나리오 4) / "admin 화면 overflow 패널 ≥ 1"(시나리오 5) / "패널 top viewport 80±20"(시나리오 8)
+- 적용: 시나리오 추가 시 "이 assertion이 FAIL 나려면 어떤 상태여야 하는가" 자문. FAIL 조건이 비현실적이면 자명 부등식. 한 시나리오가 두 방향 모두 잡도록 역 명제 포함 고려
+
+## #61-b Playwright click actionability scroll 우회 (세션 #61)
+
+- 관찰: Playwright `locator.click()`은 actionability 체크에서 scrollIntoViewIfNeeded 내장 수행. scroll position 검증 베이스라인을 오염시켜 false fail 유발
+- 우회: `locator.evaluate(el => el.click())`로 DOM 프로그래매틱 클릭 사용. 브라우저 scroll 개입 없이 onClick 트리거. 마우스 경로 실측이 필요하면 `page.mouse.move + down + up` 분리 시퀀스
+- 적용: scroll·viewport·focus 위치 관련 검증 시 Playwright `click()` 대신 programmatic 또는 mouse primitive 사용. actionability scroll은 "click이 성공했는가" 관심일 때만 안전
+
+## #61-c 재현 불가 선제 수정 박제 규약 (세션 #61)
+
+- 관찰: 세션 #61 실 Chrome scroll jump. Playwright 가상 mouse 실측에서 재현 실패 · 오너 실 Chrome에서만 재현. 이 상태에서 선제 수정(intent scrollY + 감시 창 800ms + behavior:instant 등) 배포 진행
+- 규약: "재현 실패 경위"를 커밋 메시지·progress.md·master-debt에 함께 박제. rollback 장치(localStorage toggle 등)를 같이 적재. "확인된 척" 마감 금지 — E2E PASS가 현실 검증을 대체하지 않음을 기록
+- 적용: 재현 환경과 검증 환경이 어긋날 때 (1) 선제 수정 배포하되 (2) 한계 고지 + (3) 실 환경 재검증 요청 + (4) 롤백 경로 확보. 네 단계가 모두 있어야 마감
+
+## #61-d 레이아웃 엔진 싸움 → 덮어쓰기 전환 원칙 (세션 #61 · U13 원칙화)
+
+- 관찰: scroll jump 5층 방어 누적 후에도 실 Chrome 재현 지속. 접근 전환 — "튐 억제(브라우저 자동 동작과 경쟁)"에서 "의도된 위치로 능동 정렬(scrollIntoView 덮어쓰기)"로 뒤집음. 오너 실측 판정 "아주 깔끔해"
+- 원칙: 원인 규명 비용 > 마스킹 구현 비용 + 덮어쓰기 UX가 자연스러울 때 능동 제어 방식 채택. 방어 제거 아닌 중첩(기존 5층 방어는 rollback 토글로 보존). ux-principles.md U13에 원칙화
+- 적용: 브라우저 자동 동작(scroll anchor · focus scroll · URL bar toggle 등)과 경쟁이 3층 이상 누적되면 접근 전환 판단. 능동 제어로 덮어쓸 수 있는지 UX 맥락으로 재설계
+
+## #61-e 반복 엣지 버그 표준 접근 (세션 #61)
+
+- 관찰: ⋯ handle 관련 버그가 세션 #60 → #61 전후 반복(배치 디자인 실패 · 스크롤 비노출 · jump). 각 차수가 다른 층 원인. 선제 관리 패턴이 필요해짐
+- 표준 접근: (1) 설계 단계 엣지케이스 10건+ 선제 점검(이미 가시/초과/복수 펼침/접힘 재측정/중복 클릭/reduced-motion/모바일/margin 맥락 의존/키보드 접근/iframe 등) (2) Phase 분할 배포 (3) rollback 장치 동반 (4) 실측 검증 의무화. 한 번에 다 박지 말 것
+- 적용: UI 상호작용 기능 신규 설계 시 엣지 10건 점검 문서 블록을 설계안에 기본 포함. Phase 1 스코프는 핵심 기능만, 고급 케이스는 Phase 2+ 분리
+
 ## 공포 기반 과보정 패턴 (세션 #56)
 
 - 상황: 세션 #56 블록 ② push 시점에 로컬 git missing blob 발견. 실제 해법은 "새 폴더 fresh clone + 워킹 트리 파일 복사 + 단일 누적 commit"으로 30분~1시간 규모

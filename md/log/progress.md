@@ -4,25 +4,25 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-22 세션 #60 (연차 조사 필터 해소 · 블록 ③-A 배포 · 후속 핫픽스 4건 · ⋯ 펼쳐보기 디자인 회귀 박제)
-- 작업 브랜치: master (로컬·원격 ef7451e 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
-- 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · 블록 ③-A · hover 휴지통 웹 한정 · Panel overflow hidden · ⋯ handle(44×18 pill · chevron) · 탭바 할일/메모/봉투 · 회수 링크 우측 · 패널 내부 스크롤·handle 감지 복구 · ⋯ handle viewport jump 5층 방어 · **⋯ handle Phase 1 능동 scroll 정렬** (scrollIntoView block:'start' + scroll-margin-top:80px · 이미 가시 시 생략 · reduced-motion 시 instant · 400ms lock · localStorage rollback toggle)
-- Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW · Production env 6개 정상 · Deploy Hook tB2B4PASNi 정상 (세션 #60 auto-deploy 실측 사례 1건: i42koin1y · master-debt #9 partial 해소)
-- 다음 세션 1순위: 블록 ③-B — 3층 탭바 메뉴 "기록" 진입점 + RecordModal 활용 + flows.md FLOW 1 복구 cascade 정교화(pending/accepted 직전 상태 복귀)
+- 마지막 세션: 2026-04-23 세션 #61 (⋯ 펼쳐보기 handle C안 구현 · scroll 구조 버그 해소 · 능동 scroll 정렬 전환 · 채팅 입력 A안 설계 확정)
+- 작업 브랜치: master (로컬·원격 0eeeed8 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
+- 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · ⋯ handle(C안) 하단 경계 배치 · 능동 scroll 정렬 · 2단 wrapper 구조 · E2E 7/7 PASS
+- Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW · 기존 설정 유지
+- 다음 세션 1순위: 홈 상단 채팅 기반 입력 착수 (A안 인라인 확장 + B안 사이드 패널 승격 하이브리드)
+  · 범위: main-ux.md §6 구현 (시나리오 1~3 · 토스트 · 확정/취소)
+  · 시나리오 4(복수 항목 B 승격)는 첫 구현에서 placeholder UI 골격
+  · 영향 파일: ChatInput.tsx · ChatExpand.tsx · AiBadge.tsx 신규 · chatInputStore.ts 신규 · parseIntent.ts 신규 · src/app/(main)/page.tsx 상단 배치
+  · 선행 문서: uxui.md §4 "홈 채팅 입력 토큰" · ux-principles.md U14 · patterns.md P9 · main-ux.md §6 (세션 #61 종료 시점 확정)
 - 후순위 후보:
-  - 메인 UX 블록 ④(FAB) · 블록 ⑤(달력 피어 탭) · 세션 #55 기준 1~6
-  - 기존 Panel.tsx 비과업 transition 정합 (0.2s → 0.15s ease 통일, ease 키워드 누락 보완) · 세션 #61 Codex P3 박제
-  - handle z-index 토큰 정합 (현 3 하드코딩 · tokens.ts zIndex 계층 정렬) · 세션 #61 Codex P3 박제
-- 선처리 큐: #1~#4 (세션 #55 기준) + #5 (세션 #56) + #7 (세션 #58)
-  5. tabbar-sticky.spec 전체 smoke 직렬 실행 시 간헐 timeout (세션 #56 · 유지)
-  7. Vercel 새 프로젝트 env 환경별 불완전 (세션 #58 · 유지)
-     · Production 6개 완비 · Preview 0개 · Development 5개 (API_KEY 누락)
-     · Production 배포엔 영향 없음. Preview 배포 트리거 시 Firebase 초기화 실패 가능
+  - 블록 ③-B: 3층 탭바 메뉴 "기록" 진입점 + RecordModal 활용 + flows.md FLOW 1 복구 cascade 정교화
+  - 메인 UX 블록 ④(FAB + CreatePost 재배치) · 블록 ⑤(달력 피어 탭)
+  - 세션 #55 기준 1~6 · #56 기준 5 · #58 기준 7
+- 선처리 큐: 기존 유지 (#5 tabbar-sticky.spec 간헐 timeout · #7 Vercel Preview env 불완전)
 - 미해결:
-  - Panel CSS flex shrink + overflow hidden 내부 스크롤 근본 원인 미규명 (회피책으로 ⋯ handle 토글 · 세션 #61 디자인 완결 · Playwright 실측 워크플로우 부재로 blocked · MEMORY #60)
+  - 실 Chrome ⋯ handle 클릭 scroll jump 근본 원인 미규명 (능동 scroll + 5층 방어로 덮음 · master-debt #11 신규)
+  - DevTools Performance 녹화 워크플로우 미수립 (master-debt #12 신규)
   - post-request cascade 실패 시 divergence 가능성 — master-debt #8
   - serviceAccount.json git history 잔존 — master-debt #10
-  - auto-deploy 트리거 검증 공정 편입 — master-debt #9 (partial · #60에서 실측 사례 1건 확보)
 
 ---
 
@@ -172,14 +172,77 @@ Phase: 연차 내역-달력 불일치 조사 (필터 문제) / 블록 ③-A §2.
 
 ---
 
-- [2026-04-22] 세션 #61 / 메인 패널 UI 재편 — 탭바 순서 확정(할일/메모/봉투) · ⋯ handle 하단 경계 이동(44×18 pill · chevron · wrapper 분리) · 회수 링크 우측 정렬 (8655978) — Panel.tsx · TodoList.tsx · PostList.tsx
-- [2026-04-22] 세션 #61 / 패널 내부 스크롤·handle 감지 복구 — scroll div를 card 직접 flex child로 (height:100% → flex:1 1 auto + minHeight:0) · 세션 #54부터 잠복하던 height:100% 미해결 버그 확정 · E2E 시나리오 4/5 보강(handle ↔ overflow 1:1 일치 + admin 화면 overflow 패널 ≥1) (e2706ce) — Panel.tsx · page.tsx · panel-height-s1.spec.ts
-- [2026-04-22] 세션 #61 / ⋯ handle 클릭 시 viewport jump 차단 — (a) globals.css html/body overflow-anchor:none 전역 off (b) handle onMouseDown preventDefault로 focus 이동 차단 (c) toggleExpand savedScrollY → scroll event listener 400ms + rAF 2회 직접 복원 다층 방어 · E2E 시나리오 6 추가(펼침/접힘 전후 scrollY < 3) · spec 내 Playwright click의 actionability scroll 오염 차단 위해 element.click()로 프로그래매틱 클릭 (9d445f8 · 88027e3 · 9c091ce) — Panel.tsx · globals.css · panel-height-s1.spec.ts
-- [2026-04-22] 세션 #61 / ⋯ handle viewport jump 재방문 핫픽스 — 오너 실환경 재현 보고(E2E 6/6 PASS 상태) 후 진단: Playwright mouse.move/down/up 분리 실측에서 scrollY 변화 0 → 가상 mouse 재현 실패 · 실 Chrome 특이동작 의심 상태에서 선제 수정. (a) intentScrollYRef — hover/focus/touch 진입 시점(jump 이전) scrollY 선기록 → click 시 오염 회피 (b) 감시 창 400→800ms 확장 (c) scrollTo behavior: 'instant' 명시 (d) globals.css scroll-behavior: auto 명시 · E2E 시나리오 7 추가(page.mouse.move/down/up 실마우스 시퀀스) (e6d6843) — Panel.tsx · globals.css · panel-height-s1.spec.ts
-- [2026-04-23] 세션 #61 / ⋯ handle Phase 1 능동 scroll 정렬 — 5층 방어로도 실 Chrome 점프 지속 후 접근 전환("튐 억제" → "의도된 위치로 능동 정렬"). 데스크탑 + variant='grid' 조건에서 scrollIntoView({block:'start'}) + scroll-margin-top:80px로 panel top을 viewport 상단 근처 정렬. 이미 가시(0~100) 시 생략 · prefers-reduced-motion 시 instant · smooth 진행 중 중복 click lock 400ms drop · localStorage 'hizzi:activeScrollDisabled'=true 설정 시 기존 5층 방어로 폴백. E2E 시나리오 8/10/12 PASS, 9 skip(가시 판정 경계값 auto-rows-fr 재계산 흔들림 — 후속 실측 튜닝 필요), 6/7 능동 scroll 비활성 토글 상태로 재설계 (d2f63f5 · ef7451e) — Panel.tsx · globals.css · panel-height-s1.spec.ts
+### [2026-04-23] 세션 #61 — ⋯ 펼쳐보기 handle C안 구현 + scroll 구조 버그 해소 + 능동 scroll 정렬 전환 + 채팅 입력 A안 설계 확정
 
-잠복 위험 (Phase 1 능동 scroll):
-- 실 Chrome 점프 근본 원인 미규명 — 능동 scroll은 마스킹일 수 있음. Chrome 버전·환경 변화 시 재발 가능. DevTools Performance 녹화 필요 시 수행.
-- 능동 scroll 자체가 새 jump 유발 가능성 — 배포 후 실측 악화 시 localStorage 'hizzi:activeScrollDisabled'='true' 즉시 설정 후 롤백 검토.
-- "펼치면 상단 고정" 반복 사용 시 사용자 불만 가능 — 실사용 피드백 수집 필요.
-- 가시 판정(0~100) 경계값 튜닝 — auto-rows-fr row 재계산으로 card top 측정 시점별 흔들림. 시나리오 9 skip. 실 브라우저 로컬 실측 후 기준 조정.
+Phase: 탭바 배치 확정(할일/메모/봉투) · ⋯ handle C안(하단 경계) 구현 · 스크롤·handle 비노출 구조 버그 실측 기반 해소 · scroll jump 다층 방어 5층 → 능동 scroll 정렬 전환 · 채팅 기반 입력 A안 목업 승인 / 설계 MD 4종 일괄 갱신
+브랜치: master
+커밋 수: 다수 (8655978 · 2f58f07 · e2706ce · 05c436b · 9d445f8 · 88027e3 · 9c091ce · 6d2666c · e6d6843 · 8d3aab8 · d2f63f5 · ef7451e · 0eeeed8 + 세션 종료 MD 일괄)
+
+주요 진행:
+
+1. 탭바 순서 확정 + ⋯ 펼쳐보기 handle C안 구현 (커밋 8655978 · 2f58f07)
+   · Panel.tsx 2단 구조 재편 — 외부 relative wrapper(overflow visible) + 내부 overflow hidden card
+   · 탭바 순서: 할일 / 메모 / 봉투(배지). ⋯ 완전 제거
+   · handle: 44×18 pill · chevron 14px · #C4B8B0 → hover #9E8880 · bottom -9 · z-index 3
+   · hasOverflow: ResizeObserver + MutationObserver(characterData 제외) + rAF 배치 + 이전값 guard
+   · 카테고리 전환 시 isExpanded 리셋 + PostList key={activeCategory}
+   · 회수 링크 TodoList/PostList 모두 justify-content flex-end + gap 14
+   · E2E panel-height-s1.spec 3/3 PASS · Vercel 배포 Ready
+   · Codex P3(transition 0.2s · handle z-index 토큰 정합) 박제 — master-debt 후순위
+
+2. 패널 스크롤·handle 비노출 구조 버그 실측 기반 해소 (커밋 e2706ce · 05c436b)
+   · 증상: 유미정 패널 아이템 7개임에도 스크롤바·handle 모두 안 보임
+   · 실측 근본 원인: scroll div height 100%가 flex 부모 implicit height를 %로 해결 못해 content 크기(815px)로 폴백 → scrollHeight === clientHeight → hasOverflow 항상 false. 세션 #54부터 잠복
+   · E2E 시나리오 2의 `sh >= ch` assertion이 자명 부등식이라 느슨 → PASS 위장 · 회귀 감지 실패
+   · 수정: scroll wrapper div 제거 + scroll div를 card 직접 flex child로 승격(flex: 1 1 auto, minHeight: 0, overflow-y: auto) + fade-out card 기준 absolute
+   · E2E 보강: 시나리오 4(handle 노출 ↔ overflow 1:1) + 시나리오 5(admin 실데이터 overflow 패널 ≥ 1) · 5/5 PASS
+
+3. ⋯ handle 클릭 scroll jump 다층 방어 (커밋 9d445f8 · 88027e3 · 9c091ce · 6d2666c · e6d6843 · 8d3aab8)
+   · 증상: handle 클릭 시 페이지 스크롤 위로 튐 · 튄 채 유지
+   · Playwright mouse.move/down/up 분리로 production 실측 — A_BASELINE~F_AFTER_700ms 전 phase scrollY=776 유지. 가상 mouse 재현 실패 → 실 Chrome 특이 동작 가능성
+   · 다층 방어 5층 누적:
+     - (1) html/body + card 레벨 overflow-anchor: none
+     - (2) handle onMouseDown preventDefault (focus 이동 차단, 키보드 Tab 유지)
+     - (3) intentScrollYRef — hover/focus/touch 진입 시점 scrollY 선기록 후 click 복원 기준
+     - (4) 400ms 감시 창 scroll event intercept + rAF 2회 직접 복원
+     - (5) scrollTo({ behavior: 'instant' }) + globals.css scroll-behavior: auto 명시
+   · 5층 방어 배포 후에도 오너 실 Chrome 재현 지속 → 원인 미규명 상태에서 접근 전환 결정
+
+4. 능동 scroll 정렬 전환 (U13 신규 원칙 · 커밋 d2f63f5 · ef7451e · 0eeeed8)
+   · 설계: "튐 억제"에서 "의도된 위치로 능동 정렬"로 접근 뒤집음. 펼침·접힘 시 패널 상단이 viewport scroll-margin-top 80px에 정렬
+   · 설계 엣지케이스 10건 점검(이미 가시/viewport 초과/복수 펼침/접힘 재측정/중복 클릭/reduced-motion/모바일/margin 맥락 의존/키보드 접근/iframe) 후 Phase 1 스코프 확정
+   · 구현: scrollIntoView({ block: 'start', behavior }) + rAF 2프레임 대기 + isScrollingRef 400ms lock + 데스크탑(≥768px) 한정 + 이미 가시(0~100px) 생략 + prefers-reduced-motion instant 폴백
+   · Rollback 장치: localStorage 'hizzi:activeScrollDisabled' = 'true' 설정 시 능동 scroll 비활성
+   · 기존 5층 방어 제거 없이 유지 — 능동 scroll 위에 얹힘
+   · 오너 실측 판정: "아주 깔끔해 · 원하는대로 됐어"
+
+5. 채팅 기반 입력 A안 설계 확정 (다음 세션 1순위 확정)
+   · 설계 단계: 4가지 UI 시나리오 목업 + 엣지케이스 검토
+   · 구조: 홈 상단 pill 입력 → AI 확장 영역 바로 아래 인라인 펼침 → 확정 시 접힘 · 모달 회피
+   · 임계선: 3턴 이상 or 복수 항목 미확정 → B안 사이드 패널 승격
+   · 목업에서 오너 승인: 위치·폭·AI 뱃지·파싱 프리뷰·승격 버튼 전부
+
+6. 설계 MD 4종 일괄 갱신 (세션 종료 단계 4·5 통합)
+   · main-ux.md — §1.2a handle 스펙 / §1.2b 능동 scroll / §1.2c 다층 방어 / §1.3 PASS 기준 확장 / §4.2 폼-채팅 분리 / §6 채팅 입력 섹션 신규 / §7 실행 순서 갱신 / §8 연동 표 갱신
+   · uxui.md — §4 handle 토큰 / 능동 scroll 토큰 / 홈 채팅 입력 토큰 블록 3건 신규
+   · ux-principles.md — U11은 웹 마무리 후 모바일 정리 시점까지 유지(변경 없음) / U13 능동 scroll 정렬 원칙 신규 / U14 인라인 대화 원칙 신규
+   · patterns.md — P8 ⋯ 펼쳐보기 handle 패턴 / P9 인라인 확장 대화 패턴 신규
+
+검증:
+- npm run build PASS (각 변경 후 매번)
+- Vercel Production 배포 다회 Ready
+- E2E panel-height-s1.spec 7/7 PASS (시나리오 1~7 · Phase 1 추가 시나리오 8/10/12 PASS · 9 skip)
+- 오너 실사용 검증: handle 노출 · 스크롤 작동 · 탭바 순서 · 회수 링크 우측 정렬 · 능동 scroll 정렬 모두 OK
+
+산출물:
+- 수정 코드: src/components/Panel.tsx · src/components/TodoList.tsx · src/components/PostList.tsx · src/app/globals.css · src/app/(main)/page.tsx · tests/smoke/panel-height-s1.spec.ts
+- 수정 MD: md/main-ux.md · md/ui/uxui.md · md/ui/ux-principles.md · md/ui/patterns.md · md/log/progress.md · md/core/master-debt.md · .harness/MEMORY.md · md-presets/presets.json
+
+교훈:
+- assertion tightness: scrollHeight >= clientHeight 같은 자명 부등식은 검증이 아니다. 감지하려는 현상을 1:1로 좁히는 assertion 필수 (MEMORY #61-a)
+- Playwright page.click()의 actionability scroll은 scroll position 검증 baseline을 오염. programmatic element.click() 또는 mouse.move/down/up 분리 시퀀스로 우회 (MEMORY #61-b)
+- 재현 불가 시점의 선제 수정은 한계 고지 + rollback 장치 동반 필수. "확인된 척" 박제 금지 (MEMORY #61-c)
+- 브라우저 레이아웃 엔진 싸움에서 덮어쓰기 전환 원칙. 원인 규명 비용 > 마스킹 구현 비용 + 덮어쓰기 UX 자연스러울 때 능동 제어. 방어와 덮어쓰기는 중첩 (MEMORY #61-d, U13 원칙화)
+- 반복 엣지 버그 표준 접근: 설계 단계 엣지케이스 10건+ 선제 점검 + Phase 분할 배포 + rollback 장치 + 실측 검증 (MEMORY #61-e)
+
+다음 세션 1순위: 홈 상단 채팅 기반 입력 구현 (A안 인라인 확장 · main-ux.md §6 · P9 패턴 · U14 원칙 · uxui.md §4 홈 채팅 입력 토큰). 시나리오 1~3 완전 구현 + 시나리오 4(B 승격)는 placeholder UI 골격.

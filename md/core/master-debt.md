@@ -85,6 +85,32 @@
    - Panel.tsx 회귀는 세션 #55 2eb2bf6으로 해소, flaky 2건(sidebar.spec.ts·request-badge.spec.ts)은 progress 선처리 큐 #3·#4로 이관
 ```
 
+### #12 DevTools Performance 녹화 워크플로우 미수립
+
+근거: 세션 #61 실 Chrome ⋯ handle 클릭 scroll jump 재현 지속 상태에서 Playwright 가상 mouse로는 재현 실패. 실 브라우저 특이 동작 원인 규명이 필요할 때 오너 수동 녹화 외 경로가 공정에 없음.
+
+현재 처리: 능동 scroll 정렬(Phase 1)로 사용자 체감 해소 · 근본 원인은 #11로 박제.
+
+해소 방향: 표준 녹화 절차 문서화 (Chrome DevTools Performance 탭 · Record · 재현 · Stop · Scripting/Layout/Network 캡처 범위). harness.md 막힘 탈출구 섹션 또는 신규 md/ops/ 하위 문서로 편입 검토. Playwright trace view와 비교 기준도 함께 정리.
+
+영향 범위: md/core/harness.md · 신규 ops 문서
+연동 MD: harness.md
+상태: open · #11 해소의 선결
+
+### #11 실 Chrome ⋯ handle 클릭 scroll jump 근본 원인 미규명
+
+근거: 세션 #61에서 handle 클릭 시 페이지 스크롤이 위로 튐 · 튄 채 유지되는 현상 오너 실 Chrome 재현. 5층 방어(overflow-anchor:none · onMouseDown preventDefault · intentScrollYRef · 400ms scroll event intercept · scrollTo instant + scroll-behavior:auto) 배포 후에도 재현 지속. Playwright mouse.move/down/up 분리 실측에서 모든 phase scrollY 변화 0 → 가상 mouse로는 재현 실패.
+
+현재 처리: 접근 전환으로 사용자 체감 해소 — scrollIntoView({block:'start'}) + scroll-margin-top:80px 능동 scroll 정렬(main-ux.md §1.2b). 오너 실측 "아주 깔끔해 · 원하는대로 됐어" 확인. 기존 5층 방어는 능동 scroll 비활성 경로에서 유지(제거 없음).
+
+위험: 원인 미규명 상태 · 능동 scroll은 마스킹일 수 있음. Chrome 버전·환경 변화 시 재발 가능. 능동 scroll이 새 jump 유발 가능성 있으며, 악화 시 localStorage 'hizzi:activeScrollDisabled'='true'로 즉시 롤백 경로 확보.
+
+해소 방향: #12 DevTools Performance 녹화 워크플로우 수립 후 클릭 순간 호출 스택 포착 · 원인 특정. 원인 격리 이후 능동 scroll 단순화 또는 방어 계층 축소 판단.
+
+영향 범위: src/components/Panel.tsx toggleExpand · main-ux.md §1.2b / §1.2c
+연동 MD: main-ux.md · ux-principles.md U13 · patterns.md P8
+상태: open · #12 선결 필요
+
 ### #10 serviceAccount.json git history 잔존
 
 근거: 세션 #58 push 시점 GitHub Secret Scanning이 `serviceAccount.json:1`을 감지. 최초 커밋 cceeaba(세션 초기) 이후 master에 평문 tracked 상태로 수개월 존재. 세션 #59에서 키 회전(revoke + 재발급) + `.gitignore` 추가 + `git rm --cached`로 위험 중립화 완료. 그러나 과거 커밋에 구 키는 여전히 평문으로 남음.
@@ -154,6 +180,8 @@
 - [2026-04-20 #48 재확인] users 컬렉션 문서 ID 체계 3종 공존 (uid 3건 + auto-ID 3건 + orphan_ 2건). email 기반 rules 우회로 동작. 유사 표면화 2건 이상 누적 시 해결 트리거 발동.
 - [2026-04-20 #48] Panel 명함 3분기 분기(둘 다 없음/한쪽만/둘 다) 단위 테스트 미도입. 현재 E2E 시나리오 4는 시드 독립 렌더 존재만 검증. 3분기 로직 검증은 Panel 단위 테스트 신설 세션으로 분리.
 - [2026-04-20 #48] Vitest 러너 도입 시 npm install에서 24 vulnerabilities 감지 (critical 1 / high 5 / moderate 10 / low 8). devDependencies 범위라 프로덕션 번들 영향 없음. critical 1건 내역 확인 미완 — 확인 후 본 항목 갱신 또는 해소.
+- [2026-04-23 #61] Panel.tsx 기존 transition 토큰 정합 — `transition: "background 0.2s, border 0.2s"` 등 0.2s + ease 키워드 누락 복수 존재. uxui.md 통일 규칙 0.15s ease로 정돈 필요. Codex #61 P3 박제.
+- [2026-04-23 #61] ⋯ handle z-index 매직넘버(3) 토큰화 필요. tokens.ts zIndex 계층(panel:10 등)과 정렬. Codex #61 P3 박제.
 ```
 
 ### 🟢 장기 (Rehobot 전)
