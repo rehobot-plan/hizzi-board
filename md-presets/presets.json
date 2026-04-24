@@ -1,16 +1,15 @@
 {
   "current": {
-    "name": "session-67-memory-purge",
-    "description": "방향 C-1 MEMORY 소각 작업 — 1회 박제 항목 정리",
+    "name": "c2-principles-upgrade",
+    "description": "방향 C-2 근본 원칙 CLAUDE·principles 상향 통합",
     "updated": "2026-04-24",
     "files": [
-      "md/core/CLAUDE.md",
+      "CLAUDE.md",
       "md/core/harness.md",
       "md/core/rules.md",
       "md/core/session.md",
       "md/log/progress.md",
-      ".harness/MEMORY.md",
-      "md/core/master-debt.md"
+      "md/core/principles.md"
     ]
   }
 }
