@@ -29,7 +29,7 @@
 
 ## 현재상태
 
-- 작업 브랜치: master (로컬·원격 baaf68a 동기 / 이번 거버넌스 수정 커밋 후 갱신)
+- 작업 브랜치: master (로컬·원격 2833ccb 동기 · chat-input schedule 단어 경계 fix + 프로덕션 E2E 24/24 PASS · 블록 ③-B 진입 가능)
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW
 - Codex 플러그인 커맨드 7종 실재 확인(review/rescue/adversarial-review/cancel/result/setup/status) — `/codex:adversarial-review` 존재 확정, harness.md 3 목록과 일치

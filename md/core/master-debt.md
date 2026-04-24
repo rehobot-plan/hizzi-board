@@ -232,3 +232,13 @@
 
 연동 MD: 세션 #66 1순위 진입 시 session.md 프리셋에 src/store/authStore.ts 포함
 상태: open (세션 #66 1순위 · E2E 우회로 회귀 감지만 차단)
+
+### #15 Next 14.2.35 로컬 dev OpenTelemetry clientModules TypeError
+
+근거: [2026-04-24 세션 #70] 블록 ③-B chat-input fix E2E 1-5 로컬 실행 중 dev server(npm run dev) 응답 전 route가 OpenTelemetry clientModules TypeError로 서버 에러 페이지 반환. chat-input-s6 24 케이스 전부 Pouncing 상태 고착 관측.
+
+회피: 프로덕션 배포(vercel --prod) 후 BASE_URL=hizzi-board.vercel.app으로 E2E 실행 → 24/24 PASS (커밋 2833ccb 배포본 기준).
+
+해소 방향 후보: (a) next 14.2.x 버전 bump로 OpenTelemetry 관련 패치 수용 (b) .next 캐시 전량 삭제 + reinstall 재현 여부 확인 (c) experimental/instrumentation 설정 검토.
+
+상태: open (관측만 · 프로덕션 배포 영향 없음 · 로컬 E2E 경로 차단)
