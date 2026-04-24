@@ -256,7 +256,15 @@
 
 상태: open (다음 세션 1순위 · 우선순위 P1)
 
-### #18 calendarEvents 필드 체계 분열 — reader identity 규약 혼재 + specific visibility reader 부재
+### #18 calendarEvents 필드 체계 분열 — 1·2단계 해소 / 3단계 마이그레이션 남음
+
+**1단계 — 해소 (세션 2026-04-24 · 54c2d6b)**: master-schema.md calendarEvents 블록 재정의. identity 3축(authorId=uid · authorEmail=email · authorName) 병기 + visibility 삼분(all/me/specific) + visibleTo 선택 필드 + ai-capture 4필드 본체 흡수 + updatedAt 선반영.
+
+**2단계 — 해소 (세션 2026-04-25 · eae34f3)**: writer 5지점(Calendar.AddEventModal · CreatePost · todoRequestStore · TodoDetailModal · chatInputStore) authorEmail·updatedAt 병기 + reader 4지점(Calendar canEditCalendar·team scope 필터 · filterCalendarInputs · useTodaySummary) uid/email 이원 대조 + 레거시 fallback. filterCalendarInputs에 specific visibility reader 신설(fail-closed + visibleTo recipient pass). Codex 4 라운드(P1×3·P2×4) 순차 해소 후 PASS.
+
+**3단계 — open (P2)**: Firestore 레거시 데이터 마이그레이션. 기존 문서의 authorId(email 혼재) → authorId(uid) + authorEmail(email) 분리. 스크립트 작성 + 프로덕션 1회 실행 + 검증. ⑤-3 선결 조건.
+
+### #18-legacy calendarEvents 필드 체계 분열 — 원문 보존
 
 근거: [2026-04-24 세션 #70] master-debt #16 구현 중 Codex R6 지적. `calendarEvents`는 경로별로 필드 구조가 분열:
 - `authorId` 값 타입: `calendar/Calendar.tsx` AddEventModal · TodoDetailModal · 세션 #70 chat = `user.uid` / `CreatePost.tsx` · `todoRequestStore.ts` = email / `useTodaySummary` reader = email 비교
@@ -278,7 +286,13 @@
 
 상태: open (P2 · 다음 세션 1순위 후보)
 
-### #19 chat 경로 schedule specific visibility 임시 강등
+### #19 chat 경로 schedule specific visibility — silent widening 해소 / UI 칩 복구 남음
+
+**silent widening 해소 (세션 2026-04-25 · eae34f3)**: filterCalendarInputs visibleTo reader 도입(#18 2단계) + chatInputStore schedule 분기에서 specific 저장 경로 복구 + confirmExpand downgrade 해제. parseLocal이 감지한 specific은 그대로 저장되고 reader가 올바르게 제한된 대상에게만 노출.
+
+**UI 칩 복구 open (P3)**: ChatExpand β UX에서 schedule 분기 visibility 칩이 여전히 숨김 상태. specific reader 대응은 끝났으므로 사용자 수동 선택(public/private/specific) UI 복구 가능. 사용자 가시성 개선 목적.
+
+### #19-legacy chat 경로 schedule specific visibility 임시 강등 — 원문 보존
 
 근거: [2026-04-24 세션 #70] master-debt #16 구현에서 `filterCalendarInputs` visibleTo reader 부재로 specific 저장 시 silent widening 우려 → 임시로 chat schedule의 `specific` visibility를 `'me'`(author-only)로 보수 downgrade.
 
