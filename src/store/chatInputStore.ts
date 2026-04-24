@@ -211,11 +211,17 @@ async function cancelDerived(messageId: string, derivedIds: DerivedRef[]): Promi
   }
 }
 
+// schedule은 calendarEvents 경로라 홈 패널 "탭"이 아닌 달력 대상. 블록 ⑤ 달력 피어 탭 도입 전까지 문구를 달력으로 정직화.
+function formatSingleSuccessMessage(panelName: string, item: ParsedItem): string {
+  if (item.type === 'schedule') return '달력에 일정이 추가됐습니다';
+  return `${panelName} 패널 · ${tabLabelForType(item.type)} 탭에 추가됨`;
+}
+
 // 토스트 — 저장 완료 + 실행 취소
-function showSuccessToast(panelName: string, tabLabel: string, messageId: string, derivedIds: DerivedRef[]): void {
+function showSuccessToast(message: string, messageId: string, derivedIds: DerivedRef[]): void {
   const addToast = useToastStore.getState().addToast;
   addToast({
-    message: `${panelName} 패널 · ${tabLabel} 탭에 추가됨`,
+    message,
     type: 'success',
     durationMs: 5000,
     action: {
@@ -302,7 +308,7 @@ export const useChatInputStore = create<ChatInputState>((set, get) => ({
       if (created) {
         const derived: DerivedRef[] = [{ type: created.derivedType, id: created.id, status: 'active' }];
         await finalizeChatMessage(messageId, derived);
-        showSuccessToast(findPanelName(panelId), tabLabelForType(item.type), messageId, derived);
+        showSuccessToast(formatSingleSuccessMessage(findPanelName(panelId), item), messageId, derived);
       }
       set({
         ...clearFinal,
@@ -368,7 +374,7 @@ export const useChatInputStore = create<ChatInputState>((set, get) => ({
       }
       if (derived.length > 0) {
         await finalizeChatMessage(state.currentMessageId, derived);
-        showSuccessToast(findPanelName(panelId), `${derived.length}개 항목`, state.currentMessageId, derived);
+        showSuccessToast(`${findPanelName(panelId)} 패널 · ${derived.length}개 항목 추가됨`, state.currentMessageId, derived);
       }
       set({
         isExpanded: false,
@@ -404,7 +410,7 @@ export const useChatInputStore = create<ChatInputState>((set, get) => ({
     if (created) {
       const derived: DerivedRef[] = [{ type: created.derivedType, id: created.id, status: 'active' }];
       await finalizeChatMessage(state.currentMessageId, derived);
-      showSuccessToast(findPanelName(panelId), tabLabelForType(item.type), state.currentMessageId, derived);
+      showSuccessToast(formatSingleSuccessMessage(findPanelName(panelId), item), state.currentMessageId, derived);
     }
 
     set({

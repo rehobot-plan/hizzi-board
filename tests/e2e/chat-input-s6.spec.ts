@@ -260,6 +260,20 @@ test.describe('§6 홈 채팅 입력 A안 회귀', () => {
     }
   });
 
+  // ──────────── schedule 단어 경계 (오탐 해소) ────────────
+
+  test('schedule 단어 경계 — "회의록" 단독은 memo 분기 (오탐 해소)', async ({ page }) => {
+    await gotoHome(page);
+    await typeAndSubmit(page, '회의록');
+    // visibility unset → 시나리오 3 확장
+    await expect(expandLocator(page)).toBeVisible({ timeout: 5000 });
+    const preview = page.locator('[data-testid="chat-preview"]');
+    await expect(preview).toBeVisible();
+    // memo 분기 — type 태그는 "업무/개인/메모" 중 하나. schedule(="일정") 부재 확인이 핵심.
+    await expect(preview.getByText('일정', { exact: true })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+  });
+
   // ──────────── 모바일 pill 노출 ────────────
 
   test.describe('모바일 viewport', () => {

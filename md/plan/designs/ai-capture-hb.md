@@ -120,6 +120,7 @@ ChatMessage 생성 (rawText 원본 보존)
 
 - "요청/부탁/맡기/시키/해주세요" + 수신자명 감지 → `type = request` (posts.requestFrom 채움)
 - "N시/오후/오전/미팅/약속" 시각 키워드 감지 → `type = schedule` (calendarEvents로)
+  > 단어 경계 (세션 #70 교훈): 일정 키워드(미팅·약속·회의)는 substring이 아닌 "독립 단어"로만 매칭. 앞이 한글이면 다른 단어의 일부로 간주. 직후(공백 0 or 1)에 기록성 접미(`록/자료/실/내용/장소/시간/시각/이야기`)가 붙으면 합성어로 판정해 schedule 아님. 예: `회의록/회의자료/약속 장소` → memo. `회의 있다/오후 3시 약속` → schedule.
 - "할일/처리/확인/정리/해야" → `type = todo` (posts)
 - 위 전부 비매칭 → `type = memo` (posts)
 

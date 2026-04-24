@@ -48,9 +48,32 @@ const CONNECTOR_PATTERN = /\s(그리고|또|하고)\s|\s뒤에\s/;
 // ─── 키워드 ───
 const REQUEST_KEYWORDS = ['요청', '부탁', '맡기', '시키', '해주세요', '해달라', '해주라'];
 const SCHEDULE_KEYWORDS = ['미팅', '약속', '회의'];
+// 기록성 조합 명사 — "회의록/회의자료/약속 장소" 등은 schedule이 아닌 memo.
+const SCHEDULE_BLOCK_SUFFIX = ['록', '자료', '실', '내용', '장소', '시간', '시각', '이야기'];
 const TIME_PATTERN = /(오전|오후)?\s?\d{1,2}\s?시/;
 const TODO_KEYWORDS = ['할일', '처리', '확인', '정리', '해야'];
 const PERSONAL_KEYWORDS = ['개인적으로', '사적으로'];
+
+// schedule 키워드가 "독립 단어"로 등장하는지 판정.
+// 앞 문자가 한글이면 다른 단어의 일부(예: "…회의") — 스킵.
+// 직후(공백 0 or 1) 한글 토큰이 BLOCK_SUFFIX에 해당하면 기록성 합성어 — 스킵.
+function isScheduleKeyword(text: string, kw: string): boolean {
+  let idx = 0;
+  while ((idx = text.indexOf(kw, idx)) !== -1) {
+    if (idx > 0 && /[가-힣]/.test(text[idx - 1])) {
+      idx += kw.length;
+      continue;
+    }
+    const rest = text.slice(idx + kw.length);
+    const suffix = rest.match(/^\s?([가-힣]+)/);
+    if (suffix && SCHEDULE_BLOCK_SUFFIX.some((b) => suffix[1].startsWith(b))) {
+      idx += kw.length;
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
 
 const VIS_PUBLIC = ['다 같이', '모두에게', '전체 공개', '팀 전체', '공지'];
 const VIS_PRIVATE = ['나만', '비공개', '혼자'];
@@ -162,7 +185,7 @@ function matchRecipient(text: string): string | null {
 function detectType(text: string, recipient: string | null, hasTime: boolean): ParsedItem['type'] {
   // 우선순위: 요청 → 일정 → 할일 → 메모
   if (recipient && REQUEST_KEYWORDS.some((k) => text.includes(k))) return 'todo'; // 요청도 posts type=todo + requestFrom
-  if (hasTime || SCHEDULE_KEYWORDS.some((k) => text.includes(k))) return 'schedule';
+  if (hasTime || SCHEDULE_KEYWORDS.some((kw) => isScheduleKeyword(text, kw))) return 'schedule';
   if (TODO_KEYWORDS.some((k) => text.includes(k))) return 'todo';
   return 'memo';
 }
