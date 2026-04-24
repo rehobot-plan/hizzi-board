@@ -12,6 +12,7 @@ import {
   typeAndSubmit,
   expandLocator,
   loginAsAdminForAnyViewport,
+  ADMIN_PANEL_DOC_ID,
 } from './helpers/chat-input';
 
 test.describe('§6 홈 채팅 입력 A안 회귀', () => {
@@ -258,6 +259,38 @@ test.describe('§6 홈 채팅 입력 A안 회귀', () => {
         await page.keyboard.press('Escape');
       });
     }
+  });
+
+  // ──────────── #16 chat schedule → 달력 피어 탭 렌더 ────────────
+
+  test('#16 — chat "다 같이 내일 2시 팀 회의"가 본인 패널 달력 탭에 렌더', async ({ page }) => {
+    await ensureAdminPanel();
+    await page.reload();
+    await page.locator('[data-testid="panel-container"]').first().waitFor({ state: 'visible', timeout: 30000 });
+    // 고유 마커로 이벤트 식별
+    const marker = 'AUTOTEST16-' + Date.now().toString(36);
+    await typeAndSubmit(page, `다 같이 내일 2시 ${marker}`);
+    // schedule 토스트 문구 — 세션 #70 chat-input fix(2833ccb) 이후 "달력에 일정이 추가됐습니다"
+    await expect(page.getByText(/달력에 일정이 추가됐습니다/)).toBeVisible({ timeout: 6000 });
+    // admin seed panel 달력 탭 이동
+    const adminPanel = page.locator(`[data-panel-id="${ADMIN_PANEL_DOC_ID}"]`);
+    await adminPanel.locator('[data-testid="panel-tab-calendar"]').click();
+    // FullCalendar 렌더 — title 매칭
+    await expect(page.getByText(new RegExp(marker))).toBeVisible({ timeout: 10000 });
+  });
+
+  test('#16 β — chat schedule 확장 영역에 visibility 칩 미노출', async ({ page }) => {
+    await gotoHome(page);
+    // "내일 2시 회의" — schedule + visibility unset → 확장 영역 노출. β UX상 칩 숨김.
+    await typeAndSubmit(page, '내일 2시 회의');
+    await expect(expandLocator(page)).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('[data-testid="chat-chip-public"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="chat-chip-private"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="chat-chip-specific"]')).toHaveCount(0);
+    // 추가 버튼 활성(schedule 제약 면제)
+    const confirmBtn = page.locator('[data-testid="chat-confirm"]');
+    await expect(confirmBtn).not.toBeDisabled();
+    await page.keyboard.press('Escape');
   });
 
   // ──────────── schedule 단어 경계 (오탐 해소) ────────────

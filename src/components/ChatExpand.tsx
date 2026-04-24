@@ -291,13 +291,16 @@ export default function ChatExpand() {
 
   // 시나리오 3 단일 항목 — visibility unset 해소 필요
   const singleItem = !isMultiple ? parseResult.items[0] : null;
+  // #19 — chat schedule은 visibility='all' 강등(임시). 칩 영역 숨김 + 확정 제약 면제. #18 완료 시 복구.
+  const isScheduleSingle = !isMultiple && singleItem?.type === 'schedule';
   const unsetVisibility = !isMultiple && parseResult.unset.includes('visibility');
+  const needsVisibilityChips = unsetVisibility && !isScheduleSingle;
   // 확정 버튼 활성 조건
   // 복수 항목: 전 항목 전 축 매칭 + 전체 unset 없음 (ai-capture-hb.md §6.3 엄격 조건)
-  // 단일 항목: visibility unset이면 칩 선택 필요
+  // 단일 항목: visibility unset이면 칩 선택 필요 (schedule은 칩 무시 · 바로 추가 가능)
   const confirmDisabled = isMultiple
     ? parseResult.unset.length > 0 || !parseResult.items.every((it) => it.visibility !== null)
-    : unsetVisibility && selectedVisibility === null;
+    : needsVisibilityChips && selectedVisibility === null;
 
   const confirmLabel = isMultiple ? `${parseResult.items.length}개 모두 추가` : '추가';
 
@@ -339,7 +342,7 @@ export default function ChatExpand() {
         <span style={{ fontSize: 12, color: '#6B5B52' }}>
           {isMultiple
             ? `${parseResult.items.length}개 항목이 감지됐습니다.`
-            : unsetVisibility
+            : needsVisibilityChips
               ? '‘공개범위’만 골라주시면 추가합니다.'
               : '다음과 같이 이해했습니다.'}
         </span>
@@ -353,11 +356,11 @@ export default function ChatExpand() {
           ))}
         </div>
       ) : (
-        singleItem && <PreviewCard item={singleItem} unsetVisibility={unsetVisibility} />
+        singleItem && <PreviewCard item={singleItem} unsetVisibility={needsVisibilityChips} />
       )}
 
-      {/* 공개범위 칩 — 시나리오 3 단일 + visibility unset */}
-      {!isMultiple && unsetVisibility && (
+      {/* 공개범위 칩 — 시나리오 3 단일 + visibility unset + schedule 아님(#19 강등). */}
+      {needsVisibilityChips && (
         <div style={{ marginTop: 14 }}>
           <div style={{ fontSize: 11, color: '#9E8880', marginBottom: 8, letterSpacing: '0.04em' }}>
             공개범위

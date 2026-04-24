@@ -28,7 +28,7 @@ export const S6_SEED_TAG = '__test_s6_chat__';
 export const ADMIN_EMAIL = 'admin@company.com';
 
 // admin 계정 테스트용 패널 ID (panels 컬렉션). Firestore reserved ID 패턴(__x__) 회피.
-const ADMIN_PANEL_DOC_ID = 'test-s6-admin-panel';
+export const ADMIN_PANEL_DOC_ID = 'test-s6-admin-panel';
 
 /**
  * admin 계정용 테스트 패널을 panels 컬렉션에 보장.

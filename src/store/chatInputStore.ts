@@ -7,6 +7,7 @@ import {
   collection,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -16,6 +17,12 @@ import { usePostStore } from '@/store/postStore';
 import { usePanelStore } from '@/store/panelStore';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
+import { getEventColor } from '@/lib/calendar-helpers';
+
+function todayYmd(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export type ProcessingState = 'local_parsed' | 'awaiting_user' | 'finalized';
 
@@ -126,13 +133,33 @@ async function createFromParsed(
 
   try {
     if (isSchedule) {
-      // calendarEvents 경로
+      // master-debt #16 — chat 경로 schedule을 calendar 표준 필드 체계(FAB/Calendar 경로 기준)로 정렬.
+      // authorId=uid: Calendar.tsx 편집 권한·team scope 필터(uid 비교) 정합. email-reader 분열은 #18.
+      // visibility 매핑(#19 강등): public/null→'all' · private→'me'(author-only 유지) · specific→'me' downgrade(reader 미지원 · silent widening 방지 위해 public 아닌 보수쪽).
+      const authUser = useAuthStore.getState().user;
+      const ymd = item.dueDate ?? todayYmd();
+      const effectiveVisibility: 'public' | 'private' =
+        visibility === 'private' || visibility === 'specific' ? 'private' : 'public';
+      const calendarVisibility: 'all' | 'me' = effectiveVisibility === 'private' ? 'me' : 'all';
+      const calendarVisibleTo = effectiveVisibility === 'private' ? [userEmail] : [];
       const payload: Record<string, unknown> = {
-        ...basePayload,
         title: item.content,
-        panelId, // 본인 패널 소유 이벤트
+        startDate: ymd,
+        endDate: ymd,
+        authorId: authUser?.uid || userEmail,
+        authorName: authUser?.displayName || userEmail,
+        color: getEventColor(item.taskType ?? 'work', calendarVisibility),
+        visibility: calendarVisibility,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        panelId,
+        visibleTo: calendarVisibleTo,
+        taskType: item.taskType ?? 'work',
+        sourceMessageId: messageId,
+        parseStage: 'user_confirmed' as const,
+        confidence,
+        inputSource: 'chat' as const,
       };
-      if (item.dueDate) payload.date = item.dueDate;
       const ref = await addDoc(collection(db, 'calendarEvents'), payload);
       return { id: ref.id, derivedType: 'calendarEvent' };
     }
@@ -192,11 +219,9 @@ async function cancelDerived(messageId: string, derivedIds: DerivedRef[]): Promi
           if (d.type === 'post') {
             await deletePost(d.id);
           } else {
-            // calendarEvent — soft delete 필드 업데이트
-            await updateDoc(doc(db, 'calendarEvents', d.id), {
-              deleted: true,
-              deletedAt: serverTimestamp(),
-            });
+            // calendarEvent — initCalendarListener는 deleted 필터 없음 → hard-delete로 즉시 소멸시켜 Undo 체감 보장.
+            // (기존 FAB/Calendar 경로도 hard-delete 사용 — 체계 일관.)
+            await deleteDoc(doc(db, 'calendarEvents', d.id));
           }
         } catch (e) {
           console.error('derived cancel failed:', e);
@@ -388,7 +413,11 @@ export const useChatInputStore = create<ChatInputState>((set, get) => ({
 
     // 시나리오 3 — 단일 항목 · visibility 확정
     const item = state.parseResult.items[0];
-    const resolvedVisibility = state.selectedVisibility ?? item.visibility ?? 'public';
+    // #19 — chat schedule은 칩 숨김이라 사용자 선택 없음. parseLocal이 private 감지(예: "나만") 시 유지, 나머지는 public. specific은 강등.
+    const isScheduleItem = item.type === 'schedule';
+    const resolvedVisibility: 'public' | 'private' | 'specific' = isScheduleItem
+      ? (item.visibility === 'private' ? 'private' : 'public')
+      : (state.selectedVisibility ?? item.visibility ?? 'public');
     let visibleTo: string[];
     if (resolvedVisibility === 'public') visibleTo = [];
     else if (resolvedVisibility === 'private') visibleTo = [user.email];
