@@ -65,25 +65,49 @@ interface PostAttachment {
 }
 ```
 
-### `calendarEvents`
+### `calendarEvents` (세션 #71 재정의 · master-debt #18 1단계)
 ```typescript
 {
   id: string
   title: string
-  startDate: string
-  endDate: string
-  authorId: string
-  authorName: string
-  color: string
+  startDate: string                  // 'YYYY-MM-DD'
+  endDate: string                    // 'YYYY-MM-DD'
   createdAt: Date
+  updatedAt?: Date
+
+  // identity 3축 병기 — 세션 #71 · #18 1단계.
+  // 분열 실상(master-debt #18): Calendar.tsx 편집 권한·team scope 필터는 uid 대조,
+  // useTodaySummary·filterCalendarInputs 담당자 매칭은 email 대조. 양자 병기로 각 reader 용도 분리.
+  authorId: string                   // Firebase UID — 편집 권한·team scope 필터 대조
+  authorEmail: string                // 작성자 email — 필터·카운트·visibility reader 대조
+  authorName: string                 // 표시 이름
+
+  // 시각·분류
+  color: string
+  taskType?: 'work' | 'personal'
+
+  // 공개범위 (세션 #71 삼분 확정 · reader 보강은 다음 사이클)
+  visibility?: 'all' | 'me' | 'specific'
+  visibleTo?: string[]               // specific일 때 노출 대상 email 리스트. 현재 reader 부재(filterCalendarInputs 미체크) — 보강은 #18 다음 사이클
+
+  // 반복
   repeat?: { type: string; weeklyDay: string; excludeHolidays: boolean; endType: string; endDate: string; endCount: number }
   repeatGroupId?: string
+
+  // 요청 cascade 파생 (todoRequests로부터 생성된 이벤트)
   requestId?: string
   requestFrom?: string
   requestTitle?: string
   teamRequestId?: string
-  taskType?: string
-  visibility?: string
+
+  // panel 소유 (chat 경로 · 피어 탭 달력, 블록 ⑤-1 이후)
+  panelId?: string
+
+  // ai-capture 캡처 4필드 흡수 (세션 #64 · 신규 레코드만 · ai-capture-hb.md 5.2)
+  sourceMessageId?: string | null    // chatMessages.id · manual 경로면 null
+  parseStage?: 'local' | 'user_confirmed'
+  confidence?: number                // 0~1
+  inputSource?: 'chat' | 'manual'
 }
 ```
 
@@ -114,7 +138,7 @@ interface PostAttachment {
 }
 ```
 
-### `posts` · `calendarEvents` 4필드 추가 (세션 #64 · 신규 레코드만)
+### `posts` 4필드 추가 (세션 #64 · 신규 레코드만 · ai-capture-hb.md 5.2)
 
 ```typescript
 {
@@ -127,6 +151,8 @@ interface PostAttachment {
 ```
 
 기존 레코드 소급 할당 없음 (ai-capture-hb.md 5.4). 4필드 부재 = `inputSource: 'manual'` 상당.
+
+`calendarEvents`의 동일 4필드는 세션 #71 재정의에서 본체 스키마로 흡수됨(위 `calendarEvents` 블록 참조).
 
 ### `comments`
 ```typescript
