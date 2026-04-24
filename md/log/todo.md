@@ -29,6 +29,7 @@
 - (거버넌스 잔여) old_str 작성 원칙 — Claude.ai 기억 재구성 금지, Code 실측 라인 보고 선행 후 작성 — CLAUDE.md 또는 rules.md 계열 한 줄 추가 — 2026-04-24 3회 연속 불일치 관찰
 - (거버넌스 잔여) harness.md 3 "현재 spec: playwright-login.spec.js" 문구 실측 반영 — 해당 파일 testDir 밖이라 표준 명령 실행 불가 (2026-04-24 블록 ④ 1-5 관찰)
 - (거버넌스 잔여) session.md 2번 "종료 판단 기준" 한 줄 추가 — 개발 의도 전환 / 콘텍스트 포화 / 오너 명시적 지시 중 하나 발생 시 종료. 거버넌스 층 수정이라 별도 세션에서 before/after 비교표 검수 필요 — 2026-04-24 종료 시점 판단 기준 공백 관찰
+- (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토. 1~2 세션 관찰 선행 후 거버넌스 수정 세션으로 진행. 검토 대상: 1층 session.md 1(세션 시작 주입 확인) + 2(Code 실측 + Claude.ai 직접 확인 이중 검증 구조) · 2층 session.md 4 프리셋 시스템 폐기 + md-presets/·presets.json·_staging/ 폴더 제거 · 3층 CLAUDE.md 5 파일 지도 의미 재정의(주입 목록→참조 목록) · 4층 harness.md 1-6 공장 산출물 경로 파일 저장 전환(선택). 거버넌스 층 수정이라 before/after 비교표 검수 필요. 2026-04-24 MCP filesystem 도입 완료 시점 기록
 
 ## 현재상태
 

@@ -7,6 +7,7 @@
 
 ---
 
+- [2026-04-24] Claude Desktop + MCP filesystem 설정 완료 — claude_desktop_config.json에 hizzi-board-fs 서버 등록, 허용 경로 D:\Dropbox\Dropbox\hizzi-board. MSIX 샌드박스 경로 %LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\. 검증 질의 "CLAUDE.md 상단 5줄 읽기" 정상 응답 확인. (커밋·해시 없음 — Desktop 앱 설정 파일은 프로젝트 git 관리 밖)
 - [2026-04-24] master-debt #16 chat schedule 표준 필드 정렬 + β visibility 칩 숨김 (6ddcc9a) — src/store/chatInputStore.ts · src/components/ChatExpand.tsx · tests/e2e/helpers/chat-input.ts · tests/e2e/chat-input-s6.spec.ts
 - [2026-04-24] 블록 ⑤-1 달력 피어 탭 본인 패널 + 타인 placeholder (0d09023) — src/components/Panel.tsx · src/components/calendar/Calendar.tsx · src/hooks/useCalendarFilter.ts · src/app/(main)/mydesk/today/page.tsx · src/app/(main)/mydesk/calendar/page.tsx · src/components/mydesk/TabBar.tsx · tests/smoke/panel-calendar-5.spec.ts · tests/smoke/calendar-filter-4b.spec.ts · tests/smoke/mydesk-tabbar-r4.spec.ts
 - [2026-04-24] 블록 ③-B 3층 RecordModal 진입점 + visibleTo 공유 필터 (1·2층 기존 누락 동시 해소) (61f6088) — src/components/Panel.tsx · src/components/RecordModal.tsx · src/components/TodoList.tsx · src/components/PostList.tsx · src/lib/postSelectors.ts · tests/unit/postSelectors.test.ts · tests/smoke/panel-record-menu.spec.ts
