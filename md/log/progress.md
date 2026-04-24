@@ -150,3 +150,5 @@ Phase: E2E 스위트 명령 블록 작성 / Code 1-1~1-6 / 안정화 중 구조 
 - Playwright × React 조합에서 시간 고정은 setFixedTime 안전, clock.install 위험. 규칙 기반 파싱에서 동적 날짜 assertion은 반드시 시간 고정 필요
 
 다음 세션 1순위: authStore.onAuthStateChanged reload 부작용 진단 + 수정 (master-debt #14).
+
+- [2026-04-24] 방향 A 프로세스 다이어트 — 오너 반사 튕김·경유 완화·박제 임계 (CLAUDE.md §7 / md/core/harness.md §2 / .harness/MEMORY.md)
