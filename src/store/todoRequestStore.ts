@@ -150,14 +150,16 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
         }
         if (shouldAddCalendar) {
           const assigneeNames = req.teamLabel || authorName;
+          // #18 2단계 — 담당자(req.toEmail)를 이벤트 소유자로 기록. authorId(uid)는 fallback으로 생략(3단계 마이그레이션에서 채움).
           await addDoc(collection(db, 'calendarEvents'), {
             title: req.teamLabel ? `[Team] ${req.title}` : `[요청] ${req.title}`,
             startDate: req.dueDate,
             endDate: req.dueDate,
-            authorId: req.toEmail,
+            authorEmail: req.toEmail,
             authorName: req.teamLabel ? `담당: ${assigneeNames}` : authorName,
             color: '#993556',
             createdAt: new Date(),
+            updatedAt: new Date(),
             repeat: { type: 'none' },
             taskType: 'work',
             visibility: 'all',

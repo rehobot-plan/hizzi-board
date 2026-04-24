@@ -133,20 +133,24 @@ async function createFromParsed(
 
   try {
     if (isSchedule) {
-      // master-debt #16 — chat 경로 schedule을 calendar 표준 필드 체계(FAB/Calendar 경로 기준)로 정렬.
-      // authorId=uid: Calendar.tsx 편집 권한·team scope 필터(uid 비교) 정합. email-reader 분열은 #18.
-      // visibility 매핑(#19 강등): public/null→'all' · private→'me'(author-only 유지) · specific→'me' downgrade(reader 미지원 · silent widening 방지 위해 public 아닌 보수쪽).
+      // master-debt #18 2단계 — identity 3축 병기(authorId=uid + authorEmail=email) + specific reader 대응.
+      // #19 복구: filterCalendarInputs visibleTo 체크 도입으로 specific 저장 가능 → silent widening 해소.
+      // 매핑: public/null→'all' · private→'me'(author-only) · specific→'specific'(+ visibleTo).
       const authUser = useAuthStore.getState().user;
       const ymd = item.dueDate ?? todayYmd();
-      const effectiveVisibility: 'public' | 'private' =
-        visibility === 'private' || visibility === 'specific' ? 'private' : 'public';
-      const calendarVisibility: 'all' | 'me' = effectiveVisibility === 'private' ? 'me' : 'all';
-      const calendarVisibleTo = effectiveVisibility === 'private' ? [userEmail] : [];
+      const calendarVisibility: 'all' | 'me' | 'specific' =
+        visibility === 'private' ? 'me' : visibility === 'specific' ? 'specific' : 'all';
+      let calendarVisibleTo: string[] = [];
+      if (calendarVisibility === 'me') calendarVisibleTo = [userEmail];
+      else if (calendarVisibility === 'specific') {
+        calendarVisibleTo = Array.from(new Set([userEmail, ...visibleTo]));
+      }
       const payload: Record<string, unknown> = {
         title: item.content,
         startDate: ymd,
         endDate: ymd,
-        authorId: authUser?.uid || userEmail,
+        authorId: authUser?.uid || undefined,
+        authorEmail: userEmail,
         authorName: authUser?.displayName || userEmail,
         color: getEventColor(item.taskType ?? 'work', calendarVisibility),
         visibility: calendarVisibility,
@@ -413,18 +417,20 @@ export const useChatInputStore = create<ChatInputState>((set, get) => ({
 
     // 시나리오 3 — 단일 항목 · visibility 확정
     const item = state.parseResult.items[0];
-    // #19 — chat schedule은 칩 숨김이라 사용자 선택 없음. parseLocal이 private 감지(예: "나만") 시 유지, 나머지는 public. specific은 강등.
+    // #18 2단계 — specific reader 도입으로 #19 downgrade 해제. schedule은 칩 숨김이라 사용자 선택 없음 → parseLocal 감지값 그대로(public/private/specific).
     const isScheduleItem = item.type === 'schedule';
     const resolvedVisibility: 'public' | 'private' | 'specific' = isScheduleItem
-      ? (item.visibility === 'private' ? 'private' : 'public')
+      ? (item.visibility ?? 'public')
       : (state.selectedVisibility ?? item.visibility ?? 'public');
     let visibleTo: string[];
     if (resolvedVisibility === 'public') visibleTo = [];
     else if (resolvedVisibility === 'private') visibleTo = [user.email];
     else {
-      // specific — 수신자 있으면 포함
-      visibleTo = [user.email];
-      if (item.requestFrom && !visibleTo.includes(item.requestFrom)) visibleTo.push(item.requestFrom);
+      // specific — parseLocal이 감지한 수신자 + requestFrom 보존 (author 자동 포함)
+      const parsed = Array.isArray(item.visibleTo) ? item.visibleTo : [];
+      const set = new Set<string>([user.email, ...parsed]);
+      if (item.requestFrom) set.add(item.requestFrom);
+      visibleTo = Array.from(set);
     }
 
     const created = await createFromParsed(

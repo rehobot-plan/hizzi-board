@@ -166,12 +166,17 @@ export default function CreatePost({ panelId, onClose, defaultCategory }: Create
           title: content.trim(),
           startDate: dueDate,
           endDate: dueDate,
-          authorId: myEmail,
+          // #18 2단계 — uid/email 병기. uid 부재 시 authorId 생략(마이그레이션 3단계에서 채움).
+          authorId: user?.uid || undefined,
+          authorEmail: myEmail,
           authorName: users.find(u => u.email === myEmail)?.name || myEmail.split('@')[0],
           color,
           taskType,
           visibility: visibility === 'all' ? 'all' : visibility === 'me' ? 'me' : 'specific',
+          // specific이면 visibleTo도 함께 저장(filterCalendarInputs reader 대응)
+          ...(visibility === 'specific' && visibleTo ? { visibleTo } : {}),
           createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         }));
       }
 

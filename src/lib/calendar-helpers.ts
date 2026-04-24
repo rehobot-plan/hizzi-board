@@ -254,7 +254,7 @@ export function mergeConsecutiveLeave<T extends LeaveLikeEvent>(events: T[]): (T
 
 // ─── Firestore → FullCalendar 어댑터 ───────────────────────
 
-/** Firestore calendarEvents 문서 최소 인터페이스 */
+/** Firestore calendarEvents 문서 최소 인터페이스 (master-schema.md 기준 · #18 2단계 authorEmail·visibleTo 추가) */
 export interface CalendarEventDoc {
   id: string;
   title: string;
@@ -262,14 +262,17 @@ export interface CalendarEventDoc {
   endDate: string;
   color: string;
   authorId?: string;
+  authorEmail?: string;
   authorName?: string;
   createdAt?: { toMillis?: () => number; seconds?: number };
+  updatedAt?: { toMillis?: () => number; seconds?: number };
   repeatGroupId?: string;
   requestId?: string;
   requestFrom?: string;
   requestTitle?: string;
   taskType?: string;
   visibility?: string;
+  visibleTo?: string[];
 }
 
 /** Firestore leaveEvents 문서 최소 인터페이스 */
@@ -406,6 +409,12 @@ export interface CalendarFilterContext {
   members: string[];
   categories: CalendarCategory[];
   users: CalendarFilterUser[];
+  // #18 2단계 — specific visibility reader. 지정 시 visibility='specific' 이벤트는
+  // viewer(currentUserEmail)가 author 또는 visibleTo에 포함될 때만 통과. admin은 전량 허용.
+  // currentUserUid는 레거시 uid-only author 이벤트 본인 판정(authorEmail 부재 시).
+  currentUserEmail?: string;
+  currentUserUid?: string;
+  isAdmin?: boolean;
 }
 
 function resolveEventMemberEmails(
@@ -419,6 +428,10 @@ function resolveEventMemberEmails(
   const raw = ev.extendedProps.rawCalendar;
   if (!raw) return [];
   const result = new Set<string>();
+  // #18 2단계 — authorEmail 우선 사용. 레거시 레코드 호환 위해 authorId 매핑 fallback 유지.
+  if (raw.authorEmail) {
+    result.add(raw.authorEmail);
+  }
   if (raw.authorId) {
     if (raw.authorId.includes('@')) {
       result.add(raw.authorId);
@@ -458,8 +471,29 @@ export function filterCalendarInputs(
   const memberSet = new Set(ctx.members);
   const categorySet = new Set(ctx.categories);
   return events.filter(ev => {
+    const raw = ev.extendedProps.source === 'calendar' ? ev.extendedProps.rawCalendar : undefined;
+    const me = ctx.currentUserEmail;
+    // #18 2단계 — specific visibility fail-closed. admin 제외, viewer identity 미확정이거나 author·recipient 아니면 차단.
+    if (raw?.visibility === 'specific') {
+      if (!ctx.isAdmin) {
+        if (me === undefined) return false; // auth hydrate 전: fail-closed
+        const isAuthor =
+          raw.authorEmail === me ||
+          raw.authorId === me ||
+          (ctx.currentUserUid ? raw.authorId === ctx.currentUserUid : false);
+        const isTarget = Array.isArray(raw.visibleTo) && raw.visibleTo.includes(me);
+        if (!isAuthor && !isTarget) return false;
+      }
+    }
+    // member 매칭: author/requester + specific 이벤트에서 viewer가 recipient면 viewer email도 member 후보로.
+    // (viewer가 member 필터에서 자신을 포함해야만 공유받은 specific 이벤트 노출 — 필터 정확성 유지.)
     const emails = resolveEventMemberEmails(ev, ctx.users);
+    const iAmRecipient =
+      !!me && raw?.visibility === 'specific' &&
+      Array.isArray(raw.visibleTo) && raw.visibleTo.includes(me);
+    if (iAmRecipient) emails.push(me);
     if (!emails.some(e => memberSet.has(e))) return false;
-    return categorySet.has(resolveEventCategory(ev));
+    if (!categorySet.has(resolveEventCategory(ev))) return false;
+    return true;
   });
 }

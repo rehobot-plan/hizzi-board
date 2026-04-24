@@ -90,8 +90,8 @@ interface PostAttachment {
   visibility?: 'all' | 'me' | 'specific'
   visibleTo?: string[]               // specific일 때 노출 대상 email 리스트. 현재 reader 부재(filterCalendarInputs 미체크) — 보강은 #18 다음 사이클
 
-  // 반복
-  repeat?: { type: string; weeklyDay: string; excludeHolidays: boolean; endType: string; endDate: string; endCount: number }
+  // 반복 (내부 필드 전부 선택 · writer별로 일부만 세팅 가능)
+  repeat?: { type?: string; weeklyDay?: string; excludeHolidays?: boolean; endType?: string; endDate?: string; endCount?: number }
   repeatGroupId?: string
 
   // 요청 cascade 파생 (todoRequests로부터 생성된 이벤트)

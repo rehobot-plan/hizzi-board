@@ -101,19 +101,27 @@ export default function CalendarContainer({
       members: effectiveMembers,
       categories: effectiveCategories,
       users: users.map(u => ({ id: u.id, email: u.email, name: u.name })),
+      currentUserEmail: user?.email || undefined,
+      currentUserUid: user?.uid || undefined,
+      isAdmin: user?.role === 'admin',
     });
     // 본인 패널 '전체' scope에서 타인의 private(visibility='me')은 차단(team fall-through 방지).
     // specific은 CalendarEventDoc에 visibleTo 필드 부재 — 보수적으로 author=본인만 허용(⑤-3에서 정제).
-    if (panelMode && panelScope === 'team' && user?.uid) {
+    // panelMode + 본인 패널 + team scope: 남의 private('me') 이벤트 제외.
+    // #18 2단계 — authorId(uid) 우선, authorEmail·email 레거시 fallback.
+    if (panelMode && panelScope === 'team' && (user?.uid || user?.email)) {
       return base.filter(ev => {
         if (ev.extendedProps?.source !== 'calendar') return true;
         const raw = ev.extendedProps?.rawCalendar as CalendarEventDoc | undefined;
         if (!raw?.visibility || raw.visibility === 'all') return true;
-        return raw.authorId === user.uid;
+        if (raw.visibility === 'specific') return true; // specific reader는 filterCalendarInputs가 처리
+        if (user?.uid && raw.authorId === user.uid) return true;
+        if (user?.email && (raw.authorEmail === user.email || raw.authorId === user.email)) return true;
+        return false;
       });
     }
     return base;
-  }, [eventInputs, effectiveMembers, effectiveCategories, users, panelMode, panelScope, user?.uid]);
+  }, [eventInputs, effectiveMembers, effectiveCategories, users, panelMode, panelScope, user?.uid, user?.email, user?.role]);
 
   // ─── 공통 상태 ────────────────────────────────────────
   const [loading, setLoading] = useState(false);
@@ -152,8 +160,15 @@ export default function CalendarContainer({
   }, anyModalOpen);
 
   // ─── 권한 ─────────────────────────────────────────────
-  const canEditCalendar = (ev: CalendarEvent) =>
-    !!(user && (user.role === 'admin' || user.uid === ev.authorId));
+  // #18 2단계 — uid/email 이원 대조. authorId(uid) 우선, 레거시 authorId=email·새 authorEmail 두 fallback.
+  const canEditCalendar = (ev: CalendarEvent) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (user.uid && ev.authorId === user.uid) return true;
+    const evEmail = (ev as unknown as { authorEmail?: string }).authorEmail;
+    if (user.email && (evEmail === user.email || ev.authorId === user.email)) return true;
+    return false;
+  };
 
   const canEditLeave = (ev: LeaveEvent) => {
     if (!user) return false;
@@ -244,14 +259,14 @@ export default function CalendarContainer({
     setLoading(true);
     try {
       if (repeatType === 'none') {
-        await addDoc(collection(db, 'calendarEvents'), { title: form.title, startDate: form.startDate, endDate: form.endDate, authorId: user?.uid, authorName: user?.displayName || user?.email, color: form.color, createdAt: new Date(), repeat: { type: 'none' } });
+        await addDoc(collection(db, 'calendarEvents'), { title: form.title, startDate: form.startDate, endDate: form.endDate, authorId: user?.uid, authorEmail: user?.email, authorName: user?.displayName || user?.email, color: form.color, createdAt: new Date(), updatedAt: new Date(), repeat: { type: 'none' } });
         addToast('일정이 추가되었습니다.');
       } else {
         const dates = buildRepeatDates(form.startDate, { repeatType, weeklyDay, excludeHolidays, endType, endDate, endCount });
         if (dates.length === 0) { addToast('생성할 일정이 없습니다.'); setLoading(false); return; }
         const groupId = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
         for (const ds of dates) {
-          await addDoc(collection(db, 'calendarEvents'), { title: form.title, startDate: ds, endDate: ds, authorId: user?.uid, authorName: user?.displayName || user?.email, color: form.color, createdAt: new Date(), repeat: { type: repeatType, weeklyDay, excludeHolidays, endType, endDate, endCount }, repeatGroupId: groupId });
+          await addDoc(collection(db, 'calendarEvents'), { title: form.title, startDate: ds, endDate: ds, authorId: user?.uid, authorEmail: user?.email, authorName: user?.displayName || user?.email, color: form.color, createdAt: new Date(), updatedAt: new Date(), repeat: { type: repeatType, weeklyDay, excludeHolidays, endType, endDate, endCount }, repeatGroupId: groupId });
         }
         addToast(dates.length + '개 일정이 추가되었습니다.');
       }

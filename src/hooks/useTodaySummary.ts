@@ -44,10 +44,17 @@ export function useTodaySummary(): TodaySummary {
     const todoToday = myPosts.filter(p => isToday(p.dueDate)).length;
     const overdue = myPosts.filter(p => p.dueDate && p.dueDate < todayKey).length;
 
-    // 내 일정: authorId=me 또는 visibility='all'
-    const myCalEvents = calendarEvents.filter(e =>
-      e.authorId === email || e.visibility === 'all'
-    );
+    // 내 일정 (#18 2단계): authorEmail=me · 레거시 authorId=email · 레거시 authorId=uid · visibility='all' · visibility='specific' 공유 대상 중 하나
+    const myUid = user?.uid || '';
+    const myCalEvents = calendarEvents.filter(e => {
+      const evAny = e as unknown as { authorEmail?: string; visibleTo?: string[] };
+      if (evAny.authorEmail === email) return true;
+      if (e.authorId === email) return true;
+      if (myUid !== '' && e.authorId === myUid) return true;
+      if (e.visibility === 'all') return true;
+      if (e.visibility === 'specific' && Array.isArray(evAny.visibleTo) && evAny.visibleTo.includes(email)) return true;
+      return false;
+    });
     const eventToday = myCalEvents.filter(e => e.startDate <= todayKey && e.endDate >= todayKey).length;
     const eventThisWeek = myCalEvents.filter(e => isThisWeek(e.startDate)).length;
 
@@ -118,5 +125,5 @@ export function useTodaySummary(): TodaySummary {
       counts: { todoToday, eventToday, eventThisWeek, receivedPending, sentPending, inProgress, overdue },
       urgentItems: urgent,
     };
-  }, [posts, calendarEvents, requests, email, badges]);
+  }, [posts, calendarEvents, requests, email, user?.uid, badges]);
 }

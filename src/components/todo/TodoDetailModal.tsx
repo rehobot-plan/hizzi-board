@@ -147,16 +147,20 @@ export default function TodoDetailModal({ post, canEdit, isOpen, onClose }: Todo
             const color = detailTaskType === 'personal'
               ? (detailVisibility === 'all' ? 'rgba(99,153,34,0.15)' : detailVisibility === 'me' ? 'rgba(55,138,221,0.15)' : 'rgba(186,117,23,0.15)')
               : (detailVisibility === 'all' ? tagColors.visibility.all.fg : detailVisibility === 'me' ? tagColors.visibility.meOnly.fg : tagColors.visibility.specific.fg);
+            // #18 2단계 — uid/email 병기 + updatedAt + specific visibleTo 저장.
             await addDoc(collection(db, 'calendarEvents'), {
               title: detailTitle.trim(),
               startDate: normalizedDue,
               endDate: normalizedDue,
               authorId: user.uid,
+              authorEmail: user.email,
               authorName: user.displayName || user.email,
               color,
               taskType: detailTaskType,
               visibility: detailVisibility,
+              ...(detailVisibility === 'specific' && visibleTo ? { visibleTo } : {}),
               createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
             });
             useToastStore.getState().addToast({ message: '캘린더에 등록되었습니다.', type: 'success' });
           }
