@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { useAuthStore } from '@/store/authStore';
@@ -17,6 +17,7 @@ import {
   getEventColor, DAY_KEYS, buildRepeatDates, buildDateRange,
   filterCalendarInputs,
 } from '@/lib/calendar-helpers';
+import type { CalendarCategory } from '@/lib/calendar-helpers';
 import { CalendarFormState, CalendarEvent, DeleteConfirmTarget } from './calendar-types';
 import { calendarEvent } from '@/styles/tokens';
 import CalendarGrid from './CalendarGrid';
@@ -26,9 +27,20 @@ import { useCalendarFilter, type CalendarScope } from '@/hooks/useCalendarFilter
 
 interface CalendarContainerProps {
   defaultScope?: CalendarScope;
+  /** 블록 ⑤ 패널 내부 렌더 모드 — 나만/전체 이진 토글 · 기존 CalendarFilter 숨김. */
+  panelMode?: boolean;
+  /** 패널 소유자 이메일 (main-ux.md 5.2). isOwnPanel 계산용. */
+  panelOwnerEmail?: string;
+  /** 패널 FAB 클릭 시 증가 — 외부 트리거로 AddEventModal 오픈 (달력 탭 FAB 분기). */
+  openAddSignal?: number;
 }
 
-export default function CalendarContainer({ defaultScope = 'team' }: CalendarContainerProps = {}) {
+export default function CalendarContainer({
+  defaultScope = 'team',
+  panelMode = false,
+  panelOwnerEmail,
+  openAddSignal,
+}: CalendarContainerProps = {}) {
   const { user } = useAuthStore();
   const { addToast } = useToastStore();
   const { events: leaveEvents, addLeaveEvent, updateLeaveEvent, deleteLeaveEvent } = useLeaveStore();
@@ -54,16 +66,54 @@ export default function CalendarContainer({ defaultScope = 'team' }: CalendarCon
   }, [calendarEvents, leaveEvents]);
 
   // ─── 필터 (Phase 4-A) ─────────────────────────────────
-  const filter = useCalendarFilter(defaultScope);
-  const filteredInputs = useMemo(
-    () =>
-      filterCalendarInputs(eventInputs, {
-        members: filter.members,
-        categories: filter.categories,
-        users: users.map(u => ({ id: u.id, email: u.email, name: u.name })),
-      }),
-    [eventInputs, filter.members, filter.categories, users],
+  // 블록 ⑤-1 간소화: 본인 패널만 월 그리드 렌더. 타인 패널은 placeholder(아래 early return) → scope·privacy 복잡 분기 원천 제거.
+  // ⑤-3(별도 세션)에서 visibleTo 기반 정교한 접근 제어 모델 재설계 예정.
+  const isOwnPanel = !!(panelMode && panelOwnerEmail && user?.email && panelOwnerEmail === user.email);
+  const [panelScope, setPanelScope] = useState<CalendarScope>(() => {
+    if (!panelMode) return defaultScope;
+    return 'me';
+  });
+  // auth hydrate 지연 시 isOwnPanel이 false→true로 바뀌어도 '나만' 기본값 고정(사용자 수동 전환 후엔 override 금지).
+  const panelScopeUserTouchedRef = useRef(false);
+  useEffect(() => {
+    if (!panelMode) return;
+    if (panelScopeUserTouchedRef.current) return;
+    setPanelScope('me');
+  }, [panelMode, isOwnPanel]);
+  const effectiveScope: CalendarScope = panelMode ? panelScope : defaultScope;
+  const filter = useCalendarFilter(effectiveScope);
+  // panelMode: 본인 패널만 도달. scope 기반 members(me=본인 / team=전체). localStorage 이전 members 무시.
+  const effectiveMembers = useMemo(() => {
+    if (panelMode) {
+      if (panelScope === 'me' && user?.email) return [user.email];
+      return users.map(u => u.email).filter((e): e is string => !!e);
+    }
+    return filter.members;
+  }, [panelMode, panelScope, user?.email, users, filter.members]);
+  const PANEL_ALL_CATEGORIES: CalendarCategory[] = ['work', 'request', 'personal'];
+  const effectiveCategories = useMemo(
+    () => (panelMode ? PANEL_ALL_CATEGORIES : filter.categories),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [panelMode, filter.categories],
   );
+  const filteredInputs = useMemo(() => {
+    const base = filterCalendarInputs(eventInputs, {
+      members: effectiveMembers,
+      categories: effectiveCategories,
+      users: users.map(u => ({ id: u.id, email: u.email, name: u.name })),
+    });
+    // 본인 패널 '전체' scope에서 타인의 private(visibility='me')은 차단(team fall-through 방지).
+    // specific은 CalendarEventDoc에 visibleTo 필드 부재 — 보수적으로 author=본인만 허용(⑤-3에서 정제).
+    if (panelMode && panelScope === 'team' && user?.uid) {
+      return base.filter(ev => {
+        if (ev.extendedProps?.source !== 'calendar') return true;
+        const raw = ev.extendedProps?.rawCalendar as CalendarEventDoc | undefined;
+        if (!raw?.visibility || raw.visibility === 'all') return true;
+        return raw.authorId === user.uid;
+      });
+    }
+    return base;
+  }, [eventInputs, effectiveMembers, effectiveCategories, users, panelMode, panelScope, user?.uid]);
 
   // ─── 공통 상태 ────────────────────────────────────────
   const [loading, setLoading] = useState(false);
@@ -112,6 +162,18 @@ export default function CalendarContainer({ defaultScope = 'team' }: CalendarCon
     if (isPast || ev.confirmed) return false;
     return !!(user.email && (ev.userEmail === user.email || ev.createdBy === user.email));
   };
+
+  // 외부 트리거(Panel FAB) — openAddSignal 증가 시 오늘 날짜 prefill로 AddEventModal 오픈.
+  useEffect(() => {
+    if (openAddSignal === undefined || openAddSignal === 0) return;
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    const ymd = `${y}-${m}-${d}`;
+    openAddModal(ymd, ymd);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openAddSignal]);
 
   // ─── 모달 열기 ────────────────────────────────────────
   const openAddModal = (startStr: string, endStr: string) => {
@@ -271,20 +333,76 @@ export default function CalendarContainer({ defaultScope = 'team' }: CalendarCon
   };
 
   // ─── 렌더 ─────────────────────────────────────────────
+  // 블록 ⑤-1 경계: 타인 패널(panelMode + !isOwnPanel)은 placeholder로 early return.
+  // scope 토글·월 그리드·AddEventModal write path 전부 미노출 → privacy/access 축 원천 차단.
+  if (panelMode && !isOwnPanel) {
+    return (
+      <div
+        data-testid="panel-calendar-placeholder"
+        style={{
+          padding: '40px 16px',
+          textAlign: 'center',
+          color: '#9E8880',
+          fontSize: 12,
+          letterSpacing: '0.04em',
+        }}
+      >
+        이 패널의 달력은 준비 중입니다
+      </div>
+    );
+  }
+
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 0 8px' }}>
-        <CalendarFilter
-          members={filter.members}
-          onMembersChange={filter.setMembers}
-          categories={filter.categories}
-          onCategoriesChange={filter.setCategories}
-          allMembers={users}
-          scope={defaultScope}
-          myEmail={user?.email || ''}
-          onResetDefaults={filter.resetDefaults}
-          onPersist={filter.persist}
-        />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 0 8px', gap: 8 }}>
+        {/* 블록 ⑤ 본인 패널 scope 이진 토글 (나만/전체). 타인 패널/비-panelMode에선 미노출. */}
+        {panelMode && isOwnPanel && (
+          <div
+            data-testid="calendar-scope-toggle"
+            style={{ display: 'flex', border: '1px solid #EDE5DC', borderRadius: 4, overflow: 'hidden' }}
+          >
+            {([
+              { value: 'me' as CalendarScope, label: '나만' },
+              { value: 'team' as CalendarScope, label: '전체' },
+            ]).map(opt => {
+              const active = panelScope === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  data-testid={`calendar-scope-${opt.value}`}
+                  onClick={() => { panelScopeUserTouchedRef.current = true; setPanelScope(opt.value); }}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 11,
+                    letterSpacing: '0.06em',
+                    color: active ? '#2C1810' : '#9E8880',
+                    background: active ? '#F6EFE7' : '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'background 0.15s ease',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {/* panelMode에서는 기존 담당자·카테고리 필터 숨김(월 네비 옆 scope 토글로 대체). */}
+        {!panelMode && (
+          <CalendarFilter
+            members={filter.members}
+            onMembersChange={filter.setMembers}
+            categories={filter.categories}
+            onCategoriesChange={filter.setCategories}
+            allMembers={users}
+            scope={effectiveScope}
+            myEmail={user?.email || ''}
+            onResetDefaults={filter.resetDefaults}
+            onPersist={filter.persist}
+          />
+        )}
       </div>
       <CalendarGrid
         events={filteredInputs}

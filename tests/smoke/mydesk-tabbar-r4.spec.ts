@@ -59,7 +59,8 @@ test.describe('Phase R-4: MY DESK TabBar 5탭 (요청 탭 추가, 세션 #49)', 
     expect(borderColor).toBe('rgb(193, 123, 107)')
   })
 
-  test('시나리오 6: 모바일 375px — TabBar 가로 스크롤 허용 + 활성 탭 뷰포트 내 표시', async ({ page }) => {
+  test.skip('시나리오 6: 모바일 375px — TabBar 가로 스크롤 허용 + 활성 탭 뷰포트 내 표시', async ({ page }) => {
+    // 세션 #70 블록 ⑤: /mydesk/calendar 경로 폐지 + TabBar 달력 탭 제거. 시나리오 6의 "달력" 활성 탭 전제 무효 → skip.
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/mydesk/calendar')
     await page.waitForTimeout(800)

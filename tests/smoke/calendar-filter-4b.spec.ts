@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from '../utils/auth';
 
-test.describe('Phase 4-B: MY DESK 달력 탭 활성화 (세션 #51)', () => {
+// 세션 #70 블록 ⑤: /mydesk/calendar 경로 폐지. 달력은 패널 피어 탭으로 내재화.
+// panelMode에서는 기존 CalendarFilter 숨김(scope 이진 토글이 대체) → 본 describe 전체 legacy.
+test.describe.skip('Phase 4-B: MY DESK 달력 탭 활성화 (세션 #51) — 블록 ⑤로 폐지', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
     // 양쪽 scope localStorage 초기화

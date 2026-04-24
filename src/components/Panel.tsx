@@ -13,6 +13,7 @@ import PostList from "./PostList";
 import Avatar from "./common/Avatar";
 import FAB from "./common/FAB";
 import RecordModal from "./RecordModal";
+import Calendar from "./calendar/Calendar";
 import { canViewPost } from "@/lib/postSelectors";
 import { panel as panelTokens } from "@/styles/tokens";
 
@@ -56,6 +57,8 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
   const [showMenu, setShowMenu] = useState(false);
   const [showRecord, setShowRecord] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  // 블록 ⑤ 달력 피어 탭 — FAB 외부 트리거 signal
+  const [calendarAddSignal, setCalendarAddSignal] = useState(0);
 
   // ─── 스크롤 영역 (main-ux.md §1 패널 높이 + 탭 독립 스크롤) ─
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -254,7 +257,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     return () => document.removeEventListener('mousedown', handler);
   }, [showMenu]);
 
-  // RecordModal은 기본 카테고리(할일·메모) 전용. 사용자 정의 탭으로 전환 시 열린 메뉴·모달 리셋.
+  // RecordModal은 기본 카테고리(할일·메모) 전용. 사용자 정의 탭·달력 탭으로 전환 시 열린 메뉴·모달 리셋.
   const isRecordableCategory = activeCategory === '할일' || activeCategory === '메모';
   useEffect(() => {
     if (!isRecordableCategory) {
@@ -262,6 +265,35 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
       setShowRecord(false);
     }
   }, [isRecordableCategory]);
+
+  // 블록 ⑤ — 수평 스와이프 액셀러레이터 (할일 ↔ 메모 ↔ 달력). 탭 탭핑 기본 · 스와이프 보조.
+  // 임계 60px, 수직보다 수평이 2배 이상이어야 스와이프로 인정(스크롤 간섭 방지).
+  const SWIPE_ORDER = ['할일', '메모', '달력'] as const;
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleSwipeStart = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse') return; // 데스크탑 마우스는 드래그 스와이프 제외(텍스트 선택 간섭 회피)
+    swipeStartRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleSwipeMove = (_e: React.PointerEvent) => {
+    // 별도 추적 불필요 — start/end만으로 판정
+  };
+
+  const handleSwipeEnd = (e: React.PointerEvent) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) < 60) return;
+    if (Math.abs(dx) < Math.abs(dy) * 2) return;
+    const cur = SWIPE_ORDER.indexOf(activeCategory as (typeof SWIPE_ORDER)[number]);
+    if (cur === -1) return;
+    const next = dx < 0 ? cur + 1 : cur - 1;
+    if (next < 0 || next >= SWIPE_ORDER.length) return;
+    setActiveCategory(SWIPE_ORDER[next]);
+  };
 
   // 패널 이름 인라인 편집
   const savePanelName = async () => {
@@ -368,6 +400,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           </div>
         </div>
         {/* 탭 행 — 카테고리 탭(좌) → 봉투(우) 순서, 우측 정렬 */}
+        {/* 블록 ⑤ — '달력' 피어 탭. categoryList엔 저장 안 함(기본 탭과 동일 레벨 고정). */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', height: 36, paddingRight: 20 }}>
           {categoryList.map((cat) => {
             const isBase = BASE_CATEGORIES.includes(cat);
@@ -412,6 +445,23 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
               </div>
             );
           })}
+          <button
+            type="button"
+            data-testid="panel-tab-calendar"
+            onClick={() => setActiveCategory('달력')}
+            style={{
+              height: 36, padding: '0 12px',
+              borderBottom: activeCategory === '달력' ? '2px solid #C17B6B' : '2px solid transparent',
+              color: activeCategory === '달력' ? '#C17B6B' : '#9E8880',
+              background: 'transparent', border: 'none',
+              fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em',
+              fontWeight: activeCategory === '달력' ? 700 : 400,
+              cursor: 'pointer',
+              transition: 'color 0.15s, border-color 0.15s',
+            }}
+          >
+            달력
+          </button>
           {(isOwner || user?.role === 'admin') && ownerEmail && (
             <div style={{ display: 'flex', alignItems: 'center', height: 36, paddingLeft: 12 }}>
               <TodoRequestBadge panelOwnerEmail={ownerEmail} />
@@ -522,6 +572,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
       {/* 게시물 목록 — scroll div가 card의 직접 flex child (main-ux.md §1). */}
       {/* height:100% 체인 대신 flex:1 1 auto + minHeight:0으로 shrink → card max-height 안에서 정확히 남은 공간 차지. */}
       {/* paddingBottom: FAB 겹침 회피 — FAB bottom(14) + height(44) + 여유(14) = 72. canCreate=false이면 FAB 없으므로 0. */}
+      {/* 달력 탭은 월 그리드 특성상 내부 스크롤 예외(main-ux.md 1.2 · 5). overflow:visible + paddingBottom:0. */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -530,9 +581,13 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
         style={{
           flex: '1 1 auto',
           minHeight: 0,
-          overflowY: 'auto',
-          paddingBottom: canCreate ? 72 : 0,
+          overflowY: activeCategory === '달력' ? 'visible' : 'auto',
+          paddingBottom: activeCategory === '달력' ? 0 : (canCreate ? 72 : 0),
         }}
+        onPointerDown={handleSwipeStart}
+        onPointerMove={handleSwipeMove}
+        onPointerUp={handleSwipeEnd}
+        onPointerCancel={handleSwipeEnd}
       >
         {activeCategory === "할일" ? (
           <TodoList
@@ -541,6 +596,12 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
             posts={posts}
             canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
             activeFilter={todoFilter}
+          />
+        ) : activeCategory === '달력' ? (
+          <Calendar
+            panelMode
+            panelOwnerEmail={ownerEmail ?? undefined}
+            openAddSignal={calendarAddSignal}
           />
         ) : (
           <PostList
@@ -577,8 +638,17 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           달력 탭 FAB prefill은 블록 ⑤(달력 피어 탭) 이후 이관. */}
       {canCreate && (
         <FAB
-          onClick={() => setShowCreate(true)}
-          ariaLabel={activeCategory === '메모' ? '빠른 메모 추가' : '빠른 할일 추가'}
+          onClick={() => {
+            if (activeCategory === '달력') {
+              setCalendarAddSignal(n => n + 1);
+            } else {
+              setShowCreate(true);
+            }
+          }}
+          ariaLabel={
+            activeCategory === '달력' ? '일정 추가' :
+            activeCategory === '메모' ? '빠른 메모 추가' : '빠른 할일 추가'
+          }
         />
       )}
       {/* 3층 "기록" 모달 — windowFilter='all' (전체). 1·2층은 TodoList/PostList 내부 'recent' 별도 호출. 기본 카테고리(할일·메모) 전용. */}

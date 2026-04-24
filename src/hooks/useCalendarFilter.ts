@@ -41,6 +41,9 @@ export function useCalendarFilter(scope: CalendarScope = 'team'): CalendarFilter
   const [categories, setCategoriesState] = useState<CalendarCategory[]>([...ALL_CATEGORIES]);
   const loadedRef = useRef(false);
 
+  // scope 변경 시 저장소 키가 바뀌므로 재로드 (블록 ⑤ 패널 내부 '나만/전체' 이진 토글).
+  useEffect(() => { loadedRef.current = false; }, [scope]);
+
   useEffect(() => {
     if (loadedRef.current) return;
     if (users.length === 0) return;

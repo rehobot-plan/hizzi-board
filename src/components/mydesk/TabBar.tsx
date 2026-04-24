@@ -3,12 +3,12 @@
 import { useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
+// 블록 ⑤(main-ux.md 5) — '달력' 탭을 MY DESK에서 제거. 달력은 각 패널의 피어 탭으로 내재화.
 const tabs = [
   { label: '오늘', href: '/mydesk/today' },
   { label: '요청', href: '/mydesk/request' },
   { label: '할일', href: '/mydesk/todo' },
   { label: '메모', href: '/mydesk/memo' },
-  { label: '달력', href: '/mydesk/calendar' },
 ];
 
 export default function TabBar() {

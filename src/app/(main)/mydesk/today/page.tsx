@@ -42,7 +42,7 @@ export default function TodayPage() {
           value={counts.eventToday}
           subLabel={`이번 주 ${counts.eventThisWeek}`}
           accentColor="#3B6D11"
-          onClick={() => router.push('/mydesk/calendar')}
+          onClick={() => router.push('/')}
         />
         <SummaryCard
           title="요청"
