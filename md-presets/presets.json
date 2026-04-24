@@ -1,15 +1,13 @@
 {
   "current": {
-    "name": "c3-track-separation",
-    "description": "방향 C-3 공장 6단계 트랙 분리",
+    "name": "block-4-fab",
+    "description": "메인 UX 블록 ④ FAB + CreatePost 재배치",
     "updated": "2026-04-24",
     "files": [
       "CLAUDE.md",
       "md/core/harness.md",
       "md/core/session.md",
       "md/core/rules.md",
-      "md/core/principles.md",
-      "md/core/master.md",
       "md/log/progress.md"
     ]
   }

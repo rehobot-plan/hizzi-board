@@ -13,15 +13,18 @@
   · principles.md #6 "형식은 사실을 대체하지 않는다" 신규 — MEMORY #54·#55 통합 박제
   · 원칙 총 5개 → 6개 (10개 미만 유지)
   · MEMORY 소각 연동: #54·#55·#66-a 3개 섹션 제거 (원칙 상향 후속 정리, 도메인 자율). 신규 박제 0건
-- 다음 세션 1순위: 방향 C-3 공장 6단계 트랙 분리 (히찌보드 기존 트랙 + 르호봇 신설 트랙 경계 설계)
-  · 르호봇 착수 전 재점검 명시 (progress.md 기존 표기 유지)
-  · 범위: 공장 6단계가 두 프로젝트에서 어떻게 분기될지 · 공유 자산(하네스·Codex·Playwright) 재사용 경계 · 세션 프리셋 라우팅 영향
-- 잔여 (다음 거버넌스 세션 이관):
-  · 방향 C-4 MEMORY 운영 체계 정비 (C-3 앞뒤 삽입 위치는 다음 세션 시작 시 판단)
-    - CLAUDE.md [7] 경계 사례 문구 보강 — "원칙 상향·박제 임계 규칙 적용 결과의 후속 정리는 도메인" 추가
-    - MEMORY 박제 임계 규칙 강화 (D안) — "2회 이상 관측 + 원칙·규칙 층으로 환원 불가능한 것만"으로 판정 기준 전환. CLAUDE.md [7] · MEMORY.md 헤더 동시 수정
-    - MEMORY 잔존 3건 환원 가능성 재검토 — 각 항목을 rules-detail / harness §1-5 / session §1 어디에 녹일지 설계. 환원되면 MEMORY에서 해당 섹션 소각
-- 후순위 후보: 기존 유지 (블록 ③-B · 블록 ④ · 블록 ⑤ · §6 B-1 LLM 2단 본체 부착 · §6 수신자·기한·타입 unset 질의 UI 확장 · authStore.onAuthStateChanged reload 부작용)
+- 다음 세션 1순위: 메인 UX 블록 ④ — FAB + CreatePost 재배치
+- 후순위 후보:
+  · 블록 ③-B — 3층 탭바 "기록" 진입점 + RecordModal 활용
+  · 블록 ⑤ — 달력 피어 탭
+  · §6 B-1 — LLM 2단 본체 부착 (Anthropic Haiku) · ai-capture-hb.md §9.3
+  · §6 수신자·기한·타입 unset 질의 UI 확장 · ai-capture-hb.md §4.2
+  · authStore.onAuthStateChanged reload 부작용 (master-debt #14)
+  · 거버넌스 잔여 (우선순위 낮음, 필요 시 승격):
+    - C-3 공장 6단계 트랙 분리 — 르호봇 착수 전 재점검
+    - CLAUDE.md [7] 경계 사례 문구 보강 — 원칙 상향·박제 임계 규칙 적용 결과 후속 정리는 도메인
+    - MEMORY 박제 임계 규칙 강화 (D안) — 환원 불가능한 것만 박제
+    - MEMORY 잔존 3건 환원 재검토
 - 선처리 큐: 기존 유지 (#5 tabbar-sticky.spec 간헐 timeout · #7 Vercel Preview env 불완전)
 - 미해결: 기존 유지 (실 Chrome ⋯ handle scroll jump · DevTools Performance 워크플로우 · post-request cascade divergence · serviceAccount.json git history 잔존)
 
