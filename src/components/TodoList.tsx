@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import { Post, usePostStore } from '@/store/postStore';
+import { useAuthStore } from '@/store/authStore';
 import TodoItem from './TodoItem';
 import RecordModal, { RecordTab } from './RecordModal';
-import { selectRecentlyCompleted, selectRecentlyDeleted } from '@/lib/postSelectors';
+import { selectRecentlyCompleted, selectRecentlyDeleted, canViewPost } from '@/lib/postSelectors';
 
 interface TodoListProps {
   panelId: string;
@@ -16,12 +17,17 @@ interface TodoListProps {
 
 export default function TodoList({ panelId, ownerEmail, posts, canEdit, activeFilter = ['업무', '요청'] }: TodoListProps) {
   const { posts: allPosts } = usePostStore();
+  const user = useAuthStore(s => s.user);
   const [recordOpen, setRecordOpen] = useState(false);
   const [recordTab, setRecordTab] = useState<RecordTab>('completed');
 
+  // 카운트·모달 표시가 동일 visibleTo 기준으로 일관하도록 scopedPosts에서 권한 필터 선반영.
   const scopedPosts = useMemo(
-    () => allPosts.filter(p => p.panelId === panelId && p.category === '할일'),
-    [allPosts, panelId]
+    () => {
+      const viewer = user ? { email: user.email, role: user.role } : null;
+      return allPosts.filter(p => p.panelId === panelId && p.category === '할일' && canViewPost(p, viewer));
+    },
+    [allPosts, panelId, user]
   );
 
   const recentCompletedCount = useMemo(

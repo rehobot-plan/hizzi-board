@@ -1,10 +1,11 @@
 'use client';
 
 import { Post, usePostStore } from '@/store/postStore';
+import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import PostItem from './PostItem';
 import RecordModal from './RecordModal';
-import { selectRecentlyDeleted } from '@/lib/postSelectors';
+import { selectRecentlyDeleted, canViewPost } from '@/lib/postSelectors';
 import { useMemo, useState } from 'react';
 
 interface PostListProps {
@@ -26,9 +27,14 @@ export default function PostList({ posts, activeCategory, panelId, canEdit, sele
   const activePosts = posts.filter(p => !p.deleted);
 
   const { posts: allPosts } = usePostStore();
+  const user = useAuthStore(s => s.user);
+  // 카운트·모달 표시 일관성 — visibleTo 권한 필터를 scopedPosts에서 선반영.
   const scopedPosts = useMemo(
-    () => allPosts.filter(p => p.panelId === panelId && p.category === activeCategory),
-    [allPosts, panelId, activeCategory]
+    () => {
+      const viewer = user ? { email: user.email, role: user.role } : null;
+      return allPosts.filter(p => p.panelId === panelId && p.category === activeCategory && canViewPost(p, viewer));
+    },
+    [allPosts, panelId, activeCategory, user]
   );
   const recentDeletedCount = useMemo(
     () => selectRecentlyDeleted(scopedPosts).length,

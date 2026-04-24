@@ -66,3 +66,27 @@ export function selectRecentlyDeleted(
     return t >= threshold;
   });
 }
+
+/**
+ * post 공개범위 권한 판정 — Panel·RecordModal 공유.
+ * visibleTo 해석:
+ *  - 빈 배열(또는 null/undefined) → public
+ *  - [author] → private (본인만)
+ *  - [author, ...others] → specific (본인 + 지정 대상)
+ * admin / post.author / visibleTo 포함 email만 true.
+ */
+export interface ViewerContext {
+  email: string | null | undefined;
+  role?: string | null;
+}
+
+export function canViewPost(post: Post, viewer: ViewerContext | null | undefined): boolean {
+  const visibleTo = post.visibleTo;
+  if (!visibleTo || visibleTo.length === 0) return true;
+  if (!viewer) return false;
+  if (viewer.role === 'admin') return true;
+  const email = viewer.email ?? '';
+  if (post.author === email) return true;
+  if (visibleTo.includes(email)) return true;
+  return false;
+}

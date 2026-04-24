@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest';
 import {
   selectRecentlyCompleted,
   selectRecentlyDeleted,
+  canViewPost,
   DAY_MS,
   HOUR_MS,
 } from '@/lib/postSelectors';
@@ -83,5 +84,54 @@ describe('selectRecentlyDeleted — main-ux.md §2.3 24h 창 삭제 회수', () 
     const thirtyOne = post({ id: '31d', deleted: true, deletedAt: new Date(NOW - 31 * DAY_MS) });
     const result = selectRecentlyDeleted([tenDay, thirtyOne], { now: NOW, windowMs: 30 * DAY_MS });
     expect(result.map(p => p.id)).toEqual(['10d']);
+  });
+});
+
+describe('canViewPost — main-ux.md §2 RecordModal·Panel 공유 공개범위 판정', () => {
+  const author = 'author@x.com';
+  const other = 'other@x.com';
+  const outsider = 'outsider@x.com';
+
+  test('1. public (visibleTo 빈 배열) — 비로그인 포함 전원 허용', () => {
+    const p = post({ author, visibleTo: [] });
+    expect(canViewPost(p, null)).toBe(true);
+    expect(canViewPost(p, { email: outsider })).toBe(true);
+  });
+
+  test('2. public (visibleTo null/undefined) — 전원 허용', () => {
+    const pNull = post({ author, visibleTo: null as unknown as string[] });
+    const pUndef = post({ author, visibleTo: undefined as unknown as string[] });
+    expect(canViewPost(pNull, { email: outsider })).toBe(true);
+    expect(canViewPost(pUndef, { email: outsider })).toBe(true);
+  });
+
+  test('3. private ([author]) — author 만 허용, 타인 거부', () => {
+    const p = post({ author, visibleTo: [author] });
+    expect(canViewPost(p, { email: author })).toBe(true);
+    expect(canViewPost(p, { email: outsider })).toBe(false);
+  });
+
+  test('4. specific ([author, other]) — 해당 이메일만 허용', () => {
+    const p = post({ author, visibleTo: [author, other] });
+    expect(canViewPost(p, { email: author })).toBe(true);
+    expect(canViewPost(p, { email: other })).toBe(true);
+    expect(canViewPost(p, { email: outsider })).toBe(false);
+  });
+
+  test('5. admin — visibleTo 제한 무시하고 전체 허용', () => {
+    const p = post({ author, visibleTo: [author] });
+    expect(canViewPost(p, { email: outsider, role: 'admin' })).toBe(true);
+  });
+
+  test('6. 비로그인 + 비-public — 거부', () => {
+    const p = post({ author, visibleTo: [author] });
+    expect(canViewPost(p, null)).toBe(false);
+    expect(canViewPost(p, undefined)).toBe(false);
+  });
+
+  test('7. viewer email null — 비-public 거부', () => {
+    const p = post({ author, visibleTo: [author] });
+    expect(canViewPost(p, { email: null })).toBe(false);
+    expect(canViewPost(p, { email: undefined })).toBe(false);
   });
 });

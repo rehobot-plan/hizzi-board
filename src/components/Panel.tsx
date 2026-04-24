@@ -12,6 +12,8 @@ import TodoList from "./TodoList";
 import PostList from "./PostList";
 import Avatar from "./common/Avatar";
 import FAB from "./common/FAB";
+import RecordModal from "./RecordModal";
+import { canViewPost } from "@/lib/postSelectors";
 import { panel as panelTokens } from "@/styles/tokens";
 
 interface PanelProps {
@@ -50,6 +52,10 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [memoSelectMode, setMemoSelectMode] = useState(false);
   const [todoFilter, setTodoFilter] = useState<('업무' | '요청' | '개인')[]>(['업무', '요청']);
+  // 블록 ③-B — 탭 행 우측 ··· 드롭다운(3층 진입 허브) + 3층 "기록" 모달
+  const [showMenu, setShowMenu] = useState(false);
+  const [showRecord, setShowRecord] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // ─── 스크롤 영역 (main-ux.md §1 패널 높이 + 탭 독립 스크롤) ─
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -96,14 +102,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
     } else {
       if (!post.category || post.category !== activeCategory) return false;
     }
-    const userEmail = user?.email ?? "";
-    const visibleTo = post.visibleTo;
-    if (!visibleTo || visibleTo.length === 0) return true;
-    if (!user) return false;
-    if (user.role === "admin") return true;
-    if (post.author === userEmail) return true;
-    if (visibleTo.includes(userEmail)) return true;
-    return false;
+    return canViewPost(post, user ? { email: user.email, role: user.role } : null);
   });
 
   // fade-out 재계산 — 탭 전환 + 콘텐츠 변화(Firestore 실시간·in-place complete/delete)에 연동
@@ -243,6 +242,26 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
   const canAddCategory = canCreate;
 
   useEscClose(() => setMemoSelectMode(false), memoSelectMode);
+  useEscClose(() => setShowMenu(false), showMenu);
+
+  // 바깥 클릭 시 드롭다운 닫힘
+  useEffect(() => {
+    if (!showMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showMenu]);
+
+  // RecordModal은 기본 카테고리(할일·메모) 전용. 사용자 정의 탭으로 전환 시 열린 메뉴·모달 리셋.
+  const isRecordableCategory = activeCategory === '할일' || activeCategory === '메모';
+  useEffect(() => {
+    if (!isRecordableCategory) {
+      setShowMenu(false);
+      setShowRecord(false);
+    }
+  }, [isRecordableCategory]);
 
   // 패널 이름 인라인 편집
   const savePanelName = async () => {
@@ -398,6 +417,61 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
               <TodoRequestBadge panelOwnerEmail={ownerEmail} />
             </div>
           )}
+          {canCreate && isRecordableCategory && (
+            <div ref={menuRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', height: 36, paddingLeft: 8 }}>
+              <button
+                type="button"
+                onClick={() => setShowMenu(v => !v)}
+                aria-haspopup="menu"
+                aria-expanded={showMenu}
+                aria-label="패널 메뉴"
+                data-testid="panel-menu-button"
+                style={{
+                  width: 24, height: 24, padding: 0,
+                  background: 'transparent', border: 'none',
+                  color: showMenu ? '#5C1F1F' : '#9E8880',
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 16, letterSpacing: '0.08em', lineHeight: 1,
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#5C1F1F')}
+                onMouseLeave={e => (e.currentTarget.style.color = showMenu ? '#5C1F1F' : '#9E8880')}
+              >
+                ⋯
+              </button>
+              {showMenu && (
+                <div
+                  role="menu"
+                  data-testid="panel-menu-popover"
+                  style={{
+                    position: 'absolute', top: 32, right: 0,
+                    background: '#FFFFFF', border: '1px solid #EDE5DC',
+                    boxShadow: '0 4px 12px rgba(44,20,16,0.08)',
+                    minWidth: 120, zIndex: 20,
+                  }}
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    data-testid="panel-menu-record"
+                    onClick={() => { setShowMenu(false); setShowRecord(true); }}
+                    style={{
+                      display: 'block', width: '100%',
+                      padding: '10px 14px', fontSize: 12, color: '#5C1F1F',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      textAlign: 'left', letterSpacing: '0.04em',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#F5EFE9')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    기록
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -505,6 +579,18 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
         <FAB
           onClick={() => setShowCreate(true)}
           ariaLabel={activeCategory === '메모' ? '빠른 메모 추가' : '빠른 할일 추가'}
+        />
+      )}
+      {/* 3층 "기록" 모달 — windowFilter='all' (전체). 1·2층은 TodoList/PostList 내부 'recent' 별도 호출. 기본 카테고리(할일·메모) 전용. */}
+      {isRecordableCategory && (
+        <RecordModal
+          isOpen={showRecord}
+          onClose={() => setShowRecord(false)}
+          panelId={id}
+          category={activeCategory === '메모' ? '메모' : '할일'}
+          defaultTab={activeCategory === '메모' ? 'deleted' : 'completed'}
+          windowFilter="all"
+          canEdit={!!canCreate}
         />
       )}
       {/* CreatePost 모달 */}

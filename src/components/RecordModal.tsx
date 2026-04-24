@@ -7,7 +7,7 @@ import { useTodoRequestStore } from '@/store/todoRequestStore';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import { useEscClose } from '@/hooks/useEscClose';
-import { selectRecentlyCompleted, selectRecentlyDeleted } from '@/lib/postSelectors';
+import { selectRecentlyCompleted, selectRecentlyDeleted, canViewPost } from '@/lib/postSelectors';
 
 export type RecordTab = 'completed' | 'deleted';
 export type RecordWindow = 'recent' | 'all';
@@ -49,9 +49,14 @@ export default function RecordModal({
   useEffect(() => setMounted(true), []);
   useEffect(() => { if (isOpen) setTab(defaultTab); }, [isOpen, defaultTab]);
 
+  // visibleTo 필터 공유 — 1·2·3층 전부 동일 권한 판정(postSelectors.canViewPost).
   const scopedPosts = useMemo(() => {
-    return posts.filter(p => p.panelId === panelId && p.category === category);
-  }, [posts, panelId, category]);
+    return posts.filter(p =>
+      p.panelId === panelId &&
+      p.category === category &&
+      canViewPost(p, currentUser ? { email: currentUser.email, role: currentUser.role } : null),
+    );
+  }, [posts, panelId, category, currentUser]);
 
   const completedList = useMemo(() => {
     if (category !== '할일') return [];
