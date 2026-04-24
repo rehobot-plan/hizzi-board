@@ -11,6 +11,7 @@ import TodoRequestBadge from "./TodoRequestBadge";
 import TodoList from "./TodoList";
 import PostList from "./PostList";
 import Avatar from "./common/Avatar";
+import FAB from "./common/FAB";
 import { panel as panelTokens } from "@/styles/tokens";
 
 interface PanelProps {
@@ -443,24 +444,10 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
             {memoSelectMode ? '취소' : '선택'}
           </button>
         )}
-        {canCreate && (
-          <button
-            onClick={() => setShowCreate(true)}
-            style={{
-              fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
-              padding: '2px 12px', border: '1px solid #C17B6B',
-              color: '#C17B6B', background: '#fff', cursor: 'pointer',
-              transition: 'background 0.15s ease',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#FDF8F4')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
-          >
-            + 게시물
-          </button>
-        )}
       </div>
       {/* 게시물 목록 — scroll div가 card의 직접 flex child (main-ux.md §1). */}
       {/* height:100% 체인 대신 flex:1 1 auto + minHeight:0으로 shrink → card max-height 안에서 정확히 남은 공간 차지. */}
+      {/* paddingBottom: FAB 겹침 회피 — FAB bottom(14) + height(44) + 여유(14) = 72. canCreate=false이면 FAB 없으므로 0. */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -470,6 +457,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           flex: '1 1 auto',
           minHeight: 0,
           overflowY: 'auto',
+          paddingBottom: canCreate ? 72 : 0,
         }}
       >
         {activeCategory === "할일" ? (
@@ -510,6 +498,15 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           }}
         />
       )}
+      {/* FAB — 패널 우하단 44px 진입점 (main-ux.md §4.1 · patterns.md P10 · uxui.md FAB 토큰).
+          activeCategory를 CreatePost defaultCategory로 전달해 context-aware 동작.
+          달력 탭 FAB prefill은 블록 ⑤(달력 피어 탭) 이후 이관. */}
+      {canCreate && (
+        <FAB
+          onClick={() => setShowCreate(true)}
+          ariaLabel={activeCategory === '메모' ? '빠른 메모 추가' : '빠른 할일 추가'}
+        />
+      )}
       {/* CreatePost 모달 */}
       {showCreate && (
         <CreatePost
@@ -520,7 +517,6 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
               setActiveCategory(savedCategory);
             }
           }}
-          categories={categoryList}
           defaultCategory={activeCategory}
         />
       )}

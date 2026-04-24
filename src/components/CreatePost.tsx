@@ -17,7 +17,6 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 interface CreatePostProps {
   panelId: string;
   onClose: (savedCategory?: string) => void;
-  categories?: string[];
   defaultCategory?: string;
 }
 
@@ -68,7 +67,7 @@ const parseDateInput = (val: string): string => {
   return '';
 };
 
-export default function CreatePost({ panelId, onClose }: CreatePostProps) {
+export default function CreatePost({ panelId, onClose, defaultCategory }: CreatePostProps) {
   const { user } = useAuthStore();
   const { addPost } = usePostStore();
   const { users } = useUserStore();
@@ -80,7 +79,7 @@ export default function CreatePost({ panelId, onClose }: CreatePostProps) {
   const myPanel = panels.find(p => p.ownerEmail === myEmail);
   const otherUsers = users.filter(u => u.email !== myEmail && u.role !== 'admin');
 
-  const [activeTab, setActiveTab] = useState<TabType>('todo');
+  const [activeTab, setActiveTab] = useState<TabType>(defaultCategory === '메모' ? 'memo' : 'todo');
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
