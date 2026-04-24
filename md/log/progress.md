@@ -152,3 +152,4 @@ Phase: E2E 스위트 명령 블록 작성 / Code 1-1~1-6 / 안정화 중 구조 
 다음 세션 1순위: authStore.onAuthStateChanged reload 부작용 진단 + 수정 (master-debt #14).
 
 - [2026-04-24] 방향 A 프로세스 다이어트 — 오너 반사 튕김·경유 완화·박제 임계 (CLAUDE.md §7 / md/core/harness.md §2 / .harness/MEMORY.md)
+- [2026-04-24] 방향 B 프로세스 다이어트 — 세션 종료 12→7단계 재설계 + MD 수정 거버넌스/도메인 이원화 (md/core/session.md §2 / CLAUDE.md §7)

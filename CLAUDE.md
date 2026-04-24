@@ -73,6 +73,12 @@
 
 새로 뭔가 넣고 싶을 때는 "이건 하네스 자동화로 해결되는 게 아닌가?"를 먼저 묻는다. 문서가 기능하는 게 아니라 자동화가 기능한다.
 
-MD 파일 수정 시 Claude.ai는 변경 항목별 before/after 비교표를 먼저 제시해 오너 검수를 받은 뒤에만 실행 명령 블록을 만든다. 포맷: Before(기존 문장 원문) / After(수정될 문장) / 이유(한 줄). 신규 파일 생성은 before가 없으므로 초안 전체를 통으로 검수받는다.
+MD 수정은 두 층으로 나눈다.
 
-**예외 — progress.md는 공장이 매 1-6에서 직접 업데이트한다** (짧은 한 줄 로그 + 현재상태 갱신). 사실 기록이라 문장 단위 검수 효용이 낮고, 세션 종료 단계 4·5의 통합 제안에서 세션 단위로 정돈·검수된다. 이 예외는 progress.md에만 적용된다.
+**거버넌스 층 (검수 필수) — CLAUDE.md · session.md · harness.md · principles.md · .harness/MEMORY.md 헤더의 운영 조항.** 시스템 운영 규약·역할 분담·세션 절차를 담는 파일. Claude.ai는 변경 항목별 before/after 비교표를 먼저 제시해 오너 검수를 받은 뒤에만 실행 명령 블록을 만든다. 포맷: Before(기존 문장 원문) / After(수정될 문장) / 이유(한 줄). 신규 파일 생성은 before가 없으므로 초안 전체를 통으로 검수받는다.
+
+**도메인 층 (AI 자율) — rules.md · rules-detail.md · flows.md · flows-detail.md · patterns.md · patterns-modal.md · uxui.md · ux-principles.md · master.md · master-schema.md · master-debt.md · .harness/MEMORY.md 사례 기록 · md/plan/designs/\* · md/archive/\*.** 코딩 규칙·UI 패턴·상태 전환·관측된 패턴 같은 도메인 지식. 세션 중 오너와 협의된 내용이거나 공정에서 도출된 사실이면 Claude.ai가 자율 수정하고 한 줄 사후 보고. 오너가 이상 있으면 그 자리에서 지시.
+
+**예외 — progress.md는 공장이 매 1-6에서 직접 업데이트한다** (짧은 한 줄 로그 + 현재상태 갱신). 도메인 층 자율 원칙과 정합하며, 세션 종료 단계 3에서 세션 단위로 정돈된다.
+
+**경계 사례:** MEMORY.md 헤더 규약 수정·운영 조항 추가는 거버넌스. MEMORY.md 사례 박제 추가·해소 기록은 도메인. 판단이 애매하면 거버넌스로 보수적 포함.
