@@ -233,6 +233,28 @@
 연동 MD: 세션 #66 1순위 진입 시 session.md 프리셋에 src/store/authStore.ts 포함
 상태: open (세션 #66 1순위 · E2E 우회로 회귀 감지만 차단)
 
+### #16 chat-origin schedule 저장 필드/listener 불일치 — 달력 미표시
+
+근거: [2026-04-24 세션 #70] 블록 ⑤-1 Codex 리뷰 라운드 2에서 지적. `src/store/chatInputStore.ts:129-135` chat 자연어 입력이 schedule 분류될 때 `calendarEvents` 문서에 `date` 필드만 저장. 반면 `initCalendarListener`는 `startDate` orderBy + `useTodaySummary`는 `startDate`/`endDate` 필터 → chat 경로 schedule 이벤트가 Calendar/Today에 표시되지 않음.
+
+현상: 홈 채팅 입력에서 "미팅/약속" 류 schedule 분류된 자연어 입력이 Firestore에 저장되긴 하나 달력 탭이나 오늘 섹션에서 노출되지 않음. 블록 ⑤ 달력 피어 탭 배포 직후 사용자 체감 급상승 예상.
+
+영향 범위: `src/store/chatInputStore.ts` createFromParsed — schedule 분기에서 startDate/endDate 필드 세팅.
+
+해소 방향: `date` → `startDate`+`endDate` 전환 (둘 다 동일 값). 기존 `date` 필드 보존 필요 여부 판단 (Firestore 쿼리 기타 consumer 확인).
+
+상태: open (다음 세션 1순위 · 우선순위 P1)
+
+### #17 Panel.tsx 카테고리 삭제 fallback "전체" 탭 부재
+
+근거: [2026-04-24 세션 #70] 블록 ⑤-1 Codex 리뷰 라운드 2에서 지적. `src/components/Panel.tsx:734` 커스텀 카테고리 삭제 후 현재 활성 탭이 해당 카테고리면 `setActiveCategory("전체")` 로 전환. 하지만 "전체"는 `categoryList` 및 블록 ⑤ 고정 피어 탭('달력')에도 없음 — 어느 탭도 활성 표시 안 됨.
+
+영향 범위: `src/components/Panel.tsx` 카테고리 삭제 모달 onConfirm 로직.
+
+해소 방향: fallback을 '할일' 기본값 또는 `categoryList[0]`로 전환.
+
+상태: open (우선순위 P3 — 엣지 케이스 · 실사용 빈도 낮음)
+
 ### #15 Next 14.2.35 로컬 dev OpenTelemetry clientModules TypeError
 
 근거: [2026-04-24 세션 #70] 블록 ③-B chat-input fix E2E 1-5 로컬 실행 중 dev server(npm run dev) 응답 전 route가 OpenTelemetry clientModules TypeError로 서버 에러 페이지 반환. chat-input-s6 24 케이스 전부 Pouncing 상태 고착 관측.

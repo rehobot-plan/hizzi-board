@@ -9,11 +9,12 @@
 
 ## 다음 1순위
 
-- 블록 ⑤ — 달력 피어 탭
+- chat-origin schedule 저장 필드 정렬 (master-debt #16) — Calendar 표시 복구
 
 ## 후보 큐
 
-- 블록 ⑤ — 달력 피어 탭
+- chat-origin schedule 저장 필드 정렬 (master-debt #16) — 블록 ⑤ 배포 직후 사용자 체감 우선
+- 블록 ⑤-3 — 타인 패널 달력 scope/privacy 정제 (visibleTo 기반 필터 + viewer/owner/admin 권한 매트릭스). 기획 대화 선행 후 착수
 - 6 B-1 — LLM 2단 본체 부착 (Anthropic Haiku) · ai-capture-hb.md 9.3
 - 6 수신자·기한·타입 unset 질의 UI 확장 · ai-capture-hb.md 4.2
 - authStore.onAuthStateChanged reload 부작용 (master-debt #14)
@@ -28,7 +29,7 @@
 
 ## 현재상태
 
-- 작업 브랜치: master (로컬·원격 61f6088 동기 · 블록 ③-B 3층 RecordModal 진입점 + visibleTo 공유 필터 · 프로덕션 E2E 45/46 PASS 1 skip · 블록 ⑤ 진입 가능)
+- 작업 브랜치: master (로컬·원격 0d09023 동기 · 블록 ⑤-1 달력 피어 탭 본인 패널 한정 + 타인 placeholder · 프로덕션 E2E 49p/1f/1s · 블록 ⑤-3 후속)
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW
 - Codex 플러그인 커맨드 7종 실재 확인(review/rescue/adversarial-review/cancel/result/setup/status) — `/codex:adversarial-review` 존재 확정, harness.md 3 목록과 일치
