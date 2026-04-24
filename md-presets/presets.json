@@ -1,14 +1,17 @@
 {
   "current": {
-    "name": "block-4-fab",
-    "description": "메인 UX 블록 ④ FAB + CreatePost 재배치",
+    "name": "block-4-fab-createpost",
+    "description": "메인 UX 블록 ④ FAB + CreatePost 재배치 진입용",
     "updated": "2026-04-24",
     "files": [
       "CLAUDE.md",
       "md/core/harness.md",
       "md/core/session.md",
       "md/core/rules.md",
-      "md/log/progress.md"
+      "md/core/master.md",
+      "md/log/progress.md",
+      "md/ui/patterns.md",
+      "md/ui/uxui.md"
     ]
   }
 }
