@@ -23,6 +23,7 @@
 - (거버넌스 잔여) CLAUDE.md [7] 경계 사례 문구 보강
 - (거버넌스 잔여) MEMORY 박제 임계 D안 정식화 (환원 불가능한 것만 박제)
 - (거버넌스 잔여) MEMORY 잔존 5건 환원 재검토
+- (거버넌스 잔여) done.md 자기참조 케이스 포맷 규약 — harness.md §1-6 한 줄 추가
 - (인프라 조사) Codex `/codex:adversarial-review` 커맨드 실재 여부 재확인 (harness.md §3 목록과 실측 불일치)
 - (인프라 조사) `/codex:rescue` task-resume-candidate hang 재현 조건 조사
 
