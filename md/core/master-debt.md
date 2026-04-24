@@ -233,7 +233,18 @@
 연동 MD: 세션 #66 1순위 진입 시 session.md 프리셋에 src/store/authStore.ts 포함
 상태: open (세션 #66 1순위 · E2E 우회로 회귀 감지만 차단)
 
-### #16 chat-origin schedule 저장 필드/listener 불일치 — 달력 미표시
+### #16 chat-origin schedule 저장 필드/listener 불일치 — **해소 (세션 #70 · 6ddcc9a)**
+
+- chatInputStore schedule 분기에 `startDate`/`endDate` 추가 → `initCalendarListener` orderBy 정합 복구.
+- `authorId=user.uid`로 Calendar.tsx 편집 권한·team scope 필터 정합 확보 (email reader 분열은 #18 범위).
+- `visibility` 매핑: public→'all' / private→'me'(author-only 유지) / specific→'me' 보수 downgrade.
+- hard-delete 전환으로 Undo 체감 복구 (기존 FAB/Calendar 경로 일관).
+- β UX: ChatExpand schedule 분기 visibility 칩 숨김 + confirmDisabled 제약 면제.
+- 기존 3건 `date` 필드 레거시 레코드는 본 블록 범위 밖 (#18 마이그레이션 대상).
+
+상태: **closed** (세션 #70)
+
+### #16-legacy chat-origin schedule 저장 필드/listener 불일치 — 원문 보존
 
 근거: [2026-04-24 세션 #70] 블록 ⑤-1 Codex 리뷰 라운드 2에서 지적. `src/store/chatInputStore.ts:129-135` chat 자연어 입력이 schedule 분류될 때 `calendarEvents` 문서에 `date` 필드만 저장. 반면 `initCalendarListener`는 `startDate` orderBy + `useTodaySummary`는 `startDate`/`endDate` 필터 → chat 경로 schedule 이벤트가 Calendar/Today에 표시되지 않음.
 
@@ -244,6 +255,40 @@
 해소 방향: `date` → `startDate`+`endDate` 전환 (둘 다 동일 값). 기존 `date` 필드 보존 필요 여부 판단 (Firestore 쿼리 기타 consumer 확인).
 
 상태: open (다음 세션 1순위 · 우선순위 P1)
+
+### #18 calendarEvents 필드 체계 분열 — reader identity 규약 혼재 + specific visibility reader 부재
+
+근거: [2026-04-24 세션 #70] master-debt #16 구현 중 Codex R6 지적. `calendarEvents`는 경로별로 필드 구조가 분열:
+- `authorId` 값 타입: `calendar/Calendar.tsx` AddEventModal · TodoDetailModal · 세션 #70 chat = `user.uid` / `CreatePost.tsx` · `todoRequestStore.ts` = email / `useTodaySummary` reader = email 비교
+- 필드명 분열(~세션 #70 전): chat은 `author` vs 나머지 `authorId` / chat은 `date` vs 나머지 `startDate`+`endDate` → #16에서 chat 경로만 정렬하며 나머지 경로 분열 유지
+- visibility reader 부재: `filterCalendarInputs`가 `visibleTo` 체크 안 함 → `specific` 저장해도 public과 동일 노출 (세션 #70 #16 구현에서 `specific` 강등으로 회피)
+
+영향: chat 경로 private schedule이 `useTodaySummary`에서 "내 일정" 카운트 누락 (uid/email 불일치). specific visibility UX 미지원.
+
+영향 범위: `src/store/chatInputStore.ts` · `src/store/todoRequestStore.ts` · `src/components/CreatePost.tsx` · `src/components/todo/TodoDetailModal.tsx` · `src/components/calendar/Calendar.tsx` (filterCalendarInputs) · `src/hooks/useTodaySummary.ts` · `src/lib/calendar-helpers.ts` (스키마 정의) · `md/core/master-schema.md` (문서).
+
+해소 방향:
+1. calendarEvents 정식 스키마를 `master-schema.md`에 재정의 — `authorId: firebase uid`, `authorEmail: string`, `startDate`, `endDate`, `visibility`, `visibleTo`, ... 필수 vs 선택 명시.
+2. 전 경로 addDoc을 공유 helper(`buildCalendarEventPayload`)로 정리.
+3. reader(`useTodaySummary`, `filterCalendarInputs`, `Calendar.tsx` 편집 권한) 규약 정합 — uid 기준 + authorEmail fallback 또는 전량 uid 전환.
+4. `filterCalendarInputs`에 `visibleTo` 체크 추가 (specific visibility reader 지원).
+5. 기존 Firestore 데이터 마이그레이션 — `date`→`startDate`+`endDate`, email→uid 또는 양자 병기.
+
+범위: 독립 세션 2~3 사이클. ⑤-3(타인 패널 scope/privacy 정제) 착수 전 검토 조건.
+
+상태: open (P2 · 다음 세션 1순위 후보)
+
+### #19 chat 경로 schedule specific visibility 임시 강등
+
+근거: [2026-04-24 세션 #70] master-debt #16 구현에서 `filterCalendarInputs` visibleTo reader 부재로 specific 저장 시 silent widening 우려 → 임시로 chat schedule의 `specific` visibility를 `'me'`(author-only)로 보수 downgrade.
+
+영향: chat 자연어로 "X님한테만" 류 specific 의도 입력이 private과 동일 처리 → 지정 대상에게 노출 안 됨. 사용자 의도 대비 더 보수적이라 안전하나 UX 공백.
+
+영향 범위: `src/store/chatInputStore.ts` (schedule 분기 `calendarVisibility` 매핑). `ChatExpand.tsx` (schedule 분기 visibility 칩 숨김).
+
+해소 방향: #18 완료 후 `filterCalendarInputs` visibleTo reader 정비 + chat schedule의 specific 저장·표시 경로 복구. ChatExpand β UX도 재검토(칩 복구 or 유지).
+
+상태: open (P3 · #18 완료 후 복구)
 
 ### #17 Panel.tsx 카테고리 삭제 fallback "전체" 탭 부재
 
