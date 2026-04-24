@@ -9,11 +9,10 @@
 
 ## 다음 1순위
 
-- 메인 UX 블록 ④ — FAB + CreatePost 재배치
+- 블록 ③-B — 3층 탭바 "기록" 진입점 + RecordModal 활용
 
 ## 후보 큐
 
-- 메인 UX 블록 ④ — FAB + CreatePost 재배치
 - 블록 ③-B — 3층 탭바 "기록" 진입점 + RecordModal 활용
 - 블록 ⑤ — 달력 피어 탭
 - 6 B-1 — LLM 2단 본체 부착 (Anthropic Haiku) · ai-capture-hb.md 9.3
@@ -26,14 +25,15 @@
 - (거버넌스 잔여) done.md 자기참조 케이스 포맷 규약 — harness.md 1-6 한 줄 추가
 - (거버넌스 잔여) session.md 세션 종료 2단계 제약에 "2-a 갱신 제안 '없음' 3건은 drift 아닌 정상" 명시 조항 추가 — 2026-04-24 시운전 관찰
 - (거버넌스 잔여) old_str 작성 원칙 — Claude.ai 기억 재구성 금지, Code 실측 라인 보고 선행 후 작성 — CLAUDE.md 또는 rules.md 계열 한 줄 추가 — 2026-04-24 3회 연속 불일치 관찰
-- (인프라 조사) Codex `/codex:adversarial-review` 커맨드 실재 여부 재확인 (harness.md 3 목록과 실측 불일치)
-- (인프라 조사) `/codex:rescue` task-resume-candidate hang 재현 조건 조사
+- (거버넌스 잔여) harness.md 3 "현재 spec: playwright-login.spec.js" 문구 실측 반영 — 해당 파일 testDir 밖이라 표준 명령 실행 불가 (2026-04-24 블록 ④ 1-5 관찰)
 
 ## 현재상태
 
 - 작업 브랜치: master (로컬·원격 baaf68a 동기 / 이번 거버넌스 수정 커밋 후 갱신)
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW
+- Codex 플러그인 커맨드 7종 실재 확인(review/rescue/adversarial-review/cancel/result/setup/status) — `/codex:adversarial-review` 존재 확정, harness.md 3 목록과 일치
+- `/codex:rescue` Skill tool 호출 2회 연속 reject 재현(2026-04-24) — 오너 side 1m+ hang 표시. `/codex:review`·`/codex:cancel`은 frontmatter `disable-model-invocation: true`로 assistant 자동 호출 차단, 오너 직접 입력만 허용
 
 ## 선처리 큐
 
