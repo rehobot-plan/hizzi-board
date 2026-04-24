@@ -4,16 +4,24 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-23 세션 #65 (§6 E2E 회귀 스위트 신규 · 23/23 PASS · 프로덕션 배포 · authStore reload 잠재 버그 감지)
-- 작업 브랜치: master (로컬·원격 c927ff1 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
+- 마지막 세션: 2026-04-24 세션 #66 (방향 A·B 프로세스 다이어트 · 거버넌스 재편 완료)
+- 작업 브랜치: master (로컬·원격 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · §6 홈 채팅 입력 A안 라이브 (시나리오 1~3 완전 · 시나리오 4 placeholder)
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW · 기존 설정 유지
-- 다음 세션 1순위: authStore.onAuthStateChanged reload 부작용 진단 + 수정 (master-debt #14)
-  · 범위: admin 로그인 상태에서 page reload·새 탭 오픈 시 clearAdminPanelOwnership 재호출로 패널 ownership 리셋되는 잠재 버그. E2E 우회했을 뿐 프로덕션 admin 사용 경로에 잠복
-  · 진단 시작점: src/store/authStore.ts · onAuthStateChanged 콜백 · clearAdminPanelOwnership 호출 조건
+- 거버넌스 변경 (세션 #66 적용):
+  · CLAUDE.md [7] MD 수정 이원화 — 거버넌스 4개(+ MEMORY 헤더)만 before/after 검수, 도메인 MD는 AI 자율 + 사후 보고
+  · session.md §2 세션 종료 7단계 재설계 — Code 실측 선행 + 근거 매칭으로 정확도 담보, 오너 검수는 프리셋 1건
+  · harness.md §2 에스컬레이션 경유 완화 — 설계·기획만 경유, 사실 질의는 직접
+  · MEMORY.md 박제 임계 2회 이상 + 6개월·30세션 미재발 소각 (별도 세션 진행 예정)
+- 다음 세션 1순위: 방향 C-1 MEMORY 소각 작업 (1회 박제 항목 정리)
+  · 대상 후보: #61-c 자기 위반 · #65-a clock.install 등 1회 사례
+  · 도메인 층 자율이라 오너 검수 부담 낮음, 소각 기준 첫 적용 케이스
 - 후순위 후보:
+  - 방향 C-2 근본 원칙 CLAUDE.md·principles.md 상향 통합 (거버넌스 단독 세션)
+  - 방향 C-3 공장 6단계 트랙 분리 — 르호봇 착수 전 재점검
+  - authStore.onAuthStateChanged reload 부작용 (master-debt #14) — E2E 우회 중, 프로덕션 admin 경로 잠재
   - 블록 ③-B: 3층 탭바 메뉴 "기록" 진입점 + RecordModal 활용 + flows.md FLOW 1 복구 cascade 정교화
-  - 메인 UX 블록 ④(FAB + CreatePost 재배치, §6 구현 중 CreatePost 상단 영역 제거 보류분 포함) · 블록 ⑤(달력 피어 탭)
+  - 메인 UX 블록 ④(FAB + CreatePost 재배치) · 블록 ⑤(달력 피어 탭)
   - §6 B-1 확장: LLM 2단 본체 부착 (Anthropic Haiku) — ai-capture-hb.md §9.3
   - §6 수신자·기한·타입 unset 질의 UI 확장 — ai-capture-hb.md §4.2 우선순위 후속
   - 세션 #55 기준 1~6 · #56 기준 5 · #58 기준 7
@@ -150,3 +158,45 @@ Phase: E2E 스위트 명령 블록 작성 / Code 1-1~1-6 / 안정화 중 구조 
 - Playwright × React 조합에서 시간 고정은 setFixedTime 안전, clock.install 위험. 규칙 기반 파싱에서 동적 날짜 assertion은 반드시 시간 고정 필요
 
 다음 세션 1순위: authStore.onAuthStateChanged reload 부작용 진단 + 수정 (master-debt #14).
+
+### [2026-04-24] 세션 #66 — 방향 A·B 프로세스 다이어트 · 거버넌스 재편
+
+Phase: 진단 / 오너 제약 vs AI 제약 분류 / 다이어트 방향 3개 좁히기 / 방향 A·B 순차 진입 / 방향 C 별도 세션 이관 결정
+브랜치: master (로컬·원격 a9d463e 동기)
+커밋: 40da798 (방향 A) · a9d463e (방향 B)
+
+주요 진행:
+
+1. 전수 스캔 + 분류 (기획 대화)
+   · 7개 MD 전수 스캔 (CLAUDE · harness · rules · session · progress · MEMORY · master-debt)
+   · 오너 제약 vs AI 제약 규칙 분류
+   · 르호봇 글로벌 런칭 관점에서 "살림 vs 뺌" 구분선: 품질 게이트·drift 방어는 살림, 사람 개입 루틴·1회 박제는 뺌
+   · 다이어트 방향 3개로 좁힘 (A 오너 발화 반사 제거 · B 세션 종료 압축 · C MEMORY 소각 + 원칙 상향)
+
+2. 방향 A — 오너 제약 3건 완화 (커밋 40da798)
+   · CLAUDE.md [7] 신규 요청 반사 튕김 제거 → Claude.ai 자체 판단 + 파일 지목 제안
+   · harness.md §2 에스컬레이션 경유 완화 → 설계·기획만 경유, 사실 질의는 Code 직접 출력. 오너 헤더 감시 조항 제거
+   · MEMORY.md 헤더 박제 임계 조항 신설 → 2회 이상 관측 시만 신규 박제, 6개월·30세션 미재발 소각
+
+3. 방향 B — 세션 종료 7단계 재설계 + MD 수정 이원화 (커밋 a9d463e)
+   · 저울질: 오너 검수 1회 vs 시스템 자체 정확도, 3층 보강(Code 실측 + 근거 매칭 + 프리셋 재실측) 중 층 1·층 2 채택, 층 3 보류(MEMORY #56 과보정 방지)
+   · session.md §2 12단계 → 7단계. 단계 2 Code 저장소 실측 출력 신설. 단계 3·5 주장-근거 1:1 매칭 강제, 실패 시 오너 개입 없이 단계 2로 복귀. 오너 검수는 단계 6 프리셋만
+   · CLAUDE.md [7] MD 수정 이원화: 거버넌스 층(CLAUDE·session·harness·principles + MEMORY 헤더) before/after 검수, 도메인 층(rules·flows·patterns·master·designs·archive 등) AI 자율 + 사후 보고
+   · self-modification 회피: 이번 세션 종료는 구 12단계 적용, 신 7단계는 다음 세션부터
+
+4. 방향 C 이관 결정
+   · C-1 MEMORY 소각 작업 → 다음 세션 1순위
+   · C-2 근본 원칙 상향 통합 → 별도 거버넌스 세션
+   · C-3 공장 6단계 트랙 분리 → 르호봇 착수 전 재점검
+
+산출물:
+- 수정 MD (실제 반영 — Code git log 교차 검증 완료): md/core/CLAUDE.md §7 · md/core/session.md §2 · md/core/harness.md §2 · .harness/MEMORY.md 헤더 · md/log/progress.md
+- 수정 코드: 없음 (거버넌스 MD-only)
+- 계획 but 미반영: 방향 C 전체 (다음 세션 이관)
+
+교훈:
+- 6인 내부 도구 기준으로 쌓인 방어 장치 중 "오너 개입 루틴"은 르호봇 글로벌 기준에서 과잉, "품질 게이트·drift 방어"는 글로벌에서도 필수. 구분선이 명확해 다이어트 판단 비용 낮았음
+- Claude.ai가 "검수 없애면 drift 발생 여지"로 조심스럽게 설계한 초안을 오너가 "내가 참여하지 않아도 시스템 자체 정확도 높일 방향"으로 되물어 재설계 촉발. 방어선을 오너 검수에서 Code 실측 + 근거 매칭으로 옮기자 오너 부담 동일·정확도 상승 양립 가능
+- self-modification 회피 원칙(MEMORY #62-c)이 이번 세션에서 실전 작동. session.md 수정이 이번 세션 종료 절차 자체를 바꾸는 구조라 "구 포맷으로 이번 종료, 신 포맷은 다음부터" 명시 필요
+
+다음 세션 1순위: 방향 C-1 MEMORY 소각 작업.
