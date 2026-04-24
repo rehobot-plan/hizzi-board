@@ -7,6 +7,7 @@
 
 ---
 
+- [2026-04-24] 블록 ④ FAB + CreatePost 재배치 (0f75328) — src/components/Panel.tsx · src/components/common/FAB.tsx · src/components/CreatePost.tsx · md/log/todo.md
 - [2026-04-24] progress.md 이원화 거버넌스 수정 (자기참조 — git log 본체 참조) — md/log/todo.md · md/log/done.md · md/core/session.md · md/core/harness.md · md/core/master.md · CLAUDE.md
 - [2026-04-24] master.md 5 MD 인벤토리 신설 (1398cf1) — md/core/master.md
 - [2026-04-24] principles 상향 통합 #5 보강 + #6 신규 (baaf68a) — md/core/principles.md · .harness/MEMORY.md
