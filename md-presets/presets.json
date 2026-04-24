@@ -1,15 +1,16 @@
 {
   "current": {
-    "name": "authstore-reload-debt",
-    "description": "세션 #66 — authStore.onAuthStateChanged reload 부작용 진단 + 수정 (master-debt #14)",
-    "updated": "2026-04-23",
+    "name": "process-diet",
+    "description": "세션 #66 — 개발 프로세스 다이어트 + 오너 제약 규칙 재정립 (르호봇 글로벌 런칭 대비 거버넌스 경량화)",
+    "updated": "2026-04-24",
     "files": [
       "CLAUDE.md",
       "md/core/harness.md",
       "md/core/rules.md",
       "md/core/session.md",
       "md/log/progress.md",
-      "src/store/authStore.ts"
+      ".harness/MEMORY.md",
+      "md/core/master-debt.md"
     ]
   }
 }
