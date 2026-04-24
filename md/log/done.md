@@ -7,6 +7,7 @@
 
 ---
 
+- [2026-04-24] 블록 ③-B 3층 RecordModal 진입점 + visibleTo 공유 필터 (1·2층 기존 누락 동시 해소) (61f6088) — src/components/Panel.tsx · src/components/RecordModal.tsx · src/components/TodoList.tsx · src/components/PostList.tsx · src/lib/postSelectors.ts · tests/unit/postSelectors.test.ts · tests/smoke/panel-record-menu.spec.ts
 - [2026-04-24] chat-input schedule 단어 경계 + 토스트 정직화 (2833ccb) — src/lib/parseLocal.ts · src/store/chatInputStore.ts · tests/e2e/chat-input-s6.spec.ts · md/plan/designs/ai-capture-hb.md · md/core/master-debt.md
 - [2026-04-24] 블록 ④ FAB + CreatePost 재배치 (0f75328) — src/components/Panel.tsx · src/components/common/FAB.tsx · src/components/CreatePost.tsx · md/log/todo.md
 - [2026-04-24] progress.md 이원화 거버넌스 수정 (자기참조 — git log 본체 참조) — md/log/todo.md · md/log/done.md · md/core/session.md · md/core/harness.md · md/core/master.md · CLAUDE.md
