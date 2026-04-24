@@ -1,19 +1,18 @@
 {
   "current": {
-    "name": "block-4-fab-createpost",
-    "description": "메인 UX 블록 ④ FAB + CreatePost 재배치 진입용 (main-ux·flows 추가)",
+    "name": "main-ux-block-4",
+    "description": "메인 UX 블록 ④ FAB + CreatePost 재배치 작업용",
     "updated": "2026-04-24",
     "files": [
       "CLAUDE.md",
       "md/core/harness.md",
-      "md/core/session.md",
       "md/core/rules.md",
+      "md/core/session.md",
       "md/core/master.md",
       "md/log/todo.md",
-      "md/ui/patterns.md",
-      "md/ui/uxui.md",
       "md/plan/designs/main-ux.md",
-      "md/core/flows.md"
+      "md/ui/patterns.md",
+      "md/ui/uxui.md"
     ]
   }
 }
