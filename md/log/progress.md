@@ -4,8 +4,8 @@
 
 ## 현재상태 (세션 종료 시 replace)
 
-- 마지막 세션: 2026-04-24 세션 #67 (방향 C-1 MEMORY 소각 + harness §1-6 AI 책임 전환 완료)
-- 작업 브랜치: master (로컬·원격 54cb4e1 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
+- 마지막 세션: 2026-04-24 세션 #68 진행 중 (C-2 principles #6 신규 + #5 보강)
+- 작업 브랜치: master (로컬·원격 동기 · backup/flatten-2026-04-22 = 14ab3e7 보존)
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK · §6 홈 채팅 입력 A안 라이브 (시나리오 1~3 완전 · 시나리오 4 placeholder)
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW · 기존 설정 유지
 - 거버넌스 변경 (세션 #66~#67 누적):
@@ -14,11 +14,8 @@
   · harness.md §2 에스컬레이션 경유 완화 — 설계·기획만 경유, 사실 질의는 직접
   · harness.md §1-6 배포 실패 AI 1차 분류 책임 (코드/환경) — 오너 핑계 문구 제거 (세션 #67)
   · MEMORY.md 박제 임계 2회 이상 + 6개월·30세션 미재발 소각. 세션 #67 첫 적용으로 32건 소각·유지 5건·통합 박제 1건
-- 다음 세션 1순위: 방향 C-2 근본 원칙 CLAUDE.md·principles.md 상향 통합 (거버넌스 단독 세션)
-  · 범위: 세션 #66~#67 다이어트 결과를 CLAUDE.md 최상단·principles.md에 어떻게 흡수할지 설계
-  · C-1 소각 후 남은 5건 MEMORY 패턴에서 상향 추출 대상 식별
+- 다음 세션 1순위: 방향 C-3 공장 6단계 트랙 분리 — 르호봇 착수 전 재점검
 - 후순위 후보:
-  - 방향 C-3 공장 6단계 트랙 분리 — 르호봇 착수 전 재점검
   - authStore.onAuthStateChanged reload 부작용 (master-debt #14) — E2E 우회 중, 프로덕션 admin 경로 잠재
   - 블록 ③-B: 3층 탭바 메뉴 "기록" 진입점 + RecordModal 활용 + flows.md FLOW 1 복구 cascade 정교화
   - 메인 UX 블록 ④(FAB + CreatePost 재배치) · 블록 ⑤(달력 피어 탭)
@@ -131,3 +128,5 @@ Phase: MEMORY 전수 스캔 / 소각·유지·통합 박제 분류 / harness 배
 - "오너 핑계" 패턴 제거가 AI 책임 감각 강화로 이어짐 — 실패 분류·한계 고지가 에스컬레이션의 품질 차이를 만듦. harness.md §2 경유 완화(세션 #66)와 §1-6 배포 책임 전환(세션 #67)이 한 방향 정합
 
 다음 세션 1순위: 방향 C-2 근본 원칙 CLAUDE.md·principles.md 상향 통합.
+
+- [2026-04-24] C-2 principles #6 신규 + #5 보강 — MEMORY #54·#55·#66-a 상향 통합 (md/core/principles.md)
