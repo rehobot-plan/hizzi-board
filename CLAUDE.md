@@ -42,7 +42,7 @@
 
 ## 4. 세션 시작 — 주입 확인만
 
-첨부 파일(CLAUDE.md → harness.md → rules.md → session.md → progress.md 순)을 받으면 먼저 내용으로 실제 주입됐는지 확인한다. 파일명만 보이고 내용이 비어있으면 로딩 실패다 (과거 CLAUDE-detail.md가 크기 한계로 안 들어왔던 사례). 하나라도 빠지면 즉시 오너에게 보고하고 진행을 중단한다. 이 순서는 session.md [1]에 정의돼 있다 — 정체성과 구조가 먼저 세팅돼야 현황을 해석할 틀이 생긴다.
+첨부 파일(CLAUDE.md → harness.md → rules.md → session.md → master.md → todo.md 순)을 받으면 먼저 내용으로 실제 주입됐는지 확인한다. 파일명만 보이고 내용이 비어있으면 로딩 실패다 (과거 CLAUDE-detail.md가 크기 한계로 안 들어왔던 사례). 하나라도 빠지면 즉시 오너에게 보고하고 진행을 중단한다. 이 순서는 session.md [1]에 정의돼 있다 — 정체성과 구조가 먼저 세팅돼야 현황을 해석할 틀이 생긴다.
 
 확인 후의 최초 응답 구조·세션 종료 절차·프리셋 모드는 **session.md** 참조 (프리셋 상시 포함으로 자동 로드됨).
 
@@ -52,10 +52,11 @@
 
 | 작업 / 주제 | 참조 MD |
 |---|---|
+| 항상 로드 (세션 시작 주입) | CLAUDE · harness · rules · session · master · todo |
+| 완료 로그 조회 / 이력 추적 | done.md |
 | 기획 대화 / 새 기능 방향 설정 | principles.md |
 | 코딩 규칙 상세 | rules-detail.md |
 | 상태 전환 / 버그 수정 / 새 기능(상태 변경) | flows.md (+ master.md) |
-| 구조 인덱스 / 리팩터링 | master.md |
 | UI 패턴 | patterns.md |
 | UI 스타일·토큰 | uxui.md |
 | UX 설계 원칙 | ux-principles.md |
@@ -77,8 +78,8 @@ MD 수정은 두 층으로 나눈다.
 
 **거버넌스 층 (검수 필수) — CLAUDE.md · session.md · harness.md · principles.md · .harness/MEMORY.md 헤더의 운영 조항.** 시스템 운영 규약·역할 분담·세션 절차를 담는 파일. Claude.ai는 변경 항목별 before/after 비교표를 먼저 제시해 오너 검수를 받은 뒤에만 실행 명령 블록을 만든다. 포맷: Before(기존 문장 원문) / After(수정될 문장) / 이유(한 줄). 신규 파일 생성은 before가 없으므로 초안 전체를 통으로 검수받는다.
 
-**도메인 층 (AI 자율) — rules.md · rules-detail.md · flows.md · flows-detail.md · patterns.md · patterns-modal.md · uxui.md · ux-principles.md · master.md · master-schema.md · master-debt.md · .harness/MEMORY.md 사례 기록 · md/plan/designs/\* · md/archive/\*.** 코딩 규칙·UI 패턴·상태 전환·관측된 패턴 같은 도메인 지식. 세션 중 오너와 협의된 내용이거나 공정에서 도출된 사실이면 Claude.ai가 자율 수정하고 한 줄 사후 보고. 오너가 이상 있으면 그 자리에서 지시.
+**도메인 층 (AI 자율) — rules.md · rules-detail.md · flows.md · flows-detail.md · patterns.md · patterns-modal.md · uxui.md · ux-principles.md · master.md · master-schema.md · master-debt.md · master-bugs.md · todo.md · done.md · .harness/MEMORY.md 사례 기록 · md/plan/designs/\* · md/archive/\*.** 코딩 규칙·UI 패턴·상태 전환·관측된 패턴 같은 도메인 지식. 세션 중 오너와 협의된 내용이거나 공정에서 도출된 사실이면 Claude.ai가 자율 수정하고 한 줄 사후 보고. 오너가 이상 있으면 그 자리에서 지시.
 
-**예외 — progress.md는 공장이 매 1-6에서 직접 업데이트한다** (짧은 한 줄 로그 + 현재상태 갱신). 도메인 층 자율 원칙과 정합하며, 세션 종료 단계 3에서 세션 단위로 정돈된다.
+**예외 — todo.md·done.md는 공장이 매 1-6에서 직접 업데이트한다.** 완료된 TODO는 todo.md 해당 줄 삭제, 신규 TODO는 후보 큐 추가, 완료 작업은 done.md에 한 줄 append. 도메인 층 자율 원칙과 정합하며, 세션 종료 단계 2-a에서 정돈된다. 세션 단위 서사·교훈은 쓰지 않는다 (박제 필요분은 principles.md / MEMORY.md 기존 경로).
 
 **경계 사례:** MEMORY.md 헤더 규약 수정·운영 조항 추가는 거버넌스. MEMORY.md 사례 박제 추가·해소 기록은 도메인. 판단이 애매하면 거버넌스로 보수적 포함.

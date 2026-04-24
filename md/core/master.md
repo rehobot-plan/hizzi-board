@@ -150,14 +150,16 @@ tests/
 
 | 경로 | 역할 |
 |---|---|
-| md/log/progress.md | 세션 진행 기록 (공장이 1-6마다 append) |
-| md/archive/progress-2026-04-A.md ~ U.md | 과거 세션 아카이브 (21개) |
+| md/log/todo.md | 할 일 + 현재상태 (공장 1-6마다 갱신, 완료분 삭제, 구조 규약 5구간 순서) |
+| md/log/done.md | 완료 로그 (공장 1-6마다 append, 500줄 임계 자동 분할) |
+| md/archive/progress-2026-04-A.md ~ U.md | 과거 세션 아카이브 (21개, 세션 #1~#66) |
+| md/archive/progress-final-2026-04-24.md | 세션 #67~#68 상세 (progress.md 폐기 시점 이관본) |
 
 ### 5-6. 실측 기준 유령 후보 (별도 세션에서 정리)
 
 - md/core/inbox-additions-session7.md (2026-04-16 이후 미변경, 참조 없음)
 - md/core/master-operator.md (2026-04-16 이후 미변경, 참조 없음)
-- md/log/log.md (2026-04-15 이후 미변경, progress.md와 역할 중복 의심)
+- md/log/log.md (2026-04-15 이후 미변경, 과거 progress.md와 역할 중복 의심 — progress.md는 2026-04-24 archive 이관됨)
 
 ---
 
