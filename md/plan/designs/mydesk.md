@@ -191,7 +191,7 @@ Tailwind md breakpoint (768px) 기준.
 - 데스크톱 (≥768px): 기본 레이아웃
 - 모바일 (<768px):
   - 사이드바 3뱃지 → 합산 단일 뱃지
-  - 달력 필터 드롭다운: 담당자 체크박스 2열 그리드, 폭 calc(100vw - 32px)로 확장 (calendar-filter.md §8)
+  - 달력 필터 드롭다운: 담당자 체크박스 2열 그리드, 폭 calc(100vw - 32px)로 확장 (calendar-filter.md 8)
   - 오늘 탭 요약 카드 4개 → 2×2 그리드
   - 요청 탭 RequestView 내부 2탭(받은/보낸)은 그대로 가로 배치 유지
   - TabBar: 가로 스크롤 허용 (5탭 폭 부족 시)
@@ -224,8 +224,8 @@ Tailwind md breakpoint (768px) 기준.
 | R-2 | 사이드바 요청 메뉴 제거 + MY DESK 3뱃지 | src/components/common/Sidebar.tsx, useSidebarBadges 훅 |
 | R-3 | 오늘 탭 카드 재편 (연차 제거 + overdue 추가 + 요청확장) | src/hooks/useTodaySummary.ts, src/components/mydesk/SummaryCard.tsx |
 | R-4 | MY DESK 5탭 반영 (요청 탭 추가) | src/components/mydesk/TabBar.tsx, src/app/mydesk/request/page.tsx |
-| 4-A | 달력 필터 신규 도입 + 홈 적용 (calendar-filter.md §9) | src/components/calendar/CalendarFilter.tsx, src/hooks/useCalendarFilter.ts, src/lib/calendar-helpers.ts (확장), src/components/calendar/Calendar.tsx |
-| 4-B | MY DESK 달력 탭 활성화 + scope="me" 기본값 (calendar-filter.md §9) | src/app/(main)/mydesk/calendar/page.tsx |
+| 4-A | 달력 필터 신규 도입 + 홈 적용 (calendar-filter.md 9) | src/components/calendar/CalendarFilter.tsx, src/hooks/useCalendarFilter.ts, src/lib/calendar-helpers.ts (확장), src/components/calendar/Calendar.tsx |
+| 4-B | MY DESK 달력 탭 활성화 + scope="me" 기본값 (calendar-filter.md 9) | src/app/(main)/mydesk/calendar/page.tsx |
 
 ### Phase 가드
 
@@ -234,8 +234,8 @@ Tailwind md breakpoint (768px) 기준.
 - R-2 완료 기준: 사이드바 요청 메뉴 없음, MY DESK 3뱃지 정상, 기존 useTodoRequestStore.unseenCount 로직 호환
 - R-3 완료 기준: 오늘 탭 4카드가 [할일/일정/요청확장/overdue]로 표시, 카드 클릭 점프 동작, 연차 카드 자리에 overdue
 - R-4 완료 기준: TabBar에 요청 탭 추가, 5탭 전환 정상
-- 4-A 완료 기준: calendar-filter.md §9 Phase 4-A "완료 기준" 8항 참조
-- 4-B 완료 기준: calendar-filter.md §9 Phase 4-B "완료 기준" 5항 참조
+- 4-A 완료 기준: calendar-filter.md 9 Phase 4-A "완료 기준" 8항 참조
+- 4-B 완료 기준: calendar-filter.md 9 Phase 4-B "완료 기준" 5항 참조
 
 각 Phase는 독립 세션. R4.10 3축 PASS 보고 필수. R4.11 단일 블록 범위 원칙 준수.
 

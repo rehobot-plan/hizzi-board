@@ -90,7 +90,7 @@
 범위 (해소):
 - 단계 5 테이블 셀: "산출물 '수정 MD' 목록은 실행 완료분(커밋된 것)만 포함 — 기획 논의·계획만 된 항목은 '계획 but 미반영' 라인으로 분리 표기" 조항 신규
 - 단계 11 테이블 셀: "프리셋 트리거 실행 전 대상 MD 각각의 mtime·파일 말미 타임스탬프를 Code가 확인해 세션 말 기대 상태와 괴리 없음을 보고 → 트리거 실행" 조항 신규
-- §2 "제약" 섹션 2줄 append:
+- 2 "제약" 섹션 2줄 append:
   · 단계 5 교차 검증 규칙 (MEMORY #61-c·#62-a)
   · 단계 11 복사 직전 검증 + 괴리 시 복사 중단·오너 보고 (MEMORY #62-d)
 
@@ -123,13 +123,13 @@
 
 근거: 세션 #61에서 handle 클릭 시 페이지 스크롤이 위로 튐 · 튄 채 유지되는 현상 오너 실 Chrome 재현. 5층 방어(overflow-anchor:none · onMouseDown preventDefault · intentScrollYRef · 400ms scroll event intercept · scrollTo instant + scroll-behavior:auto) 배포 후에도 재현 지속. Playwright mouse.move/down/up 분리 실측에서 모든 phase scrollY 변화 0 → 가상 mouse로는 재현 실패.
 
-현재 처리: 접근 전환으로 사용자 체감 해소 — scrollIntoView({block:'start'}) + scroll-margin-top:80px 능동 scroll 정렬(main-ux.md §1.2b). 오너 실측 "아주 깔끔해 · 원하는대로 됐어" 확인. 기존 5층 방어는 능동 scroll 비활성 경로에서 유지(제거 없음).
+현재 처리: 접근 전환으로 사용자 체감 해소 — scrollIntoView({block:'start'}) + scroll-margin-top:80px 능동 scroll 정렬(main-ux.md 1.2b). 오너 실측 "아주 깔끔해 · 원하는대로 됐어" 확인. 기존 5층 방어는 능동 scroll 비활성 경로에서 유지(제거 없음).
 
 위험: 원인 미규명 상태 · 능동 scroll은 마스킹일 수 있음. Chrome 버전·환경 변화 시 재발 가능. 능동 scroll이 새 jump 유발 가능성 있으며, 악화 시 localStorage 'hizzi:activeScrollDisabled'='true'로 즉시 롤백 경로 확보.
 
 해소 방향: #12 DevTools Performance 녹화 워크플로우 수립 후 클릭 순간 호출 스택 포착 · 원인 특정. 원인 격리 이후 능동 scroll 단순화 또는 방어 계층 축소 판단.
 
-영향 범위: src/components/Panel.tsx toggleExpand · main-ux.md §1.2b / §1.2c
+영향 범위: src/components/Panel.tsx toggleExpand · main-ux.md 1.2b / 1.2c
 연동 MD: main-ux.md · ux-principles.md U13 · patterns.md P8
 상태: open · #12 선결 필요
 
@@ -145,15 +145,15 @@
 연동 MD: 없음
 상태: open (우선순위 낮음)
 
-### #9 harness.md §3 배포 게이트에 auto-deploy 트리거 검증 누락
+### #9 harness.md 3 배포 게이트에 auto-deploy 트리거 검증 누락
 
 근거: 세션 #58 실측. push 이후 Vercel이 webhook 수신·배포 트리거에 성공했는지 공정에서 검증하지 않음. 세션 #33~#56 장기 드리프트도 같은 구조적 공백에서 누적됐고, 세션 #58에서도 empty commit push가 GitHub Rules로 거부된 상태에서 auto-deploy 경로 자체를 실측할 수단이 없었음.
 
-현재 처리: §3이 git push + vercel --prod 개별 성공만 체크. GitHub → Vercel webhook 파이프라인 상태는 공정 밖. 세션 #59에서 Deploy Hook 생성 및 수동 트리거 경로 확보 → **부분 해소**. 세션 #60에서 push → auto-deploy 실측 사례 1건 확인(`i42koin1y` 자동 빌드 정상, Git 재연결 + Deploy Hook 조합 정상 작동). 그러나 push 기반 자동 트리거의 실측 절차를 공정에 명시 단계로 편입하는 작업은 여전히 미완.
+현재 처리: 3이 git push + vercel --prod 개별 성공만 체크. GitHub → Vercel webhook 파이프라인 상태는 공정 밖. 세션 #59에서 Deploy Hook 생성 및 수동 트리거 경로 확보 → **부분 해소**. 세션 #60에서 push → auto-deploy 실측 사례 1건 확인(`i42koin1y` 자동 빌드 정상, Git 재연결 + Deploy Hook 조합 정상 작동). 그러나 push 기반 자동 트리거의 실측 절차를 공정에 명시 단계로 편입하는 작업은 여전히 미완.
 
 해소 방향: 1-6에 "push 후 30~60초 내 `vercel ls --yes`로 신규 배포 Row 생성 확인" 단계 추가. 생성 없으면 webhook 단절로 간주하고 오너 보고. 수동 CLI 배포로 폴백해도 불일치 기록.
 
-영향 범위: md/core/harness.md §3 / md/core/session.md
+영향 범위: md/core/harness.md 3 / md/core/session.md
 연동 MD: harness.md · session.md
 상태: open
 

@@ -63,7 +63,7 @@ semantic grouping(work/personal/leave/request)으로 정비돼 있으나 렌더 
 4. 그 외 → **업무** (기본값)
 
 배타 판정 — 요청 이벤트는 taskType이 work이어도 "요청"으로만 분류. calendar-filter.md
-§2.2의 배타 규칙과 정합.
+2.2의 배타 규칙과 정합.
 
 ### 2.3 visibility 축 (업무·개인 내부 3분)
 
@@ -206,7 +206,7 @@ Firestore 쓰기 경로에서 color를 "semantic key"로 저장하던 암묵적 
 
 ### 6.2 taskType='personal'인데 requestId도 있는 경우
 
-§2.2 우선순위에 따라 "요청"으로 분류. taskType이 개인이어도 요청 연쇄 이벤트는
+2.2 우선순위에 따라 "요청"으로 분류. taskType이 개인이어도 요청 연쇄 이벤트는
 요청 카테고리.
 
 ### 6.3 사용자 정의 색상
@@ -265,7 +265,7 @@ leaveEvents는 별도 컬렉션 → FullCalendar 어댑터(`buildCalendarEventIn
 3. 블록 3 세션 — 동일 공정. 스크린샷 검수가 1-4 디자인 축의 핵심 증거
 
 각 세션 진입 시 `md/plan/designs/calendar-visual.md` 참조 필수 (CLAUDE.md 파일
-지도 §5의 "기능 구현 (설계 문서 있음)" 경로).
+지도 5의 "기능 구현 (설계 문서 있음)" 경로).
 
 ---
 

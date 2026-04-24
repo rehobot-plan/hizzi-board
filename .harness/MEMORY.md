@@ -22,7 +22,7 @@
 ## 문서 암묵 전제 구조는 실제 파일에서 확인 (세션 #50·#52 통합)
 
 - 패턴: 설계·기획 논의 중 "X 필드 존재"·"Y 엔티티 쓰임" 같은 구조 전제가 기억·추측 베이스로 박힌 채 규칙 추가. 확인 없이 진입하면 오분류·이식 실패
-- 사례: #50 calendar-filter §2.2 taskType 암묵 전제 (실제 Calendar UI 저장 경로 미저장 → fallback 규칙이 개인 색상 이벤트 오분류) · #52 히찌보드 메모 엔티티 부재 오판 (실제는 post.taskType='memo' 기존 존재)
+- 사례: #50 calendar-filter 2.2 taskType 암묵 전제 (실제 Calendar UI 저장 경로 미저장 → fallback 규칙이 개인 색상 이벤트 오분류) · #52 히찌보드 메모 엔티티 부재 오판 (실제는 post.taskType='memo' 기존 존재)
 - 원칙: "X 필드 부재 시 Y 처리" 류 규칙 도입 전 X가 어느 저장 경로에서 실제로 쓰이는지 payload 레벨 확인. 외부 문서 이식 시 타겟 엔티티·필드 구조 대조 선행
 
 ## #61-b Playwright click actionability scroll 우회 (세션 #61·#65 재적용)

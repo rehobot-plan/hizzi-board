@@ -96,7 +96,7 @@ interface PostAttachment {
   rawText: string                 // 원본 입력 보존 (헌법 제1조 · 수정 불가)
   createdAt: Date
 
-  // 파이프라인 상태 (ai-capture-hb.md §5.1)
+  // 파이프라인 상태 (ai-capture-hb.md 5.1)
   processingState: 'local_parsed' | 'awaiting_user' | 'finalized'
   parsedAt_local: Date | null
   finalizedAt: Date | null
@@ -126,7 +126,7 @@ interface PostAttachment {
 }
 ```
 
-기존 레코드 소급 할당 없음 (ai-capture-hb.md §5.4). 4필드 부재 = `inputSource: 'manual'` 상당.
+기존 레코드 소급 할당 없음 (ai-capture-hb.md 5.4). 4필드 부재 = `inputSource: 'manual'` 상당.
 
 ### `comments`
 ```typescript

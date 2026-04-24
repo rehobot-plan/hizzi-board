@@ -136,7 +136,7 @@ E2E 실패 시 Code는 구현 복귀 전에 아래를 수집해 보고한다:
 - **done.md append** — 방금 끝난 작업을 한 줄로 기록: `- [YYYY-MM-DD] 작업명 (커밋 해시) — 영향 파일`
 - **done.md 임계 자동 분할** — 500줄 초과 감지 시 Code가 자동으로 `md/archive/done-{N}.md`로 분할 이관. 프로토콜 단계 아닌 자동화. 분할 후 done.md 맨 아래 "이전 로그 (N~M건): md/archive/done-{N}.md" 참조 라인 append.
 
-세션 중 공장이 여러 번 돌면 1-6도 여러 번 발생한다. 매 회 todo.md·done.md에 반영돼 언제든 최신 상태다. 세션 단위 요약 블록은 작성하지 않는다 (session.md §2 2단계 프로토콜 참조). 박제 필요한 교훈은 principles.md / MEMORY.md로 올리는 기존 경로 활용.
+세션 중 공장이 여러 번 돌면 1-6도 여러 번 발생한다. 매 회 todo.md·done.md에 반영돼 언제든 최신 상태다. 세션 단위 요약 블록은 작성하지 않는다 (session.md 2 2단계 프로토콜 참조). 박제 필요한 교훈은 principles.md / MEMORY.md로 올리는 기존 경로 활용.
 
 ## 2. 막힘 탈출구 — Claude.ai 재질의
 

@@ -188,13 +188,13 @@ hasOverflow 감지:
   ResizeObserver + MutationObserver(characterData 제외) + rAF 배치 + 이전값 guard
   scrollHeight > clientHeight 조건으로 표시 · 빈 패널엔 비노출
 
-능동 scroll 정렬 (U13 · main-ux.md §1.2b):
+능동 scroll 정렬 (U13 · main-ux.md 1.2b):
   펼침·접힘 시 패널 상단 scroll-margin-top 80px로 능동 정렬
   scrollIntoView({ block: 'start', behavior }) + rAF 2프레임 대기
   데스크탑(≥768px) 한정 · 이미 가시(0~100px) 생략
   prefers-reduced-motion 폴백 · localStorage rollback
 
-다층 방어 5층 (원인 미규명 scroll jump 대응 · main-ux.md §1.2c):
+다층 방어 5층 (원인 미규명 scroll jump 대응 · main-ux.md 1.2c):
   1. html/body + card 레벨 overflow-anchor: none
   2. handle onMouseDown preventDefault (focus 이동 차단 · 키보드 Tab 유지)
   3. intentScrollYRef — 진입 시점 scrollY 선기록 후 click 복원 기준
@@ -242,7 +242,7 @@ E2E assertion 원칙:
   └───────────────────────────────┘
 ```
 
-시나리오 분기 (시나리오 1은 빈 입력 placeholder 상태 — main-ux.md §6 참조):
+시나리오 분기 (시나리오 1은 빈 입력 placeholder 상태 — main-ux.md 6 참조):
 
   시나리오 2 (명확 입력 · 즉시 저장, 50%+):
     내용·구분·범위 모두 명확 추론 시 확장 영역 미노출

@@ -73,7 +73,7 @@ src/
 │   ├── CreatePost.tsx (모달 컴포넌트), Calendar.tsx, NoticeArea.tsx
 │   ├── LeaveManager.tsx, TodoRequestBadge.tsx, TodoRequestModal.tsx
 │   ├── RecordModal.tsx           완료·휴지통 2탭 회수 모달
-│   ├── ChatInput.tsx, ChatExpand.tsx, AiBadge.tsx   홈 상단 자연어 입력 (§6)
+│   ├── ChatInput.tsx, ChatExpand.tsx, AiBadge.tsx   홈 상단 자연어 입력 (6)
 ├── hooks/
 │   ├── useEscClose.ts, useVisibilityTooltip.ts
 ├── store/
@@ -89,7 +89,7 @@ src/
 
 tests/
 ├── e2e/
-│   ├── chat-input-s6.spec.ts              §6 홈 채팅 입력 회귀 스위트 (세션 #65 · 23 시나리오)
+│   ├── chat-input-s6.spec.ts              6 홈 채팅 입력 회귀 스위트 (세션 #65 · 23 시나리오)
 │   └── helpers/chat-input.ts              admin 패널 seed · cleanup · 고정 시간 · programmatic click
 └── smoke/                                 기존 smoke specs
 ```
@@ -139,7 +139,7 @@ tests/
 | md/plan/roadmap.md | 로드맵 |
 | md/plan/vote-system.md | hana-vote 설계 |
 | md/plan/designs/main-ux.md | 메인 UX 블록 ①~⑤ 설계 |
-| md/plan/designs/ai-capture-hb.md | §6 자연어 캡처 설계 |
+| md/plan/designs/ai-capture-hb.md | 6 자연어 캡처 설계 |
 | md/plan/designs/calendar-filter.md | 달력 필터 설계 |
 | md/plan/designs/calendar-visual.md | 달력 비주얼 설계 |
 | md/plan/designs/header.md | 헤더 설계 |
@@ -167,7 +167,7 @@ tests/
 
 ```
 ChatInput.tsx → ChatExpand.tsx → AiBadge.tsx / chatInputStore.ts → parseIntent.ts → parseLocal.ts
-ChatInput.tsx → app/(main)/page.tsx 상단 배치 (§6, U14, P9)
+ChatInput.tsx → app/(main)/page.tsx 상단 배치 (6, U14, P9)
 chatInputStore.ts → chatMessages 컬렉션 + posts/calendarEvents 4필드 (sourceMessageId·parseStage·confidence·inputSource)
 Panel.tsx → TodoList.tsx / PostList.tsx / Calendar.tsx / common/FAB.tsx / RecordModal.tsx
 TodoList.tsx → TodoItem.tsx / CompletedTodo.tsx / postStore.ts
