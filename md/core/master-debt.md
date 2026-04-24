@@ -215,3 +215,20 @@
 - 멀티데이 이벤트 수정/전체삭제
 - 완료된 할일 / 삭제된 할일 / 삭제된 메모 관리 UX 개선
 ```
+
+### #14 authStore reload 부작용 — admin 잠재 버그
+
+근거: [2026-04-23 세션 #65] E2E 셋업 중 반복 page.goto가 재현 조건 제공. authStore.onAuthStateChanged가 page reload마다 clearAdminPanelOwnership을 재호출.
+
+현상: admin 로그인 상태에서 새로고침·새 탭 오픈 시 패널 ownership(seed)이 null로 리셋될 여지.
+
+영향 범위: src/store/authStore.ts · onAuthStateChanged 콜백 · clearAdminPanelOwnership 호출 조건
+
+감지 경로: 세션 #65 E2E 셋업 중 `loginAsAdmin → page.goto('/')` 반복 호출이 매번 onAuthStateChanged를 재발동시키면서 seed 패널의 ownerEmail이 반복 null로 리셋. 수동 사용에서는 드물게 재현되는 조건이라 미발견.
+
+회피: E2E는 loginAsAdmin 후 추가 page.goto 금지 + ensureAdminPanel 타이밍 조정으로 우회.
+
+해소 방향: onAuthStateChanged 콜백 조건 재검토 — 첫 인증 이벤트와 reload 시 재발 이벤트 구분. `clearAdminPanelOwnership`을 signIn 직접 경로에서만 호출하고 onAuthStateChanged 콜백에서는 제거하거나, admin 패널 리셋이 이미 완료된 상태면 skip하는 가드 추가.
+
+연동 MD: 세션 #66 1순위 진입 시 session.md 프리셋에 src/store/authStore.ts 포함
+상태: open (세션 #66 1순위 · E2E 우회로 회귀 감지만 차단)

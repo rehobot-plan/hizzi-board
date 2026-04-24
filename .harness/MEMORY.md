@@ -234,3 +234,15 @@ session.md 공식 조항이 없는 상태에서 작동한 이 검증이 세션 #
   · 복구·인프라 이슈 상황에서 "무해성"(read-only · 파일 생성만)이 "필요성"을 대체할 수 없음. 쌓는 작업마다 "이게 실제 복구 경로에 쓰이는가" 자문 필수
   · 복구 루트를 식별한 순간 실행으로 전환. 식별 후 추가 준비 계속 쌓는 건 과보정 신호
   · 오너 직격 질문("왜 이렇게 복잡하냐") 받으면 그 자리에서 기조 변경. 인정만 하고 이어가지 말 것
+
+## #65-a Playwright page.clock.install + React rerender hang (세션 #65 박제)
+
+현상: page.clock.install()이 timers를 freeze시켜 React setState 후 rerender가 hang.
+
+원인: React 내부 스케줄러가 freeze된 timer에 의존. 가상 시간 모드에서 setTimeout/rAF 진행이 멈추면 상태 업데이트 이후 화면 반영이 끊김.
+
+규약: 테스트에서 시간 고정이 필요하면 `page.clock.setFixedTime(date)` 사용 — Date만 고정, timers는 자연 진행. `clock.install()`은 timers까지 freeze하니 React 앱 대상에는 쓰지 않는다.
+
+재적용 대상: 동적 날짜·시간 의존 assertion (예: "내일"·"D-N"·날짜 파싱·완료 알림·리마인더 등 spec).
+
+첫 발견: 세션 #65 §6 E2E — "내일 보고서 초안 정리" 입력 후 시나리오 3 확장 영역 미노출로 증상 발현. clock.install → setFixedTime 교체로 해소.
