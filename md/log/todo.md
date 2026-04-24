@@ -9,11 +9,11 @@
 
 ## 다음 1순위
 
-- calendarEvents 필드 체계 분열 통합 (master-debt #18) — ⑤-3 선결
+- calendarEvents identity 규약 writer/reader 정돈 (master-debt #18 2단계) — ⑤-3 선결
 
 ## 후보 큐
 
-- calendarEvents 필드 체계 분열 통합 (master-debt #18) — reader identity 규약 통일 + specific visibility reader 대응. 독립 세션 2~3 사이클. ⑤-3 선결 조건
+- calendarEvents identity 규약 writer/reader 정돈 (master-debt #18 2단계) — writer 5지점(AddEventModal·CreatePost·todoRequestStore·TodoDetailModal·chatInputStore) authorEmail·updatedAt 세팅 추가 + reader 4지점(Calendar.tsx 편집 권한·filterCalendarInputs·useTodaySummary·RecordModal canViewPost) uid/email 이원 대조 정합 + filterCalendarInputs visibleTo 체크(specific visibility reader) + repeat 필드 optional 표기 정돈. 3단계는 마이그레이션(Firestore 레거시 authorId email→uid + authorEmail 신규 채움). ⑤-3 선결
 - (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토. 1~2 세션 관찰 선행 후 거버넌스 수정 세션으로 진행. 검토 대상: 1층 session.md 1(세션 시작 주입 확인) + 2(Code 실측 + Claude.ai 직접 확인 이중 검증 구조) · 2층 session.md 4 프리셋 시스템 폐기 + md-presets/·presets.json·_staging/ 폴더 제거 · 3층 CLAUDE.md 5 파일 지도 의미 재정의(주입 목록→참조 목록) · 4층 harness.md 1-6 공장 산출물 경로 파일 저장 전환(선택). 거버넌스 층 수정이라 before/after 비교표 검수 필요. 2026-04-24 MCP filesystem 도입 완료 시점 기록
 - 블록 ⑤-3 — 타인 패널 달력 scope/privacy 정제 (visibleTo 기반 필터 + viewer/owner/admin 권한 매트릭스). 기획 대화 선행 후 착수. **#18 + 재설계 둘 다 선결**
 - 메인·MY DESK 전체 UX 감사 세션 — mydesk.md·main-ux.md·profile.md 재독 기반. 기능 추가·모달 동선·결함 세 축 점검. 실사용 피드백(오너 + 6인 팀) 사전 수집 2~3일 선행. 산출물은 후보 큐 항목 + P1/P2/P3 우선순위 + 의존 관계. 기획 대화 세션
@@ -33,7 +33,7 @@
 
 ## 현재상태
 
-- 작업 브랜치: master (로컬·원격 18e3aed 동기 · master-debt #16 closed · Claude Desktop + MCP filesystem 설정 완료)
+- 작업 브랜치: master (로컬·원격 54c2d6b 동기 · master-debt #16 closed · #18 1단계 master-schema calendarEvents 재정의 완료 · Claude Desktop + MCP filesystem 설정 완료)
 - 세션 운영 방침 (2026-04-24 확정 · chillkim 님): (1) MCP 익숙해지기 + #18 처리 — 기존 MD 체계 실전 운영 관찰 (2) 관찰 기반 MD 운영 프로토콜 재설계 (3) 이후 ⑤-3 착수
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW
