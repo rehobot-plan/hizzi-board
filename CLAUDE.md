@@ -64,22 +64,12 @@
 
 ## 6. 핵심 제약
 
-상태를 바꾸는 작업은 flows.md의 연쇄 요구사항을 먼저 확인한다. 코드 작성 전에는 rules.md 체크리스트를 훑는다. any 타입·Firestore undefined 저장·catch의 addToast 누락은 빈번한 실수라 특히 조심한다. locked-files.txt 대상 파일은 제안만 가능하고, 오너가 명시적으로 수정을 허가한 경우에만 실행.
+상태를 바꾸는 작업은 flows.md의 연쇄 요구사항을 먼저 확인한다. 코드 작성 전에는 rules.md 체크리스트를 훑는다. any 타입·Firestore undefined 저장·catch의 addToast 누락은 빈번한 실수라 특히 조심한다. locked-files.txt 대상 파일은 제안만 가능하고, 오너가 명시적으로 수정을 허가한 경우에만 실행. MD 파일 수정이 필요한 경우 거버넌스·도메인 두 층 구분과 검수 절차는 session.md 3번 참조.
 
-## 7. 슬림 유지 — 신규 기능·규칙·원칙 추가 요청이 들어오면 먼저 멈춘다
+## 7. 슬림 유지
 
-이 파일은 11KB 이하로 유지한다. 초과하면 분할보다 삭제를 먼저 고민한다.
+이 파일은 11KB 이하로 유지한다. 진입점·역할·소통 원칙·파일 지도·핵심 제약만 담는다. 초과하면 분할보다 삭제를 먼저 고민한다.
 
-**오너는 대화 중에 신규 기능·규칙·원칙 추가 요청을 습관적으로 던진다** (버그 수정·탐색 질문·일상 대화는 해당 없음, 오직 새로운 것을 추가해달라는 요청). 이때 Claude.ai는 받은 내용을 CLAUDE.md에 즉시 넣지 않는다. **어느 파일에 들어갈 내용인지 스스로 판단해 파일 지목과 함께 수정안을 제안**한다. CLAUDE.md는 진입점·역할·소통 원칙·파일 지도만 담는다. 세션 운영은 session.md, 코드 실행·하네스 작동은 harness.md, 코딩 규칙은 rules-detail.md, UI 패턴은 patterns.md 계열, 상태 전환은 flows.md — 5번 파일 지도의 해당 대상으로 보낸다. CLAUDE.md가 기본 수납처가 되면 이 파일은 다시 비대해지고, 비대해진 문서는 해석 여지를 늘려 엉킴을 만든다. 같은 내용을 두 파일에 중복 기술하지 않는다. 두 파일에 걸치는 내용이 발견되면 한쪽으로 수렴시킨다.
+오너가 신규 기능·규칙·원칙 추가를 요청하면 Claude.ai는 받은 내용을 CLAUDE.md에 즉시 넣지 않는다. 어느 파일에 들어갈 내용인지 스스로 판단해 5번 파일 지도의 해당 대상으로 보낸다. MD 수정 절차·두 층 구분·경계 사례는 session.md 3번 참조.
 
 새로 뭔가 넣고 싶을 때는 "이건 하네스 자동화로 해결되는 게 아닌가?"를 먼저 묻는다. 문서가 기능하는 게 아니라 자동화가 기능한다.
-
-MD 수정은 두 층으로 나눈다.
-
-**거버넌스 층 (검수 필수) — CLAUDE.md · session.md · harness.md · principles.md · .harness/MEMORY.md 헤더의 운영 조항.** 시스템 운영 규약·역할 분담·세션 절차를 담는 파일. Claude.ai는 변경 항목별 before/after 비교표를 먼저 제시해 오너 검수를 받은 뒤에만 실행 명령 블록을 만든다. 포맷: Before(기존 문장 원문) / After(수정될 문장) / 이유(한 줄). 신규 파일 생성은 before가 없으므로 초안 전체를 통으로 검수받는다.
-
-**도메인 층 (AI 자율) — rules.md · rules-detail.md · flows.md · flows-detail.md · patterns.md · patterns-modal.md · uxui.md · ux-principles.md · master.md · master-schema.md · master-debt.md · master-bugs.md · todo.md · done.md · .harness/MEMORY.md 사례 기록 · md/plan/designs/\* · md/archive/\*.** 코딩 규칙·UI 패턴·상태 전환·관측된 패턴 같은 도메인 지식. 세션 중 오너와 협의된 내용이거나 공정에서 도출된 사실이면 Claude.ai가 자율 수정하고 한 줄 사후 보고. 오너가 이상 있으면 그 자리에서 지시.
-
-**예외 — todo.md·done.md는 공장이 매 1-6에서 직접 업데이트한다.** 완료된 TODO는 todo.md 해당 줄 삭제, 신규 TODO는 후보 큐 추가, 완료 작업은 done.md에 한 줄 append. 도메인 층 자율 원칙과 정합하며, 세션 종료 단계 2-a에서 정돈된다. 세션 단위 서사·교훈은 쓰지 않는다 (박제 필요분은 principles.md / MEMORY.md 기존 경로).
-
-**경계 사례:** MEMORY.md 헤더 규약 수정·운영 조항 추가는 거버넌스. MEMORY.md 사례 박제 추가·해소 기록은 도메인. 판단이 애매하면 거버넌스로 보수적 포함.
