@@ -415,6 +415,8 @@ export interface CalendarFilterContext {
   currentUserEmail?: string;
   currentUserUid?: string;
   isAdmin?: boolean;
+  // ⑤-3 — 타인 패널 visiting 모드. true이면 admin 특권 무시 + 'me' 전면 차단 + requestId 이벤트는 visibleTo 체크 강제.
+  panelVisitingViewer?: boolean;
 }
 
 function resolveEventMemberEmails(
@@ -473,6 +475,46 @@ export function filterCalendarInputs(
   return events.filter(ev => {
     const raw = ev.extendedProps.source === 'calendar' ? ev.extendedProps.rawCalendar : undefined;
     const me = ctx.currentUserEmail;
+
+    // ⑤-3 — 타인 패널 visiting 모드. admin 특권 무시, 'me' 전면 차단, requestId 이벤트는 visibleTo 강제.
+    if (ctx.panelVisitingViewer) {
+      // leave 이벤트는 visibility 개념 없음 — 멤버 매칭만(panelOwnerEmail).
+      if (ev.extendedProps.source === 'leave') {
+        const emails = resolveEventMemberEmails(ev, ctx.users);
+        return emails.some(e => memberSet.has(e));
+      }
+      if (!raw) return false;
+      const emails = resolveEventMemberEmails(ev, ctx.users);
+      if (!emails.some(e => memberSet.has(e))) return false;
+      if (!categorySet.has(resolveEventCategory(ev))) return false;
+      // visibility='me' → 차단 (admin 포함)
+      if (raw.visibility === 'me') return false;
+      // requestId 보유(todoRequest cascade) — 보안 우선 strict.
+      // todoRequestStore.acceptRequest는 원본 request의 requestVisibility를 보존하지 않고
+      // 항상 visibility='all' + visibleTo 미저장으로 cascade한다(writer 결함). 따라서 visibility 값을
+      // 신뢰할 수 없어 visiting 모드에서는 일관되게 양당사자(from/to) + visibleTo 명시만 노출.
+      // visibility 보존은 cascade writer 정돈 후속(별도 사이클).
+      if (raw.requestId) {
+        if (!me) return false;
+        if (Array.isArray(raw.visibleTo) && raw.visibleTo.length > 0) {
+          return raw.visibleTo.includes(me);
+        }
+        const isFrom = raw.requestFrom === me;
+        const isTo =
+          raw.authorEmail === me ||
+          raw.authorId === me ||
+          (ctx.currentUserUid ? raw.authorId === ctx.currentUserUid : false);
+        return isFrom || isTo;
+      }
+      // visibility='specific' → visibleTo 체크
+      if (raw.visibility === 'specific') {
+        if (!me) return false;
+        return Array.isArray(raw.visibleTo) && raw.visibleTo.includes(me);
+      }
+      // 'all' or undefined → 통과
+      return true;
+    }
+
     // #18 2단계 — specific visibility fail-closed. admin 제외, viewer identity 미확정이거나 author·recipient 아니면 차단.
     if (raw?.visibility === 'specific') {
       if (!ctx.isAdmin) {

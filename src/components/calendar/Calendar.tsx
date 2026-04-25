@@ -82,14 +82,16 @@ export default function CalendarContainer({
   }, [panelMode, isOwnPanel]);
   const effectiveScope: CalendarScope = panelMode ? panelScope : defaultScope;
   const filter = useCalendarFilter(effectiveScope);
-  // panelMode: 본인 패널만 도달. scope 기반 members(me=본인 / team=전체). localStorage 이전 members 무시.
+  // ⑤-3 — 타인 패널 visiting 모드: members=[panelOwnerEmail] 고정. unassigned panel(panelOwnerEmail 부재)이면 빈 멤버로 가드(자기 일정 누수 방지).
+  // 본인 패널: scope 기반 members(me=본인 / team=전체). localStorage 이전 members 무시.
   const effectiveMembers = useMemo(() => {
     if (panelMode) {
+      if (!isOwnPanel) return panelOwnerEmail ? [panelOwnerEmail] : [];
       if (panelScope === 'me' && user?.email) return [user.email];
       return users.map(u => u.email).filter((e): e is string => !!e);
     }
     return filter.members;
-  }, [panelMode, panelScope, user?.email, users, filter.members]);
+  }, [panelMode, isOwnPanel, panelOwnerEmail, panelScope, user?.email, users, filter.members]);
   const PANEL_ALL_CATEGORIES: CalendarCategory[] = ['work', 'request', 'personal'];
   const effectiveCategories = useMemo(
     () => (panelMode ? PANEL_ALL_CATEGORIES : filter.categories),
@@ -104,6 +106,8 @@ export default function CalendarContainer({
       currentUserEmail: user?.email || undefined,
       currentUserUid: user?.uid || undefined,
       isAdmin: user?.role === 'admin',
+      // ⑤-3 — 타인 패널 visiting 모드: admin 특권 무시 + 'me' 전면 차단 + requestId visibleTo 강제.
+      panelVisitingViewer: panelMode && !isOwnPanel,
     });
     // 본인 패널 '전체' scope에서 타인의 private(visibility='me')은 차단(team fall-through 방지).
     // specific은 CalendarEventDoc에 visibleTo 필드 부재 — 보수적으로 author=본인만 허용(⑤-3에서 정제).
@@ -348,24 +352,9 @@ export default function CalendarContainer({
   };
 
   // ─── 렌더 ─────────────────────────────────────────────
-  // 블록 ⑤-1 경계: 타인 패널(panelMode + !isOwnPanel)은 placeholder로 early return.
-  // scope 토글·월 그리드·AddEventModal write path 전부 미노출 → privacy/access 축 원천 차단.
-  if (panelMode && !isOwnPanel) {
-    return (
-      <div
-        data-testid="panel-calendar-placeholder"
-        style={{
-          padding: '40px 16px',
-          textAlign: 'center',
-          color: '#9E8880',
-          fontSize: 12,
-          letterSpacing: '0.04em',
-        }}
-      >
-        이 패널의 달력은 준비 중입니다
-      </div>
-    );
-  }
+  // ⑤-3 — 타인 패널 visiting 모드: 월 그리드 + 읽기 전용. ⑤-1 placeholder 제거.
+  // 쓰기 진입점(AddEventModal · onDateClick · onDateRangeSelect · canEditCalendar/Leave) 전면 차단.
+  const isWriteAllowed = !panelMode || isOwnPanel;
 
   return (
     <>
@@ -421,8 +410,8 @@ export default function CalendarContainer({
       </div>
       <CalendarGrid
         events={filteredInputs}
-        onDateClick={ds => openAddModal(ds, ds)}
-        onDateRangeSelect={(s, e) => openAddModal(s, e)}
+        onDateClick={isWriteAllowed ? (ds) => openAddModal(ds, ds) : undefined}
+        onDateRangeSelect={isWriteAllowed ? (s, e) => openAddModal(s, e) : undefined}
         onEventClick={openDisplayEvent}
       />
       <AddEventModal
@@ -449,7 +438,7 @@ export default function CalendarContainer({
         open={!!showDetail}
         event={showDetail}
         form={form} setForm={setForm}
-        canEdit={showDetail ? canEditCalendar(showDetail) : false}
+        canEdit={isWriteAllowed && (showDetail ? canEditCalendar(showDetail) : false)}
         requests={requests} users={users}
         loading={loading}
         onCancel={() => setShowDetail(null)}
@@ -463,7 +452,7 @@ export default function CalendarContainer({
         form={form} setForm={setForm}
         leaveType={leaveType} setLeaveType={setLeaveType}
         leaveMemo={leaveMemo} setLeaveMemo={setLeaveMemo}
-        canEdit={showLeaveDetail ? canEditLeave(showLeaveDetail) : false}
+        canEdit={isWriteAllowed && (showLeaveDetail ? canEditLeave(showLeaveDetail) : false)}
         loading={loading}
         onCancel={() => setShowLeaveDetail(null)}
         onUpdate={handleLeaveUpdate}
