@@ -35,7 +35,7 @@ Store Listener (S9)
 □ 인라인 재구현 없이 공통 컴포넌트를 import했는가?
 
 명령 블록 (MD 수정이 포함된 경우)
-□ 변경 항목별 before/after 비교표가 선행 제시되어 오너 검수를 받았는가? (CLAUDE.md [7])
+□ 변경 항목별 before/after 비교표가 선행 제시되어 오너 검수를 받았는가? (session.md 3번)
 □ 신규 파일 생성이면 초안 전체를 통으로 검수받았는가?
 □ 부분 수정은 패치(str_replace) 방식으로 작성했는가?
 

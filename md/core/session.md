@@ -12,24 +12,24 @@
 - **Claude Code** — git 명령·파일 조작·`presets.json` 갱신 같은 기계적 실행.
 - **오너** — 각 단계 제안에 "OK / 수정" 반응만.
 
-이 파일은 Claude.ai가 자기 응답 구조에 참조하는 동시에 Claude Code가 세션 종료 실행에 참조하는 공통 레퍼런스다. 프리셋 상시 포함 파일이라 새 세션에서도 자동 로드된다.
+이 파일은 Claude.ai가 자기 응답 구조에 참조하는 동시에 Claude Code가 세션 종료 실행에 참조하는 공통 레퍼런스다.
 
 ## 1. 세션 시작
 
-### 첨부 파일
+### 진입 시 자동 read
 
-새 대화방 시작 시 오너가 업로드하는 파일 (프리셋 시스템이 `md-presets/_staging/`에 미리 준비). **아래 번호 순서대로 읽는다** — 정체성과 구조가 먼저 세팅돼야 현황을 해석할 틀이 생긴다.
+진입 발동과 동시에 hizzi-board-fs MCP로 다음 6개 파일을 아래 번호 순서대로 자동 read하고 꼼꼼히 읽고 시작한다.
 
-1. `CLAUDE.md` *(정체성·역할)*
-2. `md/core/harness.md` *(프리셋 상시 포함, 공장 구조)*
-3. `md/core/rules.md` *(공장 안 규칙)*
-4. `md/core/session.md` *(프리셋 상시 포함, 세션 경계)*
-5. `md/core/master.md` *(프리셋 상시 포함, 구조 인덱스·MD 인벤토리)*
-6. `md/log/todo.md` *(프리셋 상시 포함, 할 일·현재상태)*
+1. `CLAUDE.md`
+2. `md/core/session.md`
+3. `md/core/harness.md`
+4. `md/core/rules.md`
+5. `md/core/master.md`
+6. `md/log/todo.md`
 
 ### 주입 확인 (첫 단계)
 
-세션 시작 프롬프트를 받으면 Claude.ai는 먼저 여섯 파일이 실제 주입됐는지 내용으로 확인한다. 파일명만 보이고 내용이 비어있으면 로딩 실패다 — 과거 CLAUDE-detail.md가 크기 한계로 안 들어왔던 사례가 있음. 하나라도 빠지면 즉시 오너에게 보고하고 진행을 중단한다.
+자동 read한 6개 파일이 비어있거나 손상됐는지 내용으로 확인한다. 하나라도 실패하면 즉시 오너에게 보고하고 진행을 중단한다.
 
 ### 최초 응답 구조
 
@@ -53,25 +53,21 @@
 
 | 단계 | 내용 | 실행 주체 | 오너 검수 |
 |:---:|---|---|:---:|
-| 1 | Code 실측 — `git log --oneline -20` · 세션 중 str_replace된 파일 경로 + mtime · master-debt·MEMORY diff · `.harness/session-started.flag` · 1-4·1-5 아티팩트 실존 여부. Claude.ai는 이 출력**만을** 근거로 단계 2 초안 작성 | Code | 없음 |
-| 2-a | todo.md 완료분 삭제 + 후보 큐 갱신 + 1순위 동기화 (후보 큐 top 복붙) + done.md append + (필요 시) master-debt·MEMORY 갱신 | Claude.ai 작성 → Code 실행 | 요약 스캔만 |
-| 2-b | 다음 세션 프리셋 제안 (생략 포함 필수 검수 — 1순위가 동일 도메인이면 skip, 도메인 전환이면 갱신) → `presets.json` 갱신 → `_staging` 복사 → 트리거 실행 | Claude.ai 제안 → Code 실행 | **검수 (유일)** |
+| 1 | Code 실측 — `git log --oneline -20` · 세션 중 str_replace된 파일 경로 + mtime · master-debt·MEMORY diff · `.harness/session-started.flag` · 1-4·1-5 아티팩트 실존 여부. Claude.ai는 이 출력 + hizzi-board-fs MCP 직접 확인(파일 내용·mtime·존재 영역에 한함, git 영역 제외)으로 교차검증한 결과를 근거로 단계 2 초안 작성. 두 출처 불일치 시 초안 작성 중단 + "사실 불일치: (항목)" 보고 후 단계 1로 복귀 | Code + Claude.ai | 없음 |
+| 2 | todo.md 완료분 삭제 + 후보 큐 갱신 + 1순위 동기화 (후보 큐 top 복붙) + done.md append + (필요 시) master-debt·MEMORY 갱신 | Claude.ai 작성 → Code 실행 | 요약 스캔만 |
 
 ### 보고 포맷
 
-Claude.ai는 단계 1 실측 + 단계 2-a 갱신 제안 + 단계 2-b 프리셋 제안을 한 응답으로 제시한다. 오너는 요약을 훑어 사실 오염 여부만 확인 — 문장 단위 검수가 아니라 "이게 맞게 누적됐는가" 스캔. 검수량은 2-b 프리셋 1회, 수 초 단위.
+Claude.ai는 단계 1 실측 + 단계 2 갱신 제안을 한 응답으로 제시한다. 오너는 요약을 훑어 사실 오염 여부만 확인 — 문장 단위 검수가 아니라 "이게 맞게 누적됐는가" 스캔.
 
-오너 승인 후 Code가 단계 2-b 프리셋 실행. 완료 시 Claude.ai가 "세션 종료 완료 ✅" 출력.
+오너 승인 후 Claude.ai가 "세션 종료 완료 ✅" 출력.
 
 ### 제약
 
-- 단계 1 Code 실측 출력은 해석·판단 없이 사실만. Claude.ai는 이 출력만을 근거로 단계 2 초안을 작성한다. 대화 콘텍스트의 "완료했다" 텍스트는 초안 근거 사용 금지 (MEMORY #54·#55).
-- 단계 2-a todo.md 완료 삭제·done.md append 항목은 단계 1 git log·str_replace 경로와 1:1 매칭. 매칭 실패 시 초안 작성 중단 + "사실 불일치: (항목)" 보고 후 단계 1로 복귀 (오너 개입 없이). 기획 논의·계획만 된 항목은 "계획 but 미반영 → 후보 큐 이관"으로 분리 표기 (MEMORY #61-c·#62-a).
-- 단계 2-a master-debt·MEMORY 추가·해소 항목도 동일하게 단계 1 출력 근거 매칭 필수.
+- 단계 1 Code 실측 출력은 해석·판단 없이 사실만. Claude.ai는 이 출력과 hizzi-board-fs MCP 직접 확인 결과를 교차검증해 단계 2 초안을 작성한다. 두 출처 불일치 시 초안 작성 중단 + 보고 후 단계 1로 복귀. 대화 콘텍스트의 "완료했다" 텍스트는 초안 근거 사용 금지 (MEMORY #54·#55).
+- 단계 2 todo.md 완료 삭제·done.md append 항목은 단계 1 git log·str_replace 경로와 1:1 매칭. 매칭 실패 시 초안 작성 중단 + "사실 불일치: (항목)" 보고 후 단계 1로 복귀 (오너 개입 없이). 기획 논의·계획만 된 항목은 "계획 but 미반영 → 후보 큐 이관"으로 분리 표기 (MEMORY #61-c·#62-a).
+- 단계 2 master-debt·MEMORY 추가·해소 항목도 동일하게 단계 1 출력 근거 매칭 필수.
 - 세션 단위 요약·교훈 서사는 작성하지 않는다. 박제 필요한 교훈은 principles.md / MEMORY.md로 올리는 기존 경로 활용. 박제 필터 통과 못 한 중간 층 판단은 git commit message로 대신 담을 수 있음.
-- 단계 2-b 프리셋 복사 직전, Code는 대상 MD 각각의 mtime·파일 말미 타임스탬프를 확인해 세션 말 기대 상태와 괴리 없음을 보고한다. 괴리 감지 시 복사 중단·오너 보고 (MEMORY #62-d · #61 drift 사고 재발 방지).
-- 단계 2-b 프리셋 생략 판단 근거는 보고에 명시. 다음 세션 1순위가 이번 세션과 동일 도메인이면 skip 가능, 도메인 전환(예: 블록 ④ → 거버넌스)이면 갱신 필수.
-- 거버넌스 MD(CLAUDE · session · harness · principles · MEMORY 헤더 운영 조항) 수정이 필요한 경우, 단계 2-a에 포함하지 않고 별도 세션으로 이관한다 (self-modification 회피 원칙 MEMORY #62-c).
 
 ## 3. MD 수정 — 두 층 구분
 
@@ -91,42 +87,3 @@ Claude.ai는 변경 항목별 before/after 비교표를 먼저 제시해 오너 
 
 **중복 기술 금지** — 같은 내용을 두 파일에 중복 기술하지 않는다. 두 파일에 걸치는 내용이 발견되면 한쪽으로 수렴시킨다.
 
-## 4. 프리셋 — 다음 세션 파일 준비
-
-`프리셋` 자연어 트리거는 두 모드.
-
-### 모드 A — 복사
-
-**조건:** "프리셋" + "만들어" 계열 동사 없음.
-
-`presets.json`의 `current.files` 배열을 읽어 `md-presets/_staging/`에 복사.
-
-- 대상: `D:\Dropbox\Dropbox\hizzi-board\md-presets\presets.json`
-- 복사처: `D:\Dropbox\Dropbox\hizzi-board\md-presets\_staging\`
-- `_staging` 없으면 생성, 기존 파일 전량 삭제 후 신규 복사
-- 완료 후 파일 목록 + 크기·타임스탬프 보고
-
-예시: "프리셋", "프리셋 실행", "프리셋 복사"
-
-### 모드 B — 생성+복사
-
-**조건:** "프리셋" + "만들어" 계열 동사 포함.
-
-직전 Claude.ai가 지정한 파일 세트로 `presets.json`을 갱신하고 같은 실행에서 `_staging` 복사까지 완료.
-
-**파일 세트 출처 우선순위:**
-1. 같은 프롬프트 안에 파일 목록 명시 → 그것 사용
-2. 명시 없음 → 직전 Claude.ai 출력에서 추출
-3. 둘 다 없음 → 오너 확인 질의 (예외)
-
-**부가:**
-- `name` / `description` / `updated` 필드 있으면 함께 갱신
-- 커밋: `chore(presets): {name} 프리셋 갱신`
-
-예시: "프리셋 만들어줘", "프리셋 갱신해줘"
-
-### 공통
-
-- **실행 주체:** Claude Code (PowerShell 프로필 의존 없음)
-- **상시 포함 파일:** `md/core/harness.md` + `md/core/session.md` + `md/core/master.md` + `md/log/todo.md` (라우팅·주제 무관 무조건 포함)
-- **실패 처리:** `presets.json` 파싱 실패 / 지정 파일 미존재 시 중단 + 원인 보고, `_staging`은 건드리지 않음

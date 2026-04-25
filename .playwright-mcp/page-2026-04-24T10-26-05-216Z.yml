@@ -1,0 +1,1179 @@
+- generic [active]:
+  - alert
+  - generic:
+    - complementary:
+      - generic:
+        - generic:
+          - generic: HIZZI BOARD
+        - navigation:
+          - button:
+            - generic: HOME
+          - button:
+            - generic: MY DESK
+            - generic:
+              - generic: "4"
+      - navigation:
+        - button:
+          - generic: 기타 ▾
+    - generic:
+      - banner:
+        - generic: Hizzi is happy, and you?
+        - generic:
+          - button:
+            - generic: "?"
+            - generic: 관리자
+          - button: 관리자 모드
+          - button: 로그아웃
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - img
+                    - textbox:
+                      - /placeholder: 무엇을 추가할까요?
+                    - button [disabled]:
+                      - img
+                - generic: · 말하듯 편하게 쓰시면 AI가 분류해드립니다
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - generic: 김진우 패널
+                          - generic: 운영팀 · 이사
+                      - generic:
+                        - generic:
+                          - button: 할일
+                        - generic:
+                          - button: 메모
+                        - generic:
+                          - button:
+                            - img
+                    - generic:
+                      - button: 선택
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - button:
+                                - img
+                              - generic:
+                                - paragraph: ㅇㅇㅇddd
+                                - generic:
+                                  - generic: 개인
+                                  - generic: 전체
+                                  - generic: 2026. 4. 6.
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - button:
+                                - img
+                              - generic:
+                                - paragraph: ㅇㅇㅇㅇㅇ
+                                - generic:
+                                  - img
+                                - generic:
+                                  - generic: 업무
+                                  - generic: 나만
+                                  - generic: 2026. 4. 6.
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - button:
+                                - img
+                              - generic:
+                                - paragraph: ㅇㅇ
+                                - generic:
+                                  - generic: 개인
+                                  - generic: 나만
+                                  - generic: 2026. 4. 8.
+                    - button: +
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: "?"
+                        - generic:
+                          - generic: 홍아현 패널
+                      - generic:
+                        - generic:
+                          - button: 할일
+                        - generic:
+                          - button: 메모
+                        - generic:
+                          - button:
+                            - img
+                            - generic: "1"
+                    - generic:
+                      - button: 업무
+                      - button: 요청
+                      - button: 개인
+                    - generic:
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅊㅇㅊㅍㅊㅍ
+                                - generic: ㅇㅇㅇ
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic:
+                                - img
+                                - text: 4. 17.
+                              - generic: 2026. 4. 6.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇㅇㅇ
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 13.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇㅇ
+                                - generic: ㅇㅇㅇㅇㅇㅇㅇㅇ
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic: 2026. 4. 6.
+                    - button: +
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: "?"
+                        - generic:
+                          - generic: 우희훈 패널
+                      - generic:
+                        - generic:
+                          - button: 할일
+                        - generic:
+                          - button: 메모
+                        - generic:
+                          - button:
+                            - img
+                            - generic: "1"
+                    - generic:
+                      - button: 업무
+                      - button: 요청
+                      - button: 개인
+                    - generic:
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅊㅇㅊㅍㅊㅍ
+                                - generic: ㅇㅇㅇ
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic:
+                                - img
+                                - text: 4. 17.
+                              - generic: 2026. 4. 8.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇㅇㅇ
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 13.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇㅇㅇㅇㅇㅇ
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 13.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇ
+                                - generic: ㅇ
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic: 2026. 4. 6.
+                    - button: +
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: "?"
+                        - generic:
+                          - generic: 한다슬 패널
+                      - generic:
+                        - generic:
+                          - button: 할일
+                        - generic:
+                          - button: 메모
+                        - generic:
+                          - button:
+                            - img
+                            - generic: "1"
+                    - generic:
+                      - button: 업무
+                      - button: 요청
+                      - button: 개인
+                    - generic:
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: 테스트
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic: 2026. 4. 6.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇㅇ
+                                - generic: ㅇㅇ
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic: 2026. 4. 6.
+                    - button: +
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: "?"
+                        - generic:
+                          - generic: 유미정 패널
+                      - generic:
+                        - generic:
+                          - button: 할일
+                        - generic:
+                          - button: 메모
+                        - generic:
+                          - button:
+                            - img
+                    - generic:
+                      - button: 업무
+                      - button: 요청
+                      - button: 개인
+                    - generic:
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇ
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇㅇㅇ
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇ
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: dddd
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: d
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: d
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: d
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: d
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ddd
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: dd
+                            - generic:
+                              - generic: 업무
+                              - generic: 전체
+                              - generic: 2026. 4. 22.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: 테스트
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic: 2026. 4. 6.
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅇㅇ
+                                - generic: ㅇㅇ
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic: 2026. 4. 6.
+                    - button: +
+                  - button:
+                    - img
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic: "?"
+                        - generic:
+                          - generic: 조향래 패널
+                      - generic:
+                        - generic:
+                          - button: 할일
+                        - generic:
+                          - button: 메모
+                        - generic:
+                          - button:
+                            - img
+                            - generic: "1"
+                    - generic:
+                      - button: 업무
+                      - button: 요청
+                      - button: 개인
+                    - generic:
+                      - generic:
+                        - generic:
+                          - button
+                          - button:
+                            - img
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: ㅊㅇㅊㅍㅊㅍ
+                                - generic: ㅇㅇㅇ
+                            - generic:
+                              - generic: 요청
+                              - generic: From 관리자
+                              - generic:
+                                - generic: TEAM
+                              - generic:
+                                - img
+                                - text: 4. 17.
+                              - generic: 2026. 4. 13.
+                    - button: +
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: 테스트 패널 (S6)
+                      - generic:
+                        - generic:
+                          - button: 할일
+                        - generic:
+                          - button: 메모
+                    - generic:
+                      - button: 업무
+                      - button: 요청
+                      - button: 개인
+                    - generic:
+                      - paragraph: 할일이 없습니다
+                    - button: +
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - button: 필터 ▾
+                - generic:
+                  - generic:
+                    - button: ‹
+                    - generic: 2026년
+                    - generic: 04월
+                    - button: ›
+                  - generic:
+                    - generic:
+                      - generic: 2026년 4월
+                      - generic:
+                        - generic:
+                          - generic:
+                            - grid:
+                              - rowgroup:
+                                - generic:
+                                  - generic:
+                                    - row:
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 일
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 월
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 화
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 수
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 목
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 금
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 토
+                              - rowgroup:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "29"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "30"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "31"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "1"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "2"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "3"
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic:
+                                                    - generic: 조향래 연차 🔒
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "4"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "5"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "6"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "7"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "8"
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic:
+                                                    - generic: 우희훈 연차 🔒
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "9"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "10"
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic:
+                                                    - generic: 한다슬 연차 🔒
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "11"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "12"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "13"
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic:
+                                                    - generic: 한다슬 연차 🔒
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "14"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "15"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "16"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "17"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "18"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "19"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "20"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "21"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "22"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "23"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "24"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "25"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "26"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "27"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "28"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "29"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "30"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "1"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "2"
+                    - generic:
+                      - generic: 2026년 5월
+                      - generic:
+                        - generic:
+                          - generic:
+                            - grid:
+                              - rowgroup:
+                                - generic:
+                                  - generic:
+                                    - row:
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 일
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 월
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 화
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 수
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 목
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 금
+                                      - columnheader:
+                                        - generic:
+                                          - generic: 토
+                              - rowgroup:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "26"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "27"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "28"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "29"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "30"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "1"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "2"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "3"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "4"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "5"
+                                                  - generic: 어린이날
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "6"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "7"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "8"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "9"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "10"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "11"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "12"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "13"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "14"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "15"
+                                                  - generic: 부처님오신날
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "16"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "17"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "18"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "19"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "20"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "21"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "22"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "23"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "24"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "25"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "26"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "27"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "28"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "29"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "30"
+                                      - row:
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "31"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "1"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "2"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "3"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "4"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "5"
+                                        - gridcell:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: "6"
+                                                  - generic: 현충일
+                  - generic:
+                    - generic:
+                      - generic: 업무·전체
+                    - generic:
+                      - generic: 업무·나만
+                    - generic:
+                      - generic: 업무·지정
+                    - generic:
+                      - generic: 업무요청
+                    - generic:
+                      - generic: 개인·전체
+                    - generic:
+                      - generic: 개인·나만
+                    - generic:
+                      - generic: 개인·지정
+                    - generic:
+                      - generic: 연차
+  - dialog "게시물 작성" [ref=e1396]:
+    - heading "게시물 작성" [level=2] [ref=e1397]
+    - paragraph [ref=e1398]: 메모, 할일, 요청을 작성합니다
+    - generic [ref=e1400]:
+      - generic [ref=e1401] [cursor=pointer]: 할일
+      - generic [ref=e1402] [cursor=pointer]: 메모
+      - generic [ref=e1403] [cursor=pointer]: 요청
+    - generic [ref=e1404]:
+      - generic [ref=e1405]: 메모
+      - generic [ref=e1406]: 업무
+      - generic [ref=e1407]: 전체
+    - generic [ref=e1408]:
+      - generic [ref=e1409]:
+        - generic [ref=e1410]: 내용
+        - textbox "내용을 입력하세요 (선택)" [ref=e1411]
+      - generic [ref=e1412]:
+        - generic [ref=e1413]: 첨부파일
+        - generic [ref=e1414]: 없음
+        - generic [ref=e1415] [cursor=pointer]: + 파일 추가
+      - generic [ref=e1417]:
+        - generic [ref=e1418]: 구분
+        - generic [ref=e1419]:
+          - generic [ref=e1420] [cursor=pointer]: 업무
+          - generic [ref=e1421] [cursor=pointer]: 개인
+      - generic [ref=e1423]:
+        - generic [ref=e1424]: 보이는 범위
+        - generic [ref=e1425]:
+          - generic [ref=e1426] [cursor=pointer]: 전체
+          - generic [ref=e1427] [cursor=pointer]: 나만
+          - generic [ref=e1428] [cursor=pointer]: 특정
+    - generic [ref=e1429]:
+      - button "닫기" [ref=e1430] [cursor=pointer]
+      - button "저장" [disabled] [ref=e1431]

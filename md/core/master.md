@@ -100,12 +100,12 @@ tests/
 
 실측 기준: 2026-04-24. 재실측은 세션 시작 시 필요 판단에 따라 Code에 요청.
 
-### 5-1. 거버넌스 층 (CLAUDE.md [7])
+### 5-1. 거버넌스 층 (session.md 3번)
 
 | 경로 | 역할 |
 |---|---|
 | CLAUDE.md | 진입점·역할·소통 원칙·파일 지도 |
-| md/core/session.md | 세션 경계 절차 (시작·종료·프리셋) |
+| md/core/session.md | 세션 경계 절차 (시작·종료) |
 | md/core/harness.md | 공장 6단계 실행·검증 매뉴얼 |
 | md/core/principles.md | 근본 원칙 |
 | .harness/MEMORY.md | 사례 박제 (헤더 규약·운영 조항만 거버넌스) |

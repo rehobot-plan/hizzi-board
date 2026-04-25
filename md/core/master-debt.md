@@ -63,11 +63,6 @@
 
 ### 🔴 진행 중 (다음 세션)
 ```
-0. 새 세션 시작 워크플로우 구축
-   - Claude.ai가 오늘 대화 주제를 듣고 "최초 로드 MD" 결정
-   - 대화 진행하며 "추가로 필요한 MD" 자동 추천
-   - 세팅 완료 후 본 대화 시작하는 흐름 설계
-   - 다음 세션 최우선 작업
 1. ESC 닫기 미작동
    - 원인 추적: window.__escStack 번들 반영 여부 확인 필요
    - 다음 세션 시작 시: console.log(window.__escStack, window.__escListenerRegistered) 먼저 확인

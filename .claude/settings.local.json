@@ -30,7 +30,12 @@
       "Bash(git reset *)",
       "Bash(npx vitest *)",
       "Bash(BASE_URL=https://hizzi-board.vercel.app npx playwright test tests/smoke/panel-height-s1.spec.ts --reporter=list)",
-      "Bash(curl -s https://hizzi-board.vercel.app)"
+      "Bash(curl -s https://hizzi-board.vercel.app)",
+      "Skill(codex:review)",
+      "Bash(grep -q \"Ready in\" \"C:\\\\\\\\Users\\\\\\\\User\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\D--Dropbox-Dropbox-hizzi-board\\\\\\\\aca8a966-e65a-4d24-87e7-cc1fff190cac\\\\\\\\tasks\\\\\\\\bqfk7nxq2.output\")",
+      "Bash(tail -5 \"C:\\\\\\\\Users\\\\\\\\User\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\D--Dropbox-Dropbox-hizzi-board\\\\\\\\aca8a966-e65a-4d24-87e7-cc1fff190cac\\\\\\\\tasks\\\\\\\\bqfk7nxq2.output\")",
+      "Bash(BASE_URL=http://localhost:3001 npx playwright test tests/e2e/chat-input-s6.spec.ts --reporter=list)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://hizzi-board.vercel.app/)"
     ]
   },
   "enabledPlugins": {
