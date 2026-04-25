@@ -19,16 +19,18 @@ test.describe('블록 ⑤-1 — 패널 달력 피어 탭', () => {
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
-  test('시나리오 2: 타인 패널 달력 탭 → placeholder + scope 토글 부재 + FAB "일정 추가" aria', async ({ page }) => {
-    // admin 로그인 · 일반 panels는 admin owner 아님 → 첫 패널이 타인 패널로 간주.
+  test('시나리오 2: 타인 패널 달력 탭 → 월 그리드 read-only (⑤-3 · placeholder 제거 · scope 토글 부재 · FAB 미노출)', async ({ page }) => {
+    // admin 로그인 · 일반 panels는 admin owner 아님 → 첫 패널이 타인 패널 visiting 모드.
     const panel = page.locator('[data-testid="panel-container"]').first();
     await panel.locator('[data-testid="panel-tab-calendar"]').click();
-    await expect(panel.locator('[data-testid="panel-calendar-placeholder"]')).toBeVisible();
+    // ⑤-1 placeholder 제거 확인
+    await expect(panel.locator('[data-testid="panel-calendar-placeholder"]')).toHaveCount(0);
+    // 본인 패널 아님 → scope 토글 부재
     await expect(panel.locator('[data-testid="calendar-scope-toggle"]')).toHaveCount(0);
-    // FAB는 달력 탭에서 "일정 추가" aria-label
-    const fab = panel.locator('[data-testid="panel-fab"]');
-    const label = await fab.getAttribute('aria-label');
-    expect(label).toBe('일정 추가');
+    // visiting 쓰기 차단 → FAB 미노출 (admin 포함)
+    await expect(panel.locator('[data-testid="panel-fab"]')).toHaveCount(0);
+    // FullCalendar 그리드 컨테이너 노출 (read-only)
+    await expect(panel.locator('.fc').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('시나리오 3: 본인 패널 달력 탭 → 월 그리드 + scope 토글 노출 (seed admin owner)', async ({ page }) => {
