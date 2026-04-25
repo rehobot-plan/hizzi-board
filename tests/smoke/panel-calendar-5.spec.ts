@@ -73,13 +73,13 @@ test.describe('블록 ⑤-1 — 패널 달력 피어 탭', () => {
 
   test('시나리오 7: 메모 탭 복귀 시 기존 동작 회귀 없음 (탭 전환)', async ({ page }) => {
     const panel = page.locator('[data-testid="panel-container"]').first();
-    // 달력 → 메모 전환
+    // 달력 탭 → .fc 그리드 노출 (⑤-3 read-only)
     await panel.locator('[data-testid="panel-tab-calendar"]').click();
-    await expect(panel.locator('[data-testid="panel-calendar-placeholder"]')).toBeVisible();
+    await expect(panel.locator('.fc').first()).toBeVisible({ timeout: 5000 });
+    // 메모 탭 전환 → .fc 사라지고 scroll 영역 auto 복귀
     const memoTab = panel.locator('button').filter({ hasText: '메모' }).first();
     await memoTab.click();
-    // 메모 탭 활성 후 placeholder 사라짐 + 기본 scroll 영역 복귀(auto)
-    await expect(panel.locator('[data-testid="panel-calendar-placeholder"]')).toHaveCount(0);
+    await expect(panel.locator('.fc')).toHaveCount(0);
     const scroll = panel.locator('[data-testid="panel-scroll"]');
     const overflow = await scroll.evaluate(el => getComputedStyle(el).overflowY);
     expect(overflow).toBe('auto');

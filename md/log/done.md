@@ -7,6 +7,7 @@
 
 ---
 
+- [2026-04-25] 블록 ⑤-3 타인 패널 달력 scope/privacy 정제 (6ca2454) — src/lib/calendar-helpers.ts · src/components/calendar/Calendar.tsx · src/components/Panel.tsx · tests/smoke/panel-calendar-5.spec.ts. 타인 패널 placeholder 제거 + read-only 월 그리드 · panelVisitingViewer 필터(visibility 삼분 strict + requestId 양당사자/visibleTo + leave panelOwner 매칭) · 쓰기 진입점 전면 차단. Codex 4 라운드(P1×3 R3·R4 strict 보안 정책 PASS 응대). 프로덕션 E2E 시나리오 7 보강 후 PASS.
 - [2026-04-25] master-debt #18 3단계 closed — 프로덕션 calendarEvents 레거시 G1 3건(09u1Os··· · CaPqkC··· · YKmrTd···) 일괄 삭제, 컬렉션 초기 상태. 마이그레이션 스크립트 불필요(유령 삭제). #18 전체 closed. (Firestore 데이터 조작 · 코드 수정 없음 · 커밋 해시 없음)
 - [2026-04-25] master-debt #18 2단계 writer/reader identity 정돈 (eae34f3) — src/components/calendar/Calendar.tsx · src/components/CreatePost.tsx · src/store/todoRequestStore.ts · src/components/todo/TodoDetailModal.tsx · src/store/chatInputStore.ts · src/lib/calendar-helpers.ts · src/hooks/useTodaySummary.ts · md/core/master-schema.md. #19 silent widening 해소 동시. 프로덕션 E2E 47p/5f/1s
 - [2026-04-25] master-schema calendarEvents 재정의 · #18 1단계 (54c2d6b) — md/core/master-schema.md
