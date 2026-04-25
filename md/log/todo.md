@@ -36,8 +36,7 @@
 
 ## 현재상태
 
-- 작업 브랜치: master (로컬·원격 a731d3b 동기 · **⑤-3 closed** 타인 패널 달력 read-only · #18 전체 closed · #19 silent widening 해소(UI 칩 복구만 open) · #16 closed · Claude Desktop + MCP filesystem 설정 완료 · calendarEvents 컬렉션 초기 상태)
-- 세션 운영 방침 (2026-04-24 확정 · chillkim 님): (1) MCP 익숙해지기 + #18 처리 — 기존 MD 체계 실전 운영 관찰 (2) 관찰 기반 MD 운영 프로토콜 재설계 (3) 이후 ⑤-3 착수
+- 작업 브랜치: master (로컬·원격 e80055a 동기 · 거버넌스 재설계 1차 적용 완료 · ⑤-3 closed · #18 전체 closed · #19 silent widening 해소(UI 칩 복구만 open) · #16 closed · Claude Desktop + MCP filesystem 설정 완료 · calendarEvents 컬렉션 초기 상태)
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW
 - Codex 플러그인 커맨드 7종 실재 확인(review/rescue/adversarial-review/cancel/result/setup/status) — `/codex:adversarial-review` 존재 확정, harness.md 3 목록과 일치
