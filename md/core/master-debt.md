@@ -256,13 +256,15 @@
 
 상태: open (다음 세션 1순위 · 우선순위 P1)
 
-### #18 calendarEvents 필드 체계 분열 — 1·2단계 해소 / 3단계 마이그레이션 남음
+### #18 calendarEvents 필드 체계 분열 — **closed (세션 2026-04-25)**
 
-**1단계 — 해소 (세션 2026-04-24 · 54c2d6b)**: master-schema.md calendarEvents 블록 재정의. identity 3축(authorId=uid · authorEmail=email · authorName) 병기 + visibility 삼분(all/me/specific) + visibleTo 선택 필드 + ai-capture 4필드 본체 흡수 + updatedAt 선반영.
+**1단계 — 해소 (2026-04-24 · 54c2d6b)**: master-schema.md calendarEvents 블록 재정의. identity 3축(authorId=uid · authorEmail=email · authorName) 병기 + visibility 삼분(all/me/specific) + visibleTo 선택 필드 + ai-capture 4필드 본체 흡수 + updatedAt 선반영.
 
-**2단계 — 해소 (세션 2026-04-25 · eae34f3)**: writer 5지점(Calendar.AddEventModal · CreatePost · todoRequestStore · TodoDetailModal · chatInputStore) authorEmail·updatedAt 병기 + reader 4지점(Calendar canEditCalendar·team scope 필터 · filterCalendarInputs · useTodaySummary) uid/email 이원 대조 + 레거시 fallback. filterCalendarInputs에 specific visibility reader 신설(fail-closed + visibleTo recipient pass). Codex 4 라운드(P1×3·P2×4) 순차 해소 후 PASS.
+**2단계 — 해소 (2026-04-25 · eae34f3)**: writer 5지점(Calendar.AddEventModal · CreatePost · todoRequestStore · TodoDetailModal · chatInputStore) authorEmail·updatedAt 병기 + reader 4지점(Calendar canEditCalendar·team scope 필터 · filterCalendarInputs · useTodaySummary) uid/email 이원 대조 + 레거시 fallback. filterCalendarInputs에 specific visibility reader 신설(fail-closed + visibleTo recipient pass). Codex 4 라운드(P1×3·P2×4) 순차 해소 후 PASS.
 
-**3단계 — open (P2)**: Firestore 레거시 데이터 마이그레이션. 기존 문서의 authorId(email 혼재) → authorId(uid) + authorEmail(email) 분리. 스크립트 작성 + 프로덕션 1회 실행 + 검증. ⑤-3 선결 조건.
+**3단계 — 해소 (2026-04-25)**: 실측 결과 프로덕션 calendarEvents는 G1 세대 유령 3건뿐이었고(`author` email만 있고 startDate 부재로 이미 UI 미표시 상태 · authorId 역조회는 orphan_ doc.id라 진짜 Firebase Auth UID 확보 불가). 마이그레이션 스크립트 대신 3건 일괄 삭제로 컬렉션을 초기 상태로 정돈. 이후 신규 레코드는 2단계 writer 정돈으로 정규 스키마 준수. 사용자 체감 변화 0 (유령 삭제).
+
+상태: **closed**
 
 ### #18-legacy calendarEvents 필드 체계 분열 — 원문 보존
 

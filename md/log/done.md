@@ -7,6 +7,7 @@
 
 ---
 
+- [2026-04-25] master-debt #18 3단계 closed — 프로덕션 calendarEvents 레거시 G1 3건(09u1Os··· · CaPqkC··· · YKmrTd···) 일괄 삭제, 컬렉션 초기 상태. 마이그레이션 스크립트 불필요(유령 삭제). #18 전체 closed. (Firestore 데이터 조작 · 코드 수정 없음 · 커밋 해시 없음)
 - [2026-04-25] master-debt #18 2단계 writer/reader identity 정돈 (eae34f3) — src/components/calendar/Calendar.tsx · src/components/CreatePost.tsx · src/store/todoRequestStore.ts · src/components/todo/TodoDetailModal.tsx · src/store/chatInputStore.ts · src/lib/calendar-helpers.ts · src/hooks/useTodaySummary.ts · md/core/master-schema.md. #19 silent widening 해소 동시. 프로덕션 E2E 47p/5f/1s
 - [2026-04-25] master-schema calendarEvents 재정의 · #18 1단계 (54c2d6b) — md/core/master-schema.md
 - [2026-04-24] Claude Desktop + MCP filesystem 설정 완료 — claude_desktop_config.json에 hizzi-board-fs 서버 등록, 허용 경로 D:\Dropbox\Dropbox\hizzi-board. MSIX 샌드박스 경로 %LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\. 검증 질의 "CLAUDE.md 상단 5줄 읽기" 정상 응답 확인. (커밋·해시 없음 — Desktop 앱 설정 파일은 프로젝트 git 관리 밖)

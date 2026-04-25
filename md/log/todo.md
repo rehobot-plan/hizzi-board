@@ -9,13 +9,12 @@
 
 ## 다음 1순위
 
-- calendarEvents 레거시 데이터 마이그레이션 (master-debt #18 3단계) — ⑤-3 선결
+- (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토
 
 ## 후보 큐
 
-- calendarEvents 레거시 데이터 마이그레이션 (master-debt #18 3단계) — 기존 Firestore calendarEvents 문서 authorId(email 혼재) → authorId(uid) + authorEmail(email) 분리. 레거시 문서 중 authorId=email만 있는 레코드는 authorEmail 추가 채움. 실행 스크립트 작성 + 프로덕션 1회 실행 + 검증. ⑤-3 선결
 - (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토. 1~2 세션 관찰 선행 후 거버넌스 수정 세션으로 진행. 검토 대상: 1층 session.md 1(세션 시작 주입 확인) + 2(Code 실측 + Claude.ai 직접 확인 이중 검증 구조) · 2층 session.md 4 프리셋 시스템 폐기 + md-presets/·presets.json·_staging/ 폴더 제거 · 3층 CLAUDE.md 5 파일 지도 의미 재정의(주입 목록→참조 목록) · 4층 harness.md 1-6 공장 산출물 경로 파일 저장 전환(선택). 거버넌스 층 수정이라 before/after 비교표 검수 필요. 2026-04-24 MCP filesystem 도입 완료 시점 기록
-- 블록 ⑤-3 — 타인 패널 달력 scope/privacy 정제 (visibleTo 기반 필터 + viewer/owner/admin 권한 매트릭스). 기획 대화 선행 후 착수. **#18 + 재설계 둘 다 선결**
+- 블록 ⑤-3 — 타인 패널 달력 scope/privacy 정제 (visibleTo 기반 필터 + viewer/owner/admin 권한 매트릭스). 기획 대화 선행 후 착수. **재설계 선결** (#18은 closed)
 - 메인·MY DESK 전체 UX 감사 세션 — mydesk.md·main-ux.md·profile.md 재독 기반. 기능 추가·모달 동선·결함 세 축 점검. 실사용 피드백(오너 + 6인 팀) 사전 수집 2~3일 선행. 산출물은 후보 큐 항목 + P1/P2/P3 우선순위 + 의존 관계. 기획 대화 세션
 - ask-knowledge.js Anthropic API 직통 자동화 — 공장 내부 Code↔Claude 왕복 자동화. 100% 자동 아님, 오너 개입 영역 축소 목적. 폭주 방지 제약(라운드 상한·토큰 예산·특정 판단 유형 수동 유지) 설계 필수. 거버넌스 층 수정 동반. Claude Desktop 설정 후 별 건 검토. P2
 - 6 B-1 — LLM 2단 본체 부착 (Anthropic Haiku) · ai-capture-hb.md 9.3
@@ -33,7 +32,7 @@
 
 ## 현재상태
 
-- 작업 브랜치: master (로컬·원격 eae34f3 동기 · #18 1·2단계 closed · #19 silent widening 해소(UI 칩 복구만 open) · #16 closed · Claude Desktop + MCP filesystem 설정 완료)
+- 작업 브랜치: master (로컬·원격 5ab0de3 동기 · **#18 전체 closed (1·2·3단계)** · #19 silent widening 해소(UI 칩 복구만 open) · #16 closed · Claude Desktop + MCP filesystem 설정 완료 · calendarEvents 컬렉션 초기 상태)
 - 세션 운영 방침 (2026-04-24 확정 · chillkim 님): (1) MCP 익숙해지기 + #18 처리 — 기존 MD 체계 실전 운영 관찰 (2) 관찰 기반 MD 운영 프로토콜 재설계 (3) 이후 ⑤-3 착수
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW
