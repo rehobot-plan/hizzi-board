@@ -9,11 +9,11 @@
 
 ## 다음 1순위
 
-- (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토
+- (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토. 1~2 세션 관찰 선행 후 거버넌스 수정 세션으로 진행. 검토 대상: 1층 session.md 1(세션 시작 주입 확인) + 2(Code 실측 + Claude.ai 직접 확인 이중 검증 구조) [방향성: 핵심 거버넌스 우선 주입 + todo.md 확인 후 필요 MD 단계적 로드 검토 — 2026-04-25 오너 제안 · MCP filesystem 도입으로 read_text_file 비용 사실상 0] · 2층 session.md 4 프리셋 시스템 폐기 + md-presets/·presets.json·_staging/ 폴더 제거 [방향성: 프리셋의 대안으로 단계적 로드 방식 검토 — 1층 단계화와 통합 가능 · 2026-04-25 오너 제안] · 3층 CLAUDE.md 5 파일 지도 의미 재정의(주입 목록→참조 목록) · 4층 harness.md 1-6 공장 산출물 경로 파일 저장 전환(선택). 거버넌스 층 수정이라 before/after 비교표 검수 필요. 2026-04-24 MCP filesystem 도입 완료 시점 기록
 
 ## 후보 큐
 
-- (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토. 1~2 세션 관찰 선행 후 거버넌스 수정 세션으로 진행. 검토 대상: 1층 session.md 1(세션 시작 주입 확인) + 2(Code 실측 + Claude.ai 직접 확인 이중 검증 구조) · 2층 session.md 4 프리셋 시스템 폐기 + md-presets/·presets.json·_staging/ 폴더 제거 · 3층 CLAUDE.md 5 파일 지도 의미 재정의(주입 목록→참조 목록) · 4층 harness.md 1-6 공장 산출물 경로 파일 저장 전환(선택). 거버넌스 층 수정이라 before/after 비교표 검수 필요. 2026-04-24 MCP filesystem 도입 완료 시점 기록
+- (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토. 1~2 세션 관찰 선행 후 거버넌스 수정 세션으로 진행. 검토 대상: 1층 session.md 1(세션 시작 주입 확인) + 2(Code 실측 + Claude.ai 직접 확인 이중 검증 구조) [방향성: 핵심 거버넌스 우선 주입 + todo.md 확인 후 필요 MD 단계적 로드 검토 — 2026-04-25 오너 제안 · MCP filesystem 도입으로 read_text_file 비용 사실상 0] · 2층 session.md 4 프리셋 시스템 폐기 + md-presets/·presets.json·_staging/ 폴더 제거 [방향성: 프리셋의 대안으로 단계적 로드 방식 검토 — 1층 단계화와 통합 가능 · 2026-04-25 오너 제안] · 3층 CLAUDE.md 5 파일 지도 의미 재정의(주입 목록→참조 목록) · 4층 harness.md 1-6 공장 산출물 경로 파일 저장 전환(선택). 거버넌스 층 수정이라 before/after 비교표 검수 필요. 2026-04-24 MCP filesystem 도입 완료 시점 기록
 - todoRequest cascade visibility 보존 (writer 정돈 후속) — todoRequestStore.acceptRequest가 원본 request의 requestVisibility를 보존하지 않고 visibility='all' 하드코드 + visibleTo 미저장. ⑤-3 visiting reader는 보안 우선 strict 적용했으나 writer가 의도(requestOnly/specific)를 손실 → reader가 양당사자 fallback으로만 작동. 본질 해소는 cascade writer 정돈 + visibleTo·visibility 명시 저장. P2
 - 메인·MY DESK 전체 UX 감사 세션 — mydesk.md·main-ux.md·profile.md 재독 기반. 기능 추가·모달 동선·결함 세 축 점검. 실사용 피드백(오너 + 6인 팀) 사전 수집 2~3일 선행. 산출물은 후보 큐 항목 + P1/P2/P3 우선순위 + 의존 관계. 기획 대화 세션
   - [수집 2026-04-25] 완료 회수 동선 재설계 — 체크박스 완료 시 활성 리스트에서 즉시 제거하지 않고 패널 하단 회색 영역으로 시각 이동(체크된 글씨 회색). 재체크 시 원위치 복귀. 24h 경과 시 자동으로 보관 이동. main-ux.md 2.5 "활성만 표시" 결정 **self-overruled 검수 필요**. 24h 자동 이동 메커니즘(클라이언트 표시 필터 vs Cloud Function 쓰기) 결정 동반
