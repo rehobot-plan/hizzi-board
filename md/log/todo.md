@@ -16,9 +16,11 @@
 - (거버넌스 재설계) MCP filesystem 도입 후속 — 운영 프로토콜 4층 재검토. 1~2 세션 관찰 선행 후 거버넌스 수정 세션으로 진행. 검토 대상: 1층 session.md 1(세션 시작 주입 확인) + 2(Code 실측 + Claude.ai 직접 확인 이중 검증 구조) · 2층 session.md 4 프리셋 시스템 폐기 + md-presets/·presets.json·_staging/ 폴더 제거 · 3층 CLAUDE.md 5 파일 지도 의미 재정의(주입 목록→참조 목록) · 4층 harness.md 1-6 공장 산출물 경로 파일 저장 전환(선택). 거버넌스 층 수정이라 before/after 비교표 검수 필요. 2026-04-24 MCP filesystem 도입 완료 시점 기록
 - todoRequest cascade visibility 보존 (writer 정돈 후속) — todoRequestStore.acceptRequest가 원본 request의 requestVisibility를 보존하지 않고 visibility='all' 하드코드 + visibleTo 미저장. ⑤-3 visiting reader는 보안 우선 strict 적용했으나 writer가 의도(requestOnly/specific)를 손실 → reader가 양당사자 fallback으로만 작동. 본질 해소는 cascade writer 정돈 + visibleTo·visibility 명시 저장. P2
 - 메인·MY DESK 전체 UX 감사 세션 — mydesk.md·main-ux.md·profile.md 재독 기반. 기능 추가·모달 동선·결함 세 축 점검. 실사용 피드백(오너 + 6인 팀) 사전 수집 2~3일 선행. 산출물은 후보 큐 항목 + P1/P2/P3 우선순위 + 의존 관계. 기획 대화 세션
-  - [수집 2026-04-25] RecordModal 2탭(완료/휴지통) → 3탭(당일완료/완료/삭제) 분기 검토 — "당일이후 이동" 의미 확인 선행 (해석 A=생성일과 완료일이 다른 날 / 해석 B=완료 후 이동 동작 신설, 둘 중 결정)
+  - [수집 2026-04-25] 완료 회수 동선 재설계 — 체크박스 완료 시 활성 리스트에서 즉시 제거하지 않고 패널 하단 회색 영역으로 시각 이동(체크된 글씨 회색). 재체크 시 원위치 복귀. 24h 경과 시 자동으로 보관 이동. main-ux.md 2.5 "활성만 표시" 결정 **self-overruled 검수 필요**. 24h 자동 이동 메커니즘(클라이언트 표시 필터 vs Cloud Function 쓰기) 결정 동반
+  - [수집 2026-04-25] RecordModal 2탭(완료/휴지통) → 3탭(당일완료/완료/삭제) 분기 검토 — 위 1번 채택 시 자연 정렬: 당일완료=패널 하단 회색 / 완료=24h 지난 보관 / 삭제=휴지통
+  - [수집 2026-04-25] RecordModal 명칭 "기록" → "보관" 변경 검토 — 의도적 저장 의미 강조
   - [수집 2026-04-25] RecordModal 진입을 점세개 메뉴에서 별도 아이콘으로 승격 검토 — 탭바 우상단 ··· 안 "기록" 항목 → 헤더 아이콘 버튼 직접 진입
-  - [수집 2026-04-25] 편지봉투 아이콘 평면화 — 현재 입체적/기울어진 톤 → 평면 봉투 형태로 자산 교체
+  - [수집 2026-04-25] 편지봉투 아이콘 평면화 — 현재 입체적/기울어진 톤 → 평면 봉투 자산 교체
   - [수집 2026-04-25] TodoRequestModal 내부 4분류 재편 (받은요청/보낸요청/진행중/완료) — 발신자·수신자 양쪽 입장 직관성 회복. 현재 섹션 4 "완료·반려·취소" 그릇 재편 필요
 - ask-knowledge.js Anthropic API 직통 자동화 — 공장 내부 Code↔Claude 왕복 자동화. 100% 자동 아님, 오너 개입 영역 축소 목적. 폭주 방지 제약(라운드 상한·토큰 예산·특정 판단 유형 수동 유지) 설계 필수. 거버넌스 층 수정 동반. Claude Desktop 설정 후 별 건 검토. P2
 - 6 B-1 — LLM 2단 본체 부착 (Anthropic Haiku) · ai-capture-hb.md 9.3
