@@ -58,3 +58,8 @@ md/log/log.md
 
 # 세션 #56 인프라 박제 아티팩트 (보존용, git 추적 제외)
 .harness/patches-session-56/
+
+# 세션 플래그·로그·로컬 설정
+.harness/session-started.flag
+.playwright-mcp/
+.claude/settings.local.json
