@@ -55,6 +55,7 @@
 - Codex 플러그인 커맨드 7종 실재 확인(review/rescue/adversarial-review/cancel/result/setup/status) — `/codex:adversarial-review` 존재 확정, harness.md 3 목록과 일치
 - Codex 슬래시 커맨드 자동 호출 — 2026-04-27 진단으로 `/codex:status`·`/codex:review` 자동 호출 통과 확인(frontmatter `disable-model-invocation: true`에도 불구하고 Skill tool 호출 PASS). 직전 관찰(2026-04-24 `/codex:rescue` 1m+ hang · 2회 reject)은 환경적이며 구조적 아님. `/codex:rescue`는 본 세션 미시도(직전 관찰 인용). 플러그인 v1.0.3 정상 작동
 - 본 감사 완료 (2026-04-27) — P1 4건·P2 4건·별 세션 5건 분류, 1순위 P1-α 회색 영역으로 갱신, MD drift 3건 master-debt 박제, cancel_requested 누락 master-bugs 박제
+- harness.md 3 명령 권한 정책 sub-section 추가 (3축 + 두 파일 분담 규약). settings.local.json 무력화 2줄 삭제(공용 ask 실효 발동, .gitignore 대상이라 commit 외)
 
 ## 선처리 큐
 

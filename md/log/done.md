@@ -7,6 +7,8 @@
 
 ---
 
+- [2026-04-27] 메인·MY DESK UX 감사 산출 정돈 (a49b3b2) — md/log/todo.md · md/core/master-bugs.md · md/core/master-debt.md · md/core/master.md · md/plan/designs/main-ux.md · md/plan/designs/mydesk.md. todo 후보 큐 4군집(P1·P2·별 세션·기존) + master-bugs cancel_requested 박제 + master-debt D-1·D-2·D-3(해소) + main-ux 2.5·2.6 self-overrule·4.2·6.3 채팅=요청 주류 입구 명시 + mydesk 2·4·5.4·12 + 5탭 잔여 3곳 정리 + master CompletedTodo 라인 정리.
+- [2026-04-27] harness.md 3 명령 권한 정책 sub-section + settings.local.json 무력화 2줄 삭제 (e289111) — md/core/harness.md · .claude/settings.local.json(.gitignore 동반). 3축 분류(자동 통과·명시 허가·금지) + 두 파일 분담 규약 명문화. 공용 ask 무력화 통로(npx vercel:* · git push *) 두 줄 삭제로 규약·현실 정합 회복.
 - [2026-04-27] CLAUDE.md + session.md 거버넌스 직접 수정 (오너 IDE) (d7daa81) — CLAUDE.md · md/core/session.md. Claude.ai 역할 재정의(작업지시서 제작) + 오너 정의 재정의(절대 권력자, 방향 선택·재수정만) + 영향 범위 의미 변경(미수정 영역 명시) + 추천 의무화 + Code용 명령서 표현 + 진입 단어 'ㅇㅇ' 명문화
 - [2026-04-27] todoRequest cascade visibility 보존 — calendarEvents writer 정돈 + mapRequestVisibilityToCalendarEvent 헬퍼 (90115d1) — src/lib/calendar-helpers.ts · src/store/todoRequestStore.ts. visibility='all' 하드코드 + visibleTo 미저장 해소. 양당사자(요청자·담당자) visibleTo 보존. 'me' 분기 cascade 미사용. 기존 레코드 마이그레이션은 별도 사이클. Codex review PASS.
 - [2026-04-27] CLAUDE.md 1번 4구성 단어 보정 — "어느 파일" → "어느 영역(파일·함수명 지정 금지)" + "검수 포인트" → "오너 결정 사항(기획 판단·코드 정합 점검 아님)". 단어 미끄러짐 회귀 통로 차단(2026.04.20 H-1 + 2026-04-27 cascade 1·2차) (598a9d0) — CLAUDE.md
