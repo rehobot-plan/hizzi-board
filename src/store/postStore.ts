@@ -36,6 +36,7 @@ export interface Post {
   requestDueDate?: string | null;
   deleted?: boolean;
   deletedAt?: Date | null;
+  archivedAt?: Date | null;
 }
 
 interface PostState {
@@ -46,6 +47,7 @@ interface PostState {
   deletePost: (postId: string) => Promise<void>;
   restorePost: (postId: string) => Promise<boolean>;
   uncompletePost: (postId: string) => Promise<boolean>;
+  archivePost: (postId: string) => Promise<boolean>;
   hardDeletePost: (postId: string) => Promise<void>;
 }
 
@@ -134,27 +136,59 @@ export const usePostStore = create<PostState>((set) => ({
     }
   },
 
-  // 완료 취소 — 1층 토스트 되돌리기 / RecordModal 복구 공통 경로
+  // 완료 취소 — 1층 토스트 되돌리기 / RecordModal 복구 / 회색 영역 개별 복원 공통 경로.
+  // archivedAt도 함께 클리어 — 영구 완료 처리된 항목을 다시 active로 돌릴 때 archived 잔존으로 selectRecentCompletedTop5에서 영구 제외되는 문제 회피 (Codex P2 #1).
+  // 롤백 시 prev archivedAt까지 복구 — Firestore 실패 후 local만 archivedAt=null로 남으면 회색 영역에 잘못 노출 (Codex P2 #2).
   uncompletePost: async (postId) => {
+    const prev = usePostStore.getState().posts.find(p => p.id === postId);
+    const prevCompleted = prev?.completed ?? false;
+    const prevCompletedAt = prev?.completedAt ?? null;
+    const prevArchivedAt = prev?.archivedAt ?? null;
     set(state => ({
       posts: state.posts.map(p =>
-        p.id === postId ? { ...p, completed: false, completedAt: null } : p
+        p.id === postId ? { ...p, completed: false, completedAt: null, archivedAt: null } : p
       ),
     }));
     try {
       await updateDoc(doc(db, 'posts', postId), {
         completed: false,
         completedAt: null,
+        archivedAt: null,
       });
       return true;
     } catch (error) {
       set(state => ({
         posts: state.posts.map(p =>
-          p.id === postId ? { ...p, completed: true, completedAt: new Date() } : p
+          p.id === postId ? { ...p, completed: prevCompleted, completedAt: prevCompletedAt, archivedAt: prevArchivedAt } : p
         ),
       }));
       console.error('Error uncompleting post:', error);
       useToastStore.getState().addToast({ message: '되돌리기에 실패했습니다. 다시 시도해주세요.', type: 'error' });
+      return false;
+    }
+  },
+
+  // 영구 완료 처리 — main-ux.md 2.5 회색 영역 액션. archivedAt 세팅으로 selectRecentCompletedTop5에서 즉시 빠짐 → RecordModal 'all'에서만 노출.
+  archivePost: async (postId) => {
+    const now = new Date();
+    set(state => ({
+      posts: state.posts.map(p =>
+        p.id === postId ? { ...p, archivedAt: now } : p
+      ),
+    }));
+    try {
+      await updateDoc(doc(db, 'posts', postId), {
+        archivedAt: serverTimestamp(),
+      });
+      return true;
+    } catch (error) {
+      set(state => ({
+        posts: state.posts.map(p =>
+          p.id === postId ? { ...p, archivedAt: null } : p
+        ),
+      }));
+      console.error('Error archiving post:', error);
+      useToastStore.getState().addToast({ message: '영구 완료 처리에 실패했습니다. 다시 시도해주세요.', type: 'error' });
       return false;
     }
   },
@@ -231,6 +265,7 @@ export const initPostListener = () => {
           starredAt: data.starredAt?.toDate ? data.starredAt.toDate() : (data.starredAt || null),
           deleted: data.deleted ?? false,
           deletedAt: data.deletedAt?.toDate ? data.deletedAt.toDate() : (data.deletedAt || null),
+          archivedAt: data.archivedAt?.toDate ? data.archivedAt.toDate() : (data.archivedAt || null),
         } as Post;
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);

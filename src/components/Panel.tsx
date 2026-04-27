@@ -9,6 +9,7 @@ import { useEscClose } from '@/hooks/useEscClose';
 import CreatePost from "./CreatePost";
 import TodoRequestBadge from "./TodoRequestBadge";
 import TodoList from "./TodoList";
+import CompletedRecentSection from "./CompletedRecentSection";
 import PostList from "./PostList";
 import Avatar from "./common/Avatar";
 import FAB from "./common/FAB";
@@ -590,13 +591,19 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
         onPointerCancel={handleSwipeEnd}
       >
         {activeCategory === "할일" ? (
-          <TodoList
-            panelId={id}
-            ownerEmail={ownerEmail}
-            posts={posts}
-            canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
-            activeFilter={todoFilter}
-          />
+          <>
+            <TodoList
+              panelId={id}
+              ownerEmail={ownerEmail}
+              posts={posts}
+              canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+              activeFilter={todoFilter}
+            />
+            <CompletedRecentSection
+              panelId={id}
+              canEdit={!!(user && (user.role === 'admin' || ownerEmail === user?.email))}
+            />
+          </>
         ) : activeCategory === '달력' ? (
           <Calendar
             panelMode

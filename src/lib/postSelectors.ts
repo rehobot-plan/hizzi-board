@@ -30,6 +30,7 @@ function toMs(value: Date | null | undefined): number | null {
 /**
  * completedAt 이 (now - windowMs) 이후인 완료된 post만 반환.
  * - completedAt 없음 / completed false / pending createdAt null 등은 제외.
+ * - archivedAt 세팅된 항목은 "영구 완료 처리"라 회색 영역·1·2층 recent 양쪽에서 제외 (main-ux.md 2.5).
  * - 정렬은 호출부 책임 (selector는 필터만).
  */
 export function selectRecentlyCompleted(
@@ -41,6 +42,7 @@ export function selectRecentlyCompleted(
   const threshold = now - windowMs;
   return posts.filter(p => {
     if (!p.completed) return false;
+    if (p.archivedAt) return false;
     const t = toMs(p.completedAt);
     if (t === null) return false;
     return t >= threshold;
@@ -89,4 +91,43 @@ export function canViewPost(post: Post, viewer: ViewerContext | null | undefined
   if (post.author === email) return true;
   if (visibleTo.includes(email)) return true;
   return false;
+}
+
+export interface RecentTop5Options extends RecentWindowOptions {
+  viewer?: ViewerContext | null;
+  /** 한도 (기본 5). main-ux.md 2.5. */
+  limit?: number;
+}
+
+/**
+ * 메인 패널 "최근 완료 회색 영역" selector (main-ux.md 2.5 self-overrule).
+ * 조건: archivedAt 미세팅 + completed + completedAt within window + viewer 권한 통과.
+ * 정렬: completedAt 최신순. 한도: limit 기본 5.
+ * 영구 완료 처리(archivedAt 세팅) 시 자연 빠짐 → RecordModal 'all'에서만 노출.
+ */
+export function selectRecentCompletedTop5(
+  posts: Post[],
+  options: RecentTop5Options = {},
+): Post[] {
+  const windowMs = options.windowMs ?? DAY_MS;
+  const now = options.now ?? Date.now();
+  const limit = options.limit ?? 5;
+  const threshold = now - windowMs;
+  const viewer = options.viewer ?? null;
+  return posts
+    .filter(p => {
+      if (!p.completed) return false;
+      if (p.archivedAt) return false;
+      const t = toMs(p.completedAt);
+      if (t === null) return false;
+      if (t < threshold) return false;
+      if (!canViewPost(p, viewer)) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const aT = toMs(a.completedAt) ?? 0;
+      const bT = toMs(b.completedAt) ?? 0;
+      return bT - aT;
+    })
+    .slice(0, limit);
 }
