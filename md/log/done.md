@@ -7,6 +7,8 @@
 
 ---
 
+- [2026-04-27] P1-α 메인 패널 완료 회수 회색 영역 도입 (417dc30) — src/components/CompletedRecentSection.tsx · src/components/Panel.tsx · src/lib/postSelectors.ts · src/store/postStore.ts. main-ux.md 2.5 self-overrule 반영. archivedAt 신규 필드 + selectRecentCompletedTop5 + archivePost 액션 + 회색 영역 collapsible UI. requestId cascade 정합(reactivateRequest 동반 호출). Codex 4 라운드 PASS — P2×3 해소 + P1 cascade 누락 해소 + 4차 P2 viewer silent disappear는 master-debt #21 박제 + 별 사이클.
+- [2026-04-27] P1-α 동반 MD 정정 (d8c52e9) — md/core/master-schema.md · md/core/master-debt.md · md/core/master.md · md/core/flows-detail.md · md/plan/designs/main-ux.md · md/ui/ux-principles.md · md/ui/uxui.md. posts.archivedAt schema 정의 + master-debt #20·#21 박제 + master 4·5 CompletedRecentSection 반영 + main-ux 2.6·2.7 + ux-principles U7 + flows-detail completed→accepted 담당 + uxui 4 회색 영역 토큰 서브블록.
 - [2026-04-27] 메인·MY DESK UX 감사 산출 정돈 (a49b3b2) — md/log/todo.md · md/core/master-bugs.md · md/core/master-debt.md · md/core/master.md · md/plan/designs/main-ux.md · md/plan/designs/mydesk.md. todo 후보 큐 4군집(P1·P2·별 세션·기존) + master-bugs cancel_requested 박제 + master-debt D-1·D-2·D-3(해소) + main-ux 2.5·2.6 self-overrule·4.2·6.3 채팅=요청 주류 입구 명시 + mydesk 2·4·5.4·12 + 5탭 잔여 3곳 정리 + master CompletedTodo 라인 정리.
 - [2026-04-27] harness.md 3 명령 권한 정책 sub-section + settings.local.json 무력화 2줄 삭제 (e289111) — md/core/harness.md · .claude/settings.local.json(.gitignore 동반). 3축 분류(자동 통과·명시 허가·금지) + 두 파일 분담 규약 명문화. 공용 ask 무력화 통로(npx vercel:* · git push *) 두 줄 삭제로 규약·현실 정합 회복.
 - [2026-04-27] CLAUDE.md + session.md 거버넌스 직접 수정 (오너 IDE) (d7daa81) — CLAUDE.md · md/core/session.md. Claude.ai 역할 재정의(작업지시서 제작) + 오너 정의 재정의(절대 권력자, 방향 선택·재수정만) + 영향 범위 의미 변경(미수정 영역 명시) + 추천 의무화 + Code용 명령서 표현 + 진입 단어 'ㅇㅇ' 명문화

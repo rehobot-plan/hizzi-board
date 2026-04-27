@@ -9,7 +9,7 @@
 
 ## 다음 1순위
 
-- P1-α 메인 패널 완료 회수 회색 영역 도입 (md/plan/designs/main-ux.md 2.5 self-overrule 반영). 신규 CompletedRecentSection.tsx + Panel.tsx/TodoList.tsx 부착 + selectRecentCompletedTop5 selector + 디자인 토큰. 패널 600px 높이 안에서 collapsible 기본 접힘 + 최근 5개 한도. 할일 완료에만 적용 (메모는 completed 없음·삭제는 즉시 제거 유지).
+- P1-β. MY DESK 요청 탭 4축 패턴 도입 (결정 1) — 신규 RequestSegment·RequestFilterBar·RequestSortDropdown·RequestBulkBar + RequestList 재편. 할일 탭 패턴(TodoSegment 4종) 재사용. md/plan/designs/mydesk.md 4 update 동반.
 
 ## 후보 큐
 
@@ -26,6 +26,7 @@
 - RecordModal 진입을 점세개 → 별도 아이콘 (기존 [수집 2026-04-25] 후보 4번) — P1-α(회색 영역) 안정 후 모달 진입 빈도 재측정해 자연 기각 또는 승격 결정.
 
 ### [별 세션 트랙 — 본 감사 외, 본 정돈에서 명시 박제]
+- viewer read-only 정책 정돈 — RecordModal 'all' 탭 viewer 노출 (canCreate 게이트 완화) 또는 alternative 검토. archivedAt(P1-α) silent disappear 회귀 해소 사이클. master-debt #21 정합. P2.
 - 메모 검색·태그 도입 (결정 7). Phase 2 AI 채팅 패널 자연어 검색으로 흡수 가능.
 - 사이드바·본인 패널 헤더 인지 정보 확장 (결정 6·8 통합). P1-α 회색 영역 안정 후 별 디자인.
 - 풀스크린 달력 확대 모달 (결정 5 옵션). 본인 패널 달력 탭에 확대 진입 추가.
@@ -56,6 +57,7 @@
 - Codex 슬래시 커맨드 자동 호출 — 2026-04-27 진단으로 `/codex:status`·`/codex:review` 자동 호출 통과 확인(frontmatter `disable-model-invocation: true`에도 불구하고 Skill tool 호출 PASS). 직전 관찰(2026-04-24 `/codex:rescue` 1m+ hang · 2회 reject)은 환경적이며 구조적 아님. `/codex:rescue`는 본 세션 미시도(직전 관찰 인용). 플러그인 v1.0.3 정상 작동
 - 본 감사 완료 (2026-04-27) — P1 4건·P2 4건·별 세션 5건 분류, 1순위 P1-α 회색 영역으로 갱신, MD drift 3건 master-debt 박제, cancel_requested 누락 master-bugs 박제
 - harness.md 3 명령 권한 정책 sub-section 추가 (3축 + 두 파일 분담 규약). settings.local.json 무력화 2줄 삭제(공용 ask 실효 발동, .gitignore 대상이라 commit 외)
+- P1-α 1-6 완료 (2026-04-27) — CompletedRecentSection 부착 + archivedAt 도입 + selectRecentCompletedTop5. Codex review 4 라운드 PASS (P2×3 + P1×1 해소). 4차 P2(viewer silent disappear)는 master-debt #21 박제 + 별 사이클(viewer 정책 정돈) 분리. 1순위 → P1-β MY DESK 요청 탭 4축 패턴 승격.
 
 ## 선처리 큐
 
