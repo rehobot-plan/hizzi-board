@@ -9,10 +9,10 @@
 
 ## 다음 1순위
 
-- todoRequest cascade visibility 보존 (writer 정돈 후속) — todoRequestStore.acceptRequest가 원본 request의 requestVisibility를 보존하지 않고 visibility='all' 하드코드 + visibleTo 미저장. ⑤-3 visiting reader는 보안 우선 strict 적용했으나 writer가 의도(requestOnly/specific)를 손실 → reader가 양당사자 fallback으로만 작동. 본질 해소는 cascade writer 정돈 + visibleTo·visibility 명시 저장. P2
+- todoRequest cascade visibility 보존 (writer 정돈 후속) — todoRequestStore.acceptRequest가 원본 request의 requestVisibility를 보존하지 않고 visibility='all' 하드코드 + visibleTo 미저장. ⑤-3 visiting reader는 보안 우선 strict 적용했으나 writer가 의도(requestOnly/specific)를 손실 → reader가 양당사자 fallback으로만 작동. 본질 해소는 cascade writer 정돈 + visibleTo·visibility 명시 저장. P2 (2026-04-27 1-1 중단 — 재진입 전 명령 블록 재작성 필요: 필드명 정정·posts 제외·calendarEvents 단일 분기·S7 visibleTo→visibility 매핑 정책 확정)
 
 ## 후보 큐
-- todoRequest cascade visibility 보존 (writer 정돈 후속) — todoRequestStore.acceptRequest가 원본 request의 requestVisibility를 보존하지 않고 visibility='all' 하드코드 + visibleTo 미저장. ⑤-3 visiting reader는 보안 우선 strict 적용했으나 writer가 의도(requestOnly/specific)를 손실 → reader가 양당사자 fallback으로만 작동. 본질 해소는 cascade writer 정돈 + visibleTo·visibility 명시 저장. P2
+- todoRequest cascade visibility 보존 (writer 정돈 후속) — todoRequestStore.acceptRequest가 원본 request의 requestVisibility를 보존하지 않고 visibility='all' 하드코드 + visibleTo 미저장. ⑤-3 visiting reader는 보안 우선 strict 적용했으나 writer가 의도(requestOnly/specific)를 손실 → reader가 양당사자 fallback으로만 작동. 본질 해소는 cascade writer 정돈 + visibleTo·visibility 명시 저장. P2 (2026-04-27 1-1 중단 — 재진입 전 명령 블록 재작성 필요: 필드명 정정·posts 제외·calendarEvents 단일 분기·S7 visibleTo→visibility 매핑 정책 확정)
 - 메인·MY DESK 전체 UX 감사 세션 — mydesk.md·main-ux.md·profile.md 재독 기반. 기능 추가·모달 동선·결함 세 축 점검. 실사용 피드백(오너 + 6인 팀) 사전 수집 2~3일 선행. 산출물은 후보 큐 항목 + P1/P2/P3 우선순위 + 의존 관계. 기획 대화 세션
   - [수집 2026-04-25] 완료 회수 동선 재설계 — 체크박스 완료 시 활성 리스트에서 즉시 제거하지 않고 패널 하단 회색 영역으로 시각 이동(체크된 글씨 회색). 재체크 시 원위치 복귀. 24h 경과 시 자동으로 보관 이동. main-ux.md 2.5 "활성만 표시" 결정 **self-overruled 검수 필요**. 24h 자동 이동 메커니즘(클라이언트 표시 필터 vs Cloud Function 쓰기) 결정 동반
   - [수집 2026-04-25] RecordModal 2탭(완료/휴지통) → 3탭(당일완료/완료/삭제) 분기 검토 — 위 1번 채택 시 자연 정렬: 당일완료=패널 하단 회색 / 완료=24h 지난 보관 / 삭제=휴지통
