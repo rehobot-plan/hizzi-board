@@ -67,7 +67,7 @@ src/
 │   │   ├── Sidebar.tsx           좌측 네비게이션
 │   │   ├── ImageViewer.tsx
 │   │   └── FAB.tsx               패널 우하단 context-aware 진입점
-│   ├── Panel.tsx, TodoList.tsx, PostList.tsx
+│   ├── Panel.tsx, TodoList.tsx, PostList.tsx, CompletedRecentSection.tsx
 │   ├── PostItem.tsx, PostEditModal.tsx
 │   ├── TodoItem.tsx, TodoEditModal.tsx, TodoOrderModal.tsx
 │   ├── CreatePost.tsx (모달 컴포넌트), Calendar.tsx, NoticeArea.tsx
@@ -169,8 +169,9 @@ tests/
 ChatInput.tsx → ChatExpand.tsx → AiBadge.tsx / chatInputStore.ts → parseIntent.ts → parseLocal.ts
 ChatInput.tsx → app/(main)/page.tsx 상단 배치 (6, U14, P9)
 chatInputStore.ts → chatMessages 컬렉션 + posts/calendarEvents 4필드 (sourceMessageId·parseStage·confidence·inputSource)
-Panel.tsx → TodoList.tsx / PostList.tsx / Calendar.tsx / common/FAB.tsx / RecordModal.tsx
+Panel.tsx → TodoList.tsx / PostList.tsx / Calendar.tsx / common/FAB.tsx / RecordModal.tsx / CompletedRecentSection.tsx
 TodoList.tsx → TodoItem.tsx / postStore.ts
+CompletedRecentSection.tsx → postStore.ts (archivePost·uncompletePost) / todoRequestStore.ts (reactivateRequest cascade) / postSelectors.ts (selectRecentCompletedTop5)
 PostList.tsx → PostItem.tsx / postStore.ts
 PostItem.tsx → PostEditModal.tsx → common/ImageViewer.tsx
 TodoItem.tsx → TodoEditModal.tsx → common/ImageViewer.tsx

@@ -39,7 +39,7 @@
 1. posts.completed = false / completedAt = null
 2. todoRequests.status = 'accepted' / resolvedAt = null
 에러: try/catch + addToast
-담당: CompletedTodo.tsx > 복구 버튼 / todoRequestStore.ts > reactivateRequest()
+담당: CompletedRecentSection.tsx > 복원 버튼 / RecordModal restore / todoRequestStore.ts > reactivateRequest()
 ```
 
 **pending → rejected**

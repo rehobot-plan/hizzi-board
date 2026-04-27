@@ -347,3 +347,24 @@
 
 영향 범위: md/plan/designs/mydesk.md
 상태: 해소
+
+### #20 archivedAt 도입 — 영구 완료 처리 액션 (P1-α 동반)
+
+근거: [2026-04-27 P1-α] main-ux.md 2.5 self-overrule 반영 — 메인 패널 회색 영역에 "영구 완료 처리" 액션 도입. 기존 deletedAt·completedAt 시간 필드 패턴 자연 대칭. selectRecentCompletedTop5 = archivedAt==null + completed + 24h within + canViewPost + top 5. selectRecentlyCompleted도 archivedAt==null 필터 추가(1·2층 카운트·RecordModal recent 정합).
+
+영향 파일: src/store/postStore.ts (Post.archivedAt + archivePost 액션) · src/lib/postSelectors.ts · md/core/master-schema.md (posts 정의)
+연동 MD: main-ux.md 2.5·2.6·2.7
+상태: 해소 (P1-α 1-6 · 417dc30)
+
+### #21 archivedAt 도입 후 viewer silent disappear 회귀 — open (P2 · 별 사이클)
+
+근거: [2026-04-27 P1-α 1-4 Codex 4차 P2] archive 액션 도입으로 RecordModal 'all' 탭의 viewer 노출 게이트 부재가 silent disappear로 표면화. archive 액션 직후 항목이 회색 영역(top 5 윈도우 빠짐) + RecordModal viewer 시점(canCreate 게이트 차단) 양쪽에서 사라짐.
+
+트리거 조건: specific visibleTo + 본인 archive 액션 동시. 6명 팀 빈도 낮음.
+
+영향 범위: src/components/RecordModal.tsx (viewer 노출 정책) · src/components/Panel.tsx (canCreate 게이트) · 또는 selectRecentCompletedTop5 viewer-aware 분기.
+
+해소 방향: viewer read-only 정책 전체 정돈 사이클 (RecordModal 'all' viewer 노출 또는 alternative). 본 P1-α 블록 [영향 범위] 외라 별 사이클 분리.
+
+연동 MD: main-ux.md 2.5 · md/log/todo.md 후보 큐 [별 세션 트랙]
+상태: open · 별 사이클 (P1-α 후속 viewer 정책 정돈)

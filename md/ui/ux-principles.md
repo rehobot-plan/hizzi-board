@@ -120,8 +120,8 @@ bulk 삭제:
   2층 — 리스트 하단 "최근 완료 N개 →" (24시간 창, 0건 시 숨김)
   3층 — 탭바 메뉴(···) → "기록" → [완료] 탭 (24h 경과분, 영구 보관)
 
-기존 CompletedTodo.tsx 하단 섹션 → 2층 링크 구조로 재편
-  활성 리스트와 시각적 분리, 패널 과확장 원인 제거
+CompletedRecentSection.tsx 신규 부착 (P1-α · main-ux.md 2.5 self-overrule)
+  활성 리스트 하단 회색 영역 + 2층 링크 + 3층 RecordModal 동선 정합
 ```
 
 ---

@@ -177,7 +177,7 @@ isExpanded → false 전환 시 scrollTop 0 재설정.
 - [ ] 하단 "최근 완료/삭제 N개 →" 링크 24시간 창 자동 계산, 0건 시 숨김
 - [ ] 탭바 메뉴 "기록" 모달 2탭 동작, 개별 복원 가능
 - [ ] 요청 할일 cascade 복구 테스트 PASS (1층·2층·3층 각각)
-- [ ] `CompletedTodo.tsx` 재편, 기존 하단 완료 섹션 제거
+- [ ] `CompletedRecentSection.tsx` 신규 부착 (활성 리스트 하단 회색 영역)
 - [ ] collapsible 기본 접힘, 최근 5개 한도, "방금 완료한 N개 ▾" 토글
 - [ ] 체크 시 시각 잔류 흐름: line-through·회색 글씨 + 토스트 5초 동시 표시
 - [ ] 24시간 경과 → RecordModal 보관으로 자동 이관 (selectRecentCompletedTop5 윈도우 통과 기준)
@@ -186,7 +186,7 @@ isExpanded → false 전환 시 scrollTop 0 재설정.
 ### 2.7. 영향 파일
 
 - `src/components/TodoItem.tsx` · `PostItem.tsx`
-- `src/components/CompletedTodo.tsx` (전면 재편)
+- `src/components/CompletedRecentSection.tsx` (신규 · 회색 영역)
 - `src/components/Panel.tsx` (하단 회수 링크·메뉴 추가)
 - `src/store/postStore.ts` (스와이프 처리, 24h 창 쿼리, deletedAt 관리)
 - `src/store/toastStore.ts` (완료/삭제 실행 취소 토스트 통합)

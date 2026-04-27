@@ -30,6 +30,7 @@
   requestDueDate?: string | null
   deleted?: boolean
   deletedAt?: Date | null
+  archivedAt?: Date | null     // 영구 완료 처리 시각 (P1-α · main-ux.md 2.5). 세팅 시 selectRecentCompletedTop5에서 빠져 RecordModal 'all'에서만 노출.
   createdAt: Date
   updatedAt: Date
 }
