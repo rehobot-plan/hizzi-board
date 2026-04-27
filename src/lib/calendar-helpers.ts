@@ -539,3 +539,19 @@ export function filterCalendarInputs(
     return true;
   });
 }
+
+// ─── todoRequest cascade visibility 매핑 ────────────────────
+// req.visibleTo (S7 인코딩) → calendarEvents.{visibility, visibleTo}.
+// 'me'는 visiting reader가 무조건 차단하므로 cascade에선 사용하지 않는다.
+// 비공개 요청도 양당사자(요청자·담당자) 모두 visibleTo에 보존.
+export function mapRequestVisibilityToCalendarEvent(
+  requestVisibleTo: string[],
+  toEmail: string,
+  fromEmail: string,
+): { visibility: 'all' | 'specific'; visibleTo: string[] } {
+  if (requestVisibleTo.length === 0) {
+    return { visibility: 'all', visibleTo: [] };
+  }
+  const merged = Array.from(new Set([toEmail, fromEmail, ...requestVisibleTo]));
+  return { visibility: 'specific', visibleTo: merged };
+}

@@ -7,6 +7,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useToastStore } from '@/store/toastStore';
+import { mapRequestVisibilityToCalendarEvent } from '@/lib/calendar-helpers';
 
 export interface TodoRequest {
   id: string;
@@ -150,6 +151,11 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
         }
         if (shouldAddCalendar) {
           const assigneeNames = req.teamLabel || authorName;
+          const { visibility, visibleTo } = mapRequestVisibilityToCalendarEvent(
+            req.visibleTo,
+            req.toEmail,
+            req.fromEmail,
+          );
           // #18 2단계 — 담당자(req.toEmail)를 이벤트 소유자로 기록. authorId(uid)는 fallback으로 생략(3단계 마이그레이션에서 채움).
           await addDoc(collection(db, 'calendarEvents'), {
             title: req.teamLabel ? `[Team] ${req.title}` : `[요청] ${req.title}`,
@@ -162,7 +168,8 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
             updatedAt: new Date(),
             repeat: { type: 'none' },
             taskType: 'work',
-            visibility: 'all',
+            visibility,
+            visibleTo,
             requestId,
             requestFrom: req.fromEmail,
             requestTitle: req.title,
