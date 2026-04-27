@@ -68,6 +68,14 @@ src/
 │   │   ├── ImageViewer.tsx
 │   │   └── FAB.tsx               패널 우하단 context-aware 진입점
 │   ├── Panel.tsx, TodoList.tsx, PostList.tsx, CompletedRecentSection.tsx
+│   ├── request/                  요청 4축 (P1-β · eeddb04)
+│   │   ├── RequestView.tsx       4축 host
+│   │   ├── RequestList.tsx       slim 리스트 렌더
+│   │   ├── RequestSegment.tsx    4 평면 세그먼트 + admin 전체보기 토글
+│   │   ├── RequestFilterBar.tsx  counterpart·done status 필터
+│   │   ├── RequestSortDropdown.tsx  segment-aware sort
+│   │   ├── RequestBulkBar.tsx    segment-aware 일괄 액션
+│   │   └── RequestDetailPopup.tsx
 │   ├── PostItem.tsx, PostEditModal.tsx
 │   ├── TodoItem.tsx, TodoEditModal.tsx, TodoOrderModal.tsx
 │   ├── CreatePost.tsx (모달 컴포넌트), Calendar.tsx, NoticeArea.tsx
@@ -172,6 +180,7 @@ chatInputStore.ts → chatMessages 컬렉션 + posts/calendarEvents 4필드 (sou
 Panel.tsx → TodoList.tsx / PostList.tsx / Calendar.tsx / common/FAB.tsx / RecordModal.tsx / CompletedRecentSection.tsx
 TodoList.tsx → TodoItem.tsx / postStore.ts
 CompletedRecentSection.tsx → postStore.ts (archivePost·uncompletePost) / todoRequestStore.ts (reactivateRequest cascade) / postSelectors.ts (selectRecentCompletedTop5)
+request/RequestView.tsx → todoRequestStore.ts (acceptRequest/rejectRequest/cancelRequest/completeRequest) / postStore.ts (addPost cascade) / RequestSegment·RequestFilterBar·RequestSortDropdown·RequestBulkBar·RequestList·RequestDetailPopup
 PostList.tsx → PostItem.tsx / postStore.ts
 PostItem.tsx → PostEditModal.tsx → common/ImageViewer.tsx
 TodoItem.tsx → TodoEditModal.tsx → common/ImageViewer.tsx

@@ -9,12 +9,11 @@
 
 ## 다음 1순위
 
-- P1-β. MY DESK 요청 탭 4축 패턴 도입 (결정 1) — 신규 RequestSegment·RequestFilterBar·RequestSortDropdown·RequestBulkBar + RequestList 재편. 할일 탭 패턴(TodoSegment 4종) 재사용. md/plan/designs/mydesk.md 4 update 동반.
+- P1-γ. RecordModal 2탭 유지 + 명칭 "기록"→"보관" (결정 3 + 기존 [수집 2026-04-25] 후보 3번). 헤더 RECORD→ARCHIVE, "기록"→"보관", 진입 메뉴 라벨 동기화. md/plan/designs/main-ux.md 2.3 명칭 update.
 
 ## 후보 큐
 
 ### [본 감사 P1 우선 실행]
-- P1-β. MY DESK 요청 탭 4축 패턴 도입 (결정 1) — 신규 RequestSegment·RequestFilterBar·RequestSortDropdown·RequestBulkBar + RequestList 재편. 할일 탭 패턴(TodoSegment 4종) 재사용. md/plan/designs/mydesk.md 4 update 동반.
 - P1-γ. RecordModal 2탭 유지 + 명칭 "기록"→"보관" (결정 3 + 기존 [수집 2026-04-25] 후보 3번). 헤더 RECORD→ARCHIVE, "기록"→"보관", 진입 메뉴 라벨 동기화. md/plan/designs/main-ux.md 2.3 명칭 update.
 - P1-δ. MY DESK 요청 탭 "요청 보내기" 입구 추가 (기존 [수집 2026-04-27]). 받은요청·보낸요청 라인 우측 정렬 버튼 → RequestComposeModal 진입. 입력 방식(자연어 prefill vs 폼) 실행 단계 결정.
 - P1-ε. 채팅 입력창 글로벌 노출 (기존 [수집 2026-04-27]). AppShell 또는 Header sticky 승격 + "어느 패널에 추가될지" 시각 단서 보강 (동선 ① P2 1번 통합).
@@ -27,6 +26,7 @@
 
 ### [별 세션 트랙 — 본 감사 외, 본 정돈에서 명시 박제]
 - viewer read-only 정책 정돈 — RecordModal 'all' 탭 viewer 노출 (canCreate 게이트 완화) 또는 alternative 검토. archivedAt(P1-α) silent disappear 회귀 해소 사이클. master-debt #21 정합. P2.
+- admin 개발 감독 도구 확장 (요청 통계·이슈 트래킹·회원 활동 모니터링) — P1-β admin showAll 정식 흡수(listener 분기·전체보기 토글·monitoring 전용 selectable 차단·토스트 본인 가드) 위에 발전. 모니터링 메타뷰 신설 별 사이클.
 - 메모 검색·태그 도입 (결정 7). Phase 2 AI 채팅 패널 자연어 검색으로 흡수 가능.
 - 사이드바·본인 패널 헤더 인지 정보 확장 (결정 6·8 통합). P1-α 회색 영역 안정 후 별 디자인.
 - 풀스크린 달력 확대 모달 (결정 5 옵션). 본인 패널 달력 탭에 확대 진입 추가.
@@ -58,6 +58,7 @@
 - 본 감사 완료 (2026-04-27) — P1 4건·P2 4건·별 세션 5건 분류, 1순위 P1-α 회색 영역으로 갱신, MD drift 3건 master-debt 박제, cancel_requested 누락 master-bugs 박제
 - harness.md 3 명령 권한 정책 sub-section 추가 (3축 + 두 파일 분담 규약). settings.local.json 무력화 2줄 삭제(공용 ask 실효 발동, .gitignore 대상이라 commit 외)
 - P1-α 1-6 완료 (2026-04-27) — CompletedRecentSection 부착 + archivedAt 도입 + selectRecentCompletedTop5. Codex review 4 라운드 PASS (P2×3 + P1×1 해소). 4차 P2(viewer silent disappear)는 master-debt #21 박제 + 별 사이클(viewer 정책 정돈) 분리. 1순위 → P1-β MY DESK 요청 탭 4축 패턴 승격.
+- P1-β 1-6 완료 (2026-04-27) — MY DESK 요청 탭 4축 도입 + admin 전체보기 분할 흡수. RequestSegment·RequestFilterBar·RequestSortDropdown·RequestBulkBar 신규 + RequestView 4축 host + RequestList slim + listener admin 분기 + 토스트 본인 가드. Codex review 9 라운드 PASS (P1×3 + P2×7 해소). 1순위 → P1-γ RecordModal 명칭 "기록"→"보관" 승격.
 
 ## 선처리 큐
 

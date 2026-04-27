@@ -109,8 +109,12 @@ MY DESK 우측에 숫자 뱃지 3개 나란히:
 - 기존 `/request` 페이지 UI 본체를 `src/components/request/RequestView.tsx`로 추출
 - `/mydesk?tab=request` 진입 시 `<RequestView />` 렌더
 - `/request` 라우트도 `<RequestView />` 렌더 (북마크·딥링크 호환)
-- 내부 탭: 받은 요청 / 보낸 요청 / (관리자) 전체보기
-- 4축 패턴 도입 (P1-β): 세그먼트(받은/보낸/진행/완료) + 필터(상태·요청자) + 정렬(기한/최근/상태) + 벌크 처리. 할일 탭 5번 패턴 재사용
+- 4축 패턴 도입 (P1-β · eeddb04): 세그먼트(받은/보낸/진행/완료) + 필터(counterpart·done segment 종결 상태) + 정렬(기한·최근·종결) + 벌크 처리. 할일 탭 4축 컴포넌트 패턴 카피
+  - 받은 = toEmail=나 + pending  (액션 주체 명확)
+  - 보낸 = fromEmail=나 + pending  (액션 주체 명확)
+  - 진행 = 양쪽 + (accepted OR cancel_requested) — cancel_requested 흡수로 approve/deny/withdraw 워크플로우 진입 보존
+  - 완료 = 양쪽 + (completed OR rejected OR cancelled) — 종결 상태 통합
+- admin 전용 "전체보기" 토글 (4 평면 세그먼트 위, 일반 사용자 미노출). 토글 활성 시 본인 시점 필터 우회 → 전체 모니터링. listener도 admin 이메일 분기로 전체 적재. 일괄 액션은 차단(모니터링 전용), 토스트는 본인 관련만 발생(noisy global notifications 회피)
 - RequestDetailPopup 기존 동작 유지
 
 ### 4.2 진입점 호환
