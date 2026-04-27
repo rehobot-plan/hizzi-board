@@ -39,7 +39,7 @@
 - 프로덕션: hizzi-board.vercel.app + hana-vote.vercel.app 200 OK
 - Vercel 프로젝트: prj_2P0Hyj5FR99NUdSgyFEhzpi6AXVW
 - Codex 플러그인 커맨드 7종 실재 확인(review/rescue/adversarial-review/cancel/result/setup/status) — `/codex:adversarial-review` 존재 확정, harness.md 3 목록과 일치
-- `/codex:rescue` Skill tool 호출 2회 연속 reject 재현(2026-04-24) — 오너 side 1m+ hang 표시. `/codex:review`·`/codex:cancel`은 frontmatter `disable-model-invocation: true`로 assistant 자동 호출 차단, 오너 직접 입력만 허용
+- Codex 슬래시 커맨드 자동 호출 — 2026-04-27 진단으로 `/codex:status`·`/codex:review` 자동 호출 통과 확인(frontmatter `disable-model-invocation: true`에도 불구하고 Skill tool 호출 PASS). 직전 관찰(2026-04-24 `/codex:rescue` 1m+ hang · 2회 reject)은 환경적이며 구조적 아님. `/codex:rescue`는 본 세션 미시도(직전 관찰 인용). 플러그인 v1.0.3 정상 작동
 
 ## 선처리 큐
 

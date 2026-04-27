@@ -7,6 +7,7 @@
 
 ---
 
+- [2026-04-27] CLAUDE.md + session.md 거버넌스 직접 수정 (오너 IDE) (d7daa81) — CLAUDE.md · md/core/session.md. Claude.ai 역할 재정의(작업지시서 제작) + 오너 정의 재정의(절대 권력자, 방향 선택·재수정만) + 영향 범위 의미 변경(미수정 영역 명시) + 추천 의무화 + Code용 명령서 표현 + 진입 단어 'ㅇㅇ' 명문화
 - [2026-04-27] todoRequest cascade visibility 보존 — calendarEvents writer 정돈 + mapRequestVisibilityToCalendarEvent 헬퍼 (90115d1) — src/lib/calendar-helpers.ts · src/store/todoRequestStore.ts. visibility='all' 하드코드 + visibleTo 미저장 해소. 양당사자(요청자·담당자) visibleTo 보존. 'me' 분기 cascade 미사용. 기존 레코드 마이그레이션은 별도 사이클. Codex review PASS.
 - [2026-04-27] CLAUDE.md 1번 4구성 단어 보정 — "어느 파일" → "어느 영역(파일·함수명 지정 금지)" + "검수 포인트" → "오너 결정 사항(기획 판단·코드 정합 점검 아님)". 단어 미끄러짐 회귀 통로 차단(2026.04.20 H-1 + 2026-04-27 cascade 1·2차) (598a9d0) — CLAUDE.md
 - [2026-04-25] 거버넌스 재설계 1차 누락 1건 정리 — session.md 3번 단계 라벨 (e80055a) — md/core/session.md
