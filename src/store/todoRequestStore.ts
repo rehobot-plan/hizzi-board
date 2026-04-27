@@ -390,11 +390,15 @@ export const initRequestListener = (userEmail: string) => {
           seenAt: data.seenAt || undefined,
         } as TodoRequest;
       })
-      .filter((r) => r.fromEmail === userEmail || r.toEmail === userEmail);
+      // admin 이메일은 본인 시점 필터 우회 — 개발 감독·전체 관리 도구 (master.md 7).
+      .filter((r) => userEmail === 'admin@company.com' || r.fromEmail === userEmail || r.toEmail === userEmail);
 
-    // 상태 변화 토스트 (초기 스냅샷 제외)
+    // 상태 변화 토스트 (초기 스냅샷 제외).
+    // admin@company.com은 모든 요청 적재(monitoring)지만 토스트는 본인 관련만 — noisy global notifications 회피 (Codex P2 7-2).
     if (!isInitialSnapshot) {
       for (const req of requests) {
+        const isMine = req.fromEmail === userEmail || req.toEmail === userEmail;
+        if (!isMine) continue;
         const prev = prevStatuses.get(req.id);
         if (prev && prev !== req.status) {
           // 본인 액션 제외: cancel_requested는 cancelRequestedBy, 그 외는 toEmail(수락/반려/완료 = 담당자 액션)
