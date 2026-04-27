@@ -16,15 +16,23 @@
 ### [본 감사 P1 우선 실행]
 - P1-γ. RecordModal 2탭 유지 + 명칭 "기록"→"보관" (결정 3 + 기존 [수집 2026-04-25] 후보 3번). 헤더 RECORD→ARCHIVE, "기록"→"보관", 진입 메뉴 라벨 동기화. md/plan/designs/main-ux.md 2.3 명칭 update.
 - P1-δ. MY DESK 요청 탭 "요청 보내기" 입구 추가 (기존 [수집 2026-04-27]). 받은요청·보낸요청 라인 우측 정렬 버튼 → RequestComposeModal 진입. 입력 방식(자연어 prefill vs 폼) 실행 단계 결정.
-- P1-ε. 채팅 입력창 글로벌 노출 (기존 [수집 2026-04-27]). AppShell 또는 Header sticky 승격 + "어느 패널에 추가될지" 시각 단서 보강 (동선 ① P2 1번 통합).
+- P1-ε. 채팅 입력창 글로벌 노출 (기존 [수집 2026-04-27]). AppShell 또는 Header sticky 승격 + "어느 패널에 추가될지" 시각 단서 보강 (동선 ① P2 1번 통합). **(2026-04-27) 별 세션 트랙 "입력 진입점 단순화" 안건에 자연 흡수 — 르호봇 트랙 검증 후 통합 처리.**
 
 ### [본 감사 P2 후속]
-- 메인 채팅 = 요청 보내기 주류 입구 명시 (결정 4) — md/plan/designs/main-ux.md 4.2·6.3 MD update + src/lib/parseLocal.ts 요청 trigger 단어 경계 점검.
+- 메인 채팅 = 요청 보내기 주류 입구 명시 (결정 4) — md/plan/designs/main-ux.md 4.2·6.3 MD update + src/lib/parseLocal.ts 요청 trigger 단어 경계 점검. **(2026-04-27) 별 세션 트랙 "입력 진입점 단순화" 안건에 자연 흡수 — 르호봇 트랙 검증 후 통합 처리.**
 - 채팅 입력 키보드 동선 보강 (기존 [수집 2026-04-27]) — Enter 확정·Tab 칩 이동·항목 카드 진입. md/ui/patterns.md P9 키보드 동선 추가.
 - 채팅 파서 정확도 점검·향상 설계 (기존 [수집 2026-04-27]) — src/lib/parseLocal.ts 4축 분류 케이스 측정 + 향상 방향. md/plan/designs/ai-capture-hb.md 영역.
 - RecordModal 진입을 점세개 → 별도 아이콘 (기존 [수집 2026-04-25] 후보 4번) — P1-α(회색 영역) 안정 후 모달 진입 빈도 재측정해 자연 기각 또는 승격 결정.
 
 ### [별 세션 트랙 — 본 감사 외, 본 정돈에서 명시 박제]
+- 히찌보드 입력 진입점 단순화 (큰 사이클, 르호봇 트랙 정합 검증 동반) — 채팅 단일 진입 + 아이템 클릭 수정만. 영향:
+  · md/plan/designs/main-ux.md 4 폼·채팅 분리 재검토
+  · FAB 역할 재정의
+  · src/components/CreatePost.tsx 모달 폐기/흡수
+  · md/plan/designs/ai-capture-hb.md 9.3 LLM 2단 본체 부착(6 B-1) 필수 승격
+  · md/plan/designs/mydesk.md 5.4 R/U/D 전제 강화
+  · md/core/flows.md 입력 진입 경로 재정리
+  P1-ε(채팅 글로벌 노출) + 결정 4(메인 채팅 = 요청 주류 입구) 자연 흡수. 르호봇 트랙 윤곽 잡힌 후 히찌보드 적용 여부 결정 — 르호봇 프레이밍 정합 검증 동반.
 - viewer read-only 정책 정돈 — RecordModal 'all' 탭 viewer 노출 (canCreate 게이트 완화) 또는 alternative 검토. archivedAt(P1-α) silent disappear 회귀 해소 사이클. master-debt #21 정합. P2.
 - admin 개발 감독 도구 확장 (요청 통계·이슈 트래킹·회원 활동 모니터링) — P1-β admin showAll 정식 흡수(listener 분기·전체보기 토글·monitoring 전용 selectable 차단·토스트 본인 가드) 위에 발전. 모니터링 메타뷰 신설 별 사이클.
 - 메모 검색·태그 도입 (결정 7). Phase 2 AI 채팅 패널 자연어 검색으로 흡수 가능.
