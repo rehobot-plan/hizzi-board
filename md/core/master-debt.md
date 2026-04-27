@@ -320,3 +320,30 @@
 해소 방향 후보: (a) next 14.2.x 버전 bump로 OpenTelemetry 관련 패치 수용 (b) .next 캐시 전량 삭제 + reinstall 재현 여부 확인 (c) experimental/instrumentation 설정 검토.
 
 상태: open (관측만 · 프로덕션 배포 영향 없음 · 로컬 E2E 경로 차단)
+
+### D-1. mydesk.md 2번 5탭 명세 drift — 해소 (2026-04-27 · 본 감사 산출 정돈)
+
+근거: md/plan/designs/mydesk.md 2번이 "5탭: 오늘/요청/할일/메모/달력"으로 명세돼있으나 실 코드는 4탭(src/components/mydesk/TabBar.tsx 명시), /mydesk/calendar는 redirect (md/plan/designs/main-ux.md 5번 결정대로).
+
+해소: PART F에서 mydesk.md 2번을 "4탭: 오늘/요청/할일/메모"로 정정 + 12번 폐기 결정 표에 "(세션 #70) 5탭 → 4탭, 달력은 패널 피어 탭으로 흡수" 추가.
+
+영향 범위: md/plan/designs/mydesk.md
+상태: 해소
+
+### D-2. master.md 4 파일 구조 CompletedTodo.tsx 명시 drift — 해소 (2026-04-27 · 본 감사 산출 정돈)
+
+근거: md/core/master.md 4 파일 구조에 src/components/CompletedTodo.tsx 명시되어 있으나 실 파일 부재 (md/plan/designs/main-ux.md 2.5 재편 완료로 삭제됨, 본 감사 실측 확인). 6 파일 의존성 맵에도 등장.
+
+해소: PART G에서 master.md 70번 줄(파일 구조) + 173번 줄(의존성 맵)에서 CompletedTodo.tsx 라인 정리.
+
+영향 범위: md/core/master.md
+상태: 해소
+
+### D-3. mydesk.md 5.4 "새 할일 버튼" 명세 코드 부재 drift — 해소 (2026-04-27 · 본 감사 산출 정돈)
+
+근거: md/plan/designs/mydesk.md 5.4 "새 할일 버튼" 명세이나 src/app/(main)/mydesk/todo/page.tsx에 create 핸들러·UI 둘 다 부재. 결과적으로 chillkim 님 의도("MY DESK = 정렬·정돈, 캡처는 메인")와 일치하지만 명세 drift.
+
+해소: PART F에서 mydesk.md 5.4를 "MY DESK 할일 탭은 R/U/D 전용 — 추가 입구 부재. 캡처는 메인 채팅(주류) 또는 본인 패널 FAB. MY DESK는 정렬·필터·정돈·일괄 처리 도구."로 정정.
+
+영향 범위: md/plan/designs/mydesk.md
+상태: 해소

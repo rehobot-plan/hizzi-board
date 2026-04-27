@@ -60,7 +60,7 @@ MY DESK 우측에 숫자 뱃지 3개 나란히:
 
 ## 2. MY DESK 탭 구조
 
-5탭: 오늘 / 요청 / 할일 / 메모 / 달력 (시급도 순)
+4탭: 오늘 / 요청 / 할일 / 메모 (시급도 순). (세션 #70) 5탭 → 4탭, 달력은 패널 피어 탭으로 흡수 (md/plan/designs/main-ux.md 5).
 
 - 기본 진입 탭: 오늘
 - URL: `/mydesk?tab=today` (또는 `/mydesk/today`)
@@ -110,13 +110,14 @@ MY DESK 우측에 숫자 뱃지 3개 나란히:
 - `/mydesk?tab=request` 진입 시 `<RequestView />` 렌더
 - `/request` 라우트도 `<RequestView />` 렌더 (북마크·딥링크 호환)
 - 내부 탭: 받은 요청 / 보낸 요청 / (관리자) 전체보기
+- 4축 패턴 도입 (P1-β): 세그먼트(받은/보낸/진행/완료) + 필터(상태·요청자) + 정렬(기한/최근/상태) + 벌크 처리. 할일 탭 5번 패턴 재사용
 - RequestDetailPopup 기존 동작 유지
 
 ### 4.2 진입점 호환
 
 | URL | 렌더 | 용도 |
 |---|---|---|
-| `/mydesk/request` | AppShell + TabBar(요청 활성) + RequestView | MY DESK 5탭 내부 |
+| `/mydesk/request` | AppShell + TabBar(요청 활성) + RequestView | MY DESK 4탭 내부 |
 | `/request` | AppShell + RequestView (TabBar 없음) | 북마크·알림 링크 |
 
 - 두 진입점에서 RequestView는 동일 데이터·동일 액션
@@ -161,7 +162,7 @@ MY DESK 우측에 숫자 뱃지 3개 나란히:
 
 ### 5.4 아이템 구조 / 벌크 바 / 안전장치 / 새 할일 버튼
 
-세션 #37 설계 유지 (섹션 내용 동일, 중복 서술 생략).
+MY DESK 할일 탭은 R/U/D 전용 — 추가 입구 부재. 캡처는 메인 채팅(주류) 또는 본인 패널 FAB. MY DESK는 정렬·필터·정돈·일괄 처리 도구.
 
 ---
 
@@ -194,7 +195,7 @@ Tailwind md breakpoint (768px) 기준.
   - 달력 필터 드롭다운: 담당자 체크박스 2열 그리드, 폭 calc(100vw - 32px)로 확장 (calendar-filter.md 8)
   - 오늘 탭 요약 카드 4개 → 2×2 그리드
   - 요청 탭 RequestView 내부 2탭(받은/보낸)은 그대로 가로 배치 유지
-  - TabBar: 가로 스크롤 허용 (5탭 폭 부족 시)
+  - TabBar: 가로 스크롤 허용 (4탭 폭 부족 시)
   - 벌크 바는 하단 floating 유지
 
 ---
@@ -223,7 +224,7 @@ Tailwind md breakpoint (768px) 기준.
 | R-1 | RequestView 공통 컴포넌트 추출 + /mydesk/request 진입점 | src/components/request/RequestView.tsx, src/app/request/page.tsx, src/app/mydesk/request/page.tsx |
 | R-2 | 사이드바 요청 메뉴 제거 + MY DESK 3뱃지 | src/components/common/Sidebar.tsx, useSidebarBadges 훅 |
 | R-3 | 오늘 탭 카드 재편 (연차 제거 + overdue 추가 + 요청확장) | src/hooks/useTodaySummary.ts, src/components/mydesk/SummaryCard.tsx |
-| R-4 | MY DESK 5탭 반영 (요청 탭 추가) | src/components/mydesk/TabBar.tsx, src/app/mydesk/request/page.tsx |
+| R-4 | MY DESK 4탭 반영 (요청 탭 추가, 달력 제외) | src/components/mydesk/TabBar.tsx, src/app/mydesk/request/page.tsx |
 | 4-A | 달력 필터 신규 도입 + 홈 적용 (calendar-filter.md 9) | src/components/calendar/CalendarFilter.tsx, src/hooks/useCalendarFilter.ts, src/lib/calendar-helpers.ts (확장), src/components/calendar/Calendar.tsx |
 | 4-B | MY DESK 달력 탭 활성화 + scope="me" 기본값 (calendar-filter.md 9) | src/app/(main)/mydesk/calendar/page.tsx |
 
@@ -233,7 +234,7 @@ Tailwind md breakpoint (768px) 기준.
 - R-1 완료 기준: /request 회귀 0, /mydesk/request 진입 시 동일 UI 렌더
 - R-2 완료 기준: 사이드바 요청 메뉴 없음, MY DESK 3뱃지 정상, 기존 useTodoRequestStore.unseenCount 로직 호환
 - R-3 완료 기준: 오늘 탭 4카드가 [할일/일정/요청확장/overdue]로 표시, 카드 클릭 점프 동작, 연차 카드 자리에 overdue
-- R-4 완료 기준: TabBar에 요청 탭 추가, 5탭 전환 정상
+- R-4 완료 기준: TabBar에 요청 탭 추가, 4탭 전환 정상
 - 4-A 완료 기준: calendar-filter.md 9 Phase 4-A "완료 기준" 8항 참조
 - 4-B 완료 기준: calendar-filter.md 9 Phase 4-B "완료 기준" 5항 참조
 
@@ -246,6 +247,7 @@ Tailwind md breakpoint (768px) 기준.
 - (세션 #37) 사이드바 4메뉴 [홈/MY DESK/요청/기타] → (세션 #43) 3메뉴 [홈/MY DESK/기타]
 - (세션 #37) 오늘 탭 연차 카드 → (세션 #43) overdue 카드로 교체 + 연차 제거
 - (선처리 큐 구 1번) 연차 카드 → overdue 카드 단일 교체: 세션 #43 Phase R-3으로 통합 흡수, 선처리 큐에서 폐기
+- (세션 #70) 5탭 → 4탭, 달력은 패널 피어 탭으로 흡수 (md/plan/designs/main-ux.md 5)
 
 ---
 

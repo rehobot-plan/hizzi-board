@@ -27,3 +27,12 @@
 | 메모 이미지 클릭 시 팝업 열림 | 클릭 레이어 zIndex 충돌 | 루트 div onClick으로 전환 |
 | 할일 이미지 클릭 시 팝업 열림 | 동일 원인 | 동일 해결 |
 | ESC 미작동 | window.__escStack 번들 미반영 추정 | 다음 세션 확인 필요 |
+
+---
+
+### TodoRequestModal cancel_requested 상태 누락 (P3 · 별 세션 처리)
+
+- 봉투 4탭 분류: 받은=pending only · 보낸=pending only · 진행 중=accepted only · 완료=rejected+cancelled+completed → cancel_requested 어느 탭에도 미포함, 사용자 시야에서 사라짐
+- src/components/request/RequestList.tsx STATUS_CONFIG에는 정의되어 MY DESK 요청 탭에선 표시 (받은/보낸 리스트 안에 한 줄)
+- 영향: cancel_requested 단계의 요청이 봉투 모달에서 추적 불가
+- 우선순위: cancel_requested 발생 빈도가 낮아 P3 — 별 세션 처리
