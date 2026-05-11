@@ -67,6 +67,7 @@
 - harness.md 3 명령 권한 정책 sub-section 추가 (3축 + 두 파일 분담 규약). settings.local.json 무력화 2줄 삭제(공용 ask 실효 발동, .gitignore 대상이라 commit 외)
 - P1-α 1-6 완료 (2026-04-27) — CompletedRecentSection 부착 + archivedAt 도입 + selectRecentCompletedTop5. Codex review 4 라운드 PASS (P2×3 + P1×1 해소). 4차 P2(viewer silent disappear)는 master-debt #21 박제 + 별 사이클(viewer 정책 정돈) 분리. 1순위 → P1-β MY DESK 요청 탭 4축 패턴 승격.
 - P1-β 1-6 완료 (2026-04-27) — MY DESK 요청 탭 4축 도입 + admin 전체보기 분할 흡수. RequestSegment·RequestFilterBar·RequestSortDropdown·RequestBulkBar 신규 + RequestView 4축 host + RequestList slim + listener admin 분기 + 토스트 본인 가드. Codex review 9 라운드 PASS (P1×3 + P2×7 해소). 1순위 → P1-γ RecordModal 명칭 "기록"→"보관" 승격.
+- 별 안건 — 하나보트 admin 보고서 엑셀 다운로드 1-6 완료 (2026-05-11) — sticky 바 인쇄 좌측 형제로 "엑셀 다운로드" 버튼 추가. 4시트(요약·장로·시무권사·안수집사) .xlsx 클라이언트 사이드 생성, voteCalculator 결과 그대로 사용. xlsx@0.18.5 의존성 추가. 파일명 OS 금지 문자 sanitize. 마감 전도 인쇄와 동일 정책. Codex review 3축 1라운드 PASS (P2 transition 수정 반영). E2E는 spec 부재 + session 데이터 의존으로 production 수동 검증 구간. 1순위 P1-γ 유지.
 
 ## 선처리 큐
 
