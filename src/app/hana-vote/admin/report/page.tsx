@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import * as XLSX from 'xlsx'
 import { useAdminVoteStore } from '@/store/adminVoteStore'
 import { calculateCandidateResults, calculatePartStats, getPartTotal } from '@/lib/voteCalculator'
 import type { CandidateResult, PartStats } from '@/lib/voteCalculator'
@@ -69,6 +70,47 @@ export default function ReportPage() {
     '안수집사': calculatePartStats(ballots, candidates, '안수집사', getPartTotal(session, '안수집사')),
   }
 
+  const handleDownloadExcel = () => {
+    const wb = XLSX.utils.book_new()
+
+    const summaryAOA: (string | number)[][] = [
+      ['세션명', session.sessionName],
+      ['집계 완료 시각', finalizedAt || '마감 전'],
+      [],
+      ['항목', '장로', '시무권사', '안수집사'],
+      ['전체 투표수', statsByPart['장로'].totalParticipants, statsByPart['시무권사'].totalParticipants, statsByPart['안수집사'].totalParticipants],
+      ['당선 기준', statsByPart['장로'].threshold, statsByPart['시무권사'].threshold, statsByPart['안수집사'].threshold],
+      ['유효', statsByPart['장로'].validCount, statsByPart['시무권사'].validCount, statsByPart['안수집사'].validCount],
+      ['무효', statsByPart['장로'].invalidCount, statsByPart['시무권사'].invalidCount, statsByPart['안수집사'].invalidCount],
+      ['회수 안 됨', statsByPart['장로'].missingCount, statsByPart['시무권사'].missingCount, statsByPart['안수집사'].missingCount],
+      ['후보 수', statsByPart['장로'].candidateCount, statsByPart['시무권사'].candidateCount, statsByPart['안수집사'].candidateCount],
+      ['당선', statsByPart['장로'].electedCount, statsByPart['시무권사'].electedCount, statsByPart['안수집사'].electedCount],
+      ['탈락', statsByPart['장로'].rejectedCount, statsByPart['시무권사'].rejectedCount, statsByPart['안수집사'].rejectedCount],
+    ]
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryAOA)
+    XLSX.utils.book_append_sheet(wb, summarySheet, '요약')
+
+    for (const part of parts) {
+      const partAOA: (string | number)[][] = [
+        ['순위', '이름', '찬성', '반대', '무효', '득표율(%)', '판정'],
+        ...resultsByPart[part].map((r, idx) => [
+          idx + 1,
+          r.name,
+          r.yes,
+          r.no,
+          r.invalid,
+          Number(r.yesRate.toFixed(1)),
+          r.isElected ? '당선' : '미달',
+        ]),
+      ]
+      const partSheet = XLSX.utils.aoa_to_sheet(partAOA)
+      XLSX.utils.book_append_sheet(wb, partSheet, part)
+    }
+
+    const sanitized = session.sessionName.replace(/[\\/:*?"<>|]/g, '_')
+    XLSX.writeFile(wb, `${sanitized}_개표결과.xlsx`)
+  }
+
   return (
     <>
       <style jsx global>{`
@@ -85,6 +127,10 @@ export default function ReportPage() {
       <div className='no-print' style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', borderBottom: '1px solid #e0e0e0', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link href='/hana-vote/admin' style={{ fontSize: 13, color: '#6e6e6e', textDecoration: 'none' }}>← 대시보드</Link>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={handleDownloadExcel}
+            style={{ padding: '8px 16px', background: '#1c1c1c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.15s ease' }}
+          >엑셀 다운로드</button>
           <button
             onClick={() => window.print()}
             style={{ padding: '8px 16px', background: '#1c1c1c', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
