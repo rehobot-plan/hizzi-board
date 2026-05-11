@@ -88,6 +88,7 @@ export default function ReportPage() {
       ['탈락', statsByPart['장로'].rejectedCount, statsByPart['시무권사'].rejectedCount, statsByPart['안수집사'].rejectedCount],
     ]
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryAOA)
+    summarySheet['!cols'] = [{ wch: 14 }, { wch: 22 }, { wch: 12 }, { wch: 12 }]
     XLSX.utils.book_append_sheet(wb, summarySheet, '요약')
 
     for (const part of parts) {
@@ -104,6 +105,7 @@ export default function ReportPage() {
         ]),
       ]
       const partSheet = XLSX.utils.aoa_to_sheet(partAOA)
+      partSheet['!cols'] = [{ wch: 6 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }]
       XLSX.utils.book_append_sheet(wb, partSheet, part)
     }
 
