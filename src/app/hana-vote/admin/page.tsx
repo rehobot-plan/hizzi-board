@@ -10,7 +10,7 @@ import type { VotePart } from '@/types/vote'
 const PARTS: VotePart[] = ['장로', '시무권사', '안수집사']
 
 const ADMIN_SESSION_KEY = 'hanaVoteAdmin'
-const ADMIN_PW = process.env.NEXT_PUBLIC_VOTE_ADMIN_PW || 'admin2026'
+const ADMIN_PW = process.env.NEXT_PUBLIC_VOTE_ADMIN_PW || '2026'
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
