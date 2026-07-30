@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 
 /**
- * patterns.md P9 스와이프 제스처 — 좌←우 드래그로 삭제 확정.
+ * component-patterns.md P9 스와이프 제스처 — 좌←우 드래그로 삭제 확정.
  *
  * - Pointer Events API (터치·마우스·트랙패드 통합)
  * - 임계값 80px 이상 드래그 시 onThresholdReached 호출

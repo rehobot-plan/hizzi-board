@@ -1,7 +1,7 @@
 'use client';
 
 // src/components/ChatInput.tsx
-// uxui.md §4 홈 채팅 입력 토큰 · ux-principles.md U14 인라인 대화 원칙.
+// uxui.md §4 홈 채팅 입력 토큰 · ux-rules.md U14 인라인 대화 원칙.
 // 높이 52 · border-radius 26 · 한 줄 pill · placeholder + 서브라벨.
 
 import { useChatInputStore } from '@/store/chatInputStore';

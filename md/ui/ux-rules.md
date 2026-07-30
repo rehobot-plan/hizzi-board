@@ -94,10 +94,10 @@
 요청 할일 스와이프 삭제:
   post soft delete + todoRequest.status = 'cancelled' (cascade 필수)
   1층·2층·3층 복구 시 todoRequest.status를 삭제 직전 상태(pending|accepted)로 cascade 복귀
-  flows.md FLOW 1 참조
+  state-flows.md FLOW 1 참조
 
 bulk 삭제:
-  try/catch/finally 필수 (rules.md S2 참조)
+  try/catch/finally 필수 (coding-rules.md S2 참조)
 ```
 
 ---

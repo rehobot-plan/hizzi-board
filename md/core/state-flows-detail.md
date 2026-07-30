@@ -185,7 +185,7 @@ requestId가 있을 때 todoRequests.status 없이 posts.completed만 업데이�
 ```
 트리거: 수정 팝업에서 범위 변경 후 저장
 연쇄: 없음 (단독 업데이트)
-주의: 저장 시 author 포함 여부 반드시 확인 (rules.md S7 참조)
+주의: 저장 시 author 포함 여부 반드시 확인 (coding-rules.md S7 참조)
 담당: PostItem.tsx / TodoItem.tsx > handleEditSave()
 ```
 
@@ -196,7 +196,7 @@ requestId가 있을 때 todoRequests.status 없이 posts.completed만 업데이�
 ```
 트리거: 별 아이콘 클릭
 연쇄: 없음 (단독 업데이트)
-정렬: starred = true → 목록 최상단 (rules.md S1 정렬 기준 참조)
+정렬: starred = true → 목록 최상단 (coding-rules.md S1 정렬 기준 참조)
 담당: PostItem.tsx / TodoItem.tsx > handleStar()
 ```
 
@@ -271,7 +271,7 @@ hard delete:
 ### FLOW 12. 실시간 동기화 (onSnapshot)
 
 ```
-원칙: createdAt = null인 pending 문서는 반드시 필터링 (rules.md S3 참조)
+원칙: createdAt = null인 pending 문서는 반드시 필터링 (coding-rules.md S3 참조)
 원칙: 낙관적 업데이트 후 Firestore 반영 순서 유지
 담당: postStore.ts / todoRequestStore.ts > initListener()
 ```

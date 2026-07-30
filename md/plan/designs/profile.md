@@ -44,14 +44,14 @@
 - 라이브러리: `react-easy-crop` (CLAUDE.md [6] R4.9 범용 도메인 오픈소스 우선 원칙)
 - 저장 스펙: 크롭된 정사각 500x500 JPEG만 업로드 (원본 미저장)
 - 덮어쓰기 정책: 새 업로드 시 동일 경로 덮어쓰기
-- 실패 처리: rules.md 체크리스트 "모든 catch에 addToast" 준수
+- 실패 처리: coding-rules.md 체크리스트 "모든 catch에 addToast" 준수
 
 ---
 
 ## 5. 프로필 수정 모달
 
 - 트리거: Header 우측 이름 클릭
-- 위치: 모달 오버레이 (patterns.md P3 준수)
+- 위치: 모달 오버레이 (component-patterns.md P3 준수)
 - 필드:
   - 사진 (원형 미리보기 + "변경" 버튼 → 파일 선택 → 크롭 UI → 저장)
   - 이름 (text input)
@@ -61,7 +61,7 @@
   - Firestore `users/{uid}` 업데이트 (변경된 필드만)
   - 사진 변경 시에만 Storage 업로드
 - 취소 동작: ESC / 백드롭 클릭 / 취소 버튼
-- `useEscClose` 적용 (rules.md 체크리스트)
+- `useEscClose` 적용 (coding-rules.md 체크리스트)
 
 ---
 

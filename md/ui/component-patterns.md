@@ -3,7 +3,7 @@
 > 컴포넌트 구현 방법의 기준.
 > 새 컴포넌트 작성 전 여기를 먼저 확인한다.
 > 패턴 변경 시 오너 승인 필수.
-> 모달 패턴 상세 (M1, M2, M3): patterns-modal.md 참조.
+> 모달 패턴 상세 (M1, M2, M3): component-patterns-modal.md 참조.
 
 ---
 
@@ -346,7 +346,7 @@ hover: transform scale(1.04) + background #1A0E08
 
 요청 할일 cascade:
   스와이프 삭제 시 post soft delete + todoRequest.status = 'cancelled'
-  1층 토스트 실행 취소 시 양쪽 동시 복구 (flows.md FLOW 1, flows-detail.md)
+  1층 토스트 실행 취소 시 양쪽 동시 복구 (state-flows.md FLOW 1, state-flows-detail.md)
 
 ---
 

@@ -1,6 +1,8 @@
 # 히찌보드 — 기술 부채 트래커
 
 > master.md에서 분리. 세션 종료 시 갱신 대상.
+>
+> **`harness.md` 를 가리키는 항목이 여섯 있는데 그 문서는 없다**(2026-07-31 소거 — 거버넌스 하네스와 내용이 겹쳐 앱 사본을 걷었다). 그 항목들은 앱 부채가 아니라 **거버넌스 공정에 관한 것**이라 이 목록에 남을 자리가 아닐 수 있다. 항목 본문은 그때 서술이라 손대지 않았다 — **다시 세울지 접을지는 그 부채를 다룰 때 정한다.**
 
 ---
 
@@ -125,7 +127,7 @@
 해소 방향: #12 DevTools Performance 녹화 워크플로우 수립 후 클릭 순간 호출 스택 포착 · 원인 특정. 원인 격리 이후 능동 scroll 단순화 또는 방어 계층 축소 판단.
 
 영향 범위: src/components/Panel.tsx toggleExpand · main-ux.md 1.2b / 1.2c
-연동 MD: main-ux.md · ux-principles.md U13 · patterns.md P8
+연동 MD: main-ux.md · ux-rules.md U13 · component-patterns.md P8
 상태: open · #12 선결 필요
 
 ### #10 serviceAccount.json git history 잔존
@@ -158,14 +160,14 @@
   - TodoItem handleCheck — updatePost(completed=true) 성공 후 completeRequest 실패 시 post=완료 / request=accepted 분기 (pre-existing)
   - TodoItem handleDelete — deletePost 성공 후 cancelRequest 실패 시 post=deleted / request=accepted 분기 (블록 ② 신규)
 
-현재 처리: flows.md 레이어 1 "각각 독립 try/catch + addToast" 원칙 하에 postStore·todoRequestStore 각 함수 내부 catch에서 addToast로 사용자 인지. 1층 토스트 실행 취소 탭 시에만 양쪽 복구 동기화.
+현재 처리: state-flows.md 레이어 1 "각각 독립 try/catch + addToast" 원칙 하에 postStore·todoRequestStore 각 함수 내부 catch에서 addToast로 사용자 인지. 1층 토스트 실행 취소 탭 시에만 양쪽 복구 동기화.
 
 위험: cascade 실패 + 사용자가 5초 내 실행 취소 미탭 시 불일치 상태 유지. 6명 팀 규모에선 빈도 낮으나 상대방이 대기 중인 요청 케이스는 체감 가능.
 
-해소 방향: cascade 전면 재설계 시 writeBatch · runTransaction 도입 일괄 전환. 개별 handleCheck/handleDelete 수정은 설계 일관성 훼손으로 지양. flows.md 레이어 1 "연쇄 실패 기본 원칙" 자체의 개정 필요 여부 포함 재검토.
+해소 방향: cascade 전면 재설계 시 writeBatch · runTransaction 도입 일괄 전환. 개별 handleCheck/handleDelete 수정은 설계 일관성 훼손으로 지양. state-flows.md 레이어 1 "연쇄 실패 기본 원칙" 자체의 개정 필요 여부 포함 재검토.
 
 영향 범위: src/components/TodoItem.tsx handleCheck / handleDelete
-연동 MD: flows.md 레이어 1
+연동 MD: state-flows.md 레이어 1
 상태: open
 
 ### �� 성장 준비

@@ -29,7 +29,7 @@ export default function CompletedRecentSection({ panelId, canEdit }: CompletedRe
 
   if (recent.length === 0) return null;
 
-  // 요청 cascade 정합 — requestId 있으면 reactivateRequest 동반 호출(RecordModal.restore와 동일 패턴, flows.md 레이어 1).
+  // 요청 cascade 정합 — requestId 있으면 reactivateRequest 동반 호출(RecordModal.restore와 동일 패턴, state-flows.md 레이어 1).
   const handleRestore = async (p: Post) => {
     if (!canEdit) return;
     const ok = await uncompletePost(p.id);

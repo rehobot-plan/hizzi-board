@@ -114,18 +114,18 @@ tests/
 |---|---|
 | CLAUDE.md | 진입점·역할·소통 원칙·파일 지도 |
 | md/core/session.md | 세션 경계 절차 (시작·종료) |
-| md/core/harness.md | 공장 6단계 실행·검증 매뉴얼 |
-| md/core/principles.md | 근본 원칙 |
+| (앱 안에 없음) | 공장 6단계·검증·배포 절차는 **거버넌스 하네스**가 단일 출처다 — 앱 문서로 복제하지 않는다 |
+| md/core/board-principles.md | 근본 원칙 |
 | .harness/MEMORY.md | 사례 박제 (헤더 규약·운영 조항만 거버넌스) |
 
 ### 5-2. 도메인 층 — 코어
 
 | 경로 | 역할 |
 |---|---|
-| md/core/rules.md | 코딩 실행 전 체크리스트 |
-| md/core/rules-detail.md | 코딩 규칙 상세 (S1~S9) |
-| md/core/flows.md | 상태 전환 연쇄 요구사항 |
-| md/core/flows-detail.md | flows 상세 |
+| md/core/coding-rules.md | 코딩 실행 전 체크리스트 |
+| md/core/coding-rules-detail.md | 코딩 규칙 상세 (S1~S9) |
+| md/core/state-flows.md | 상태 전환 연쇄 요구사항 |
+| md/core/state-flows-detail.md | flows 상세 |
 | md/core/master.md | 구조 인덱스 (본 파일) |
 | md/core/master-schema.md | Firestore 스키마 상세 |
 | md/core/master-debt.md | 기술 부채 이력 |
@@ -135,10 +135,10 @@ tests/
 
 | 경로 | 역할 |
 |---|---|
-| md/ui/patterns.md | UI 패턴 |
-| md/ui/patterns-modal.md | 모달 패턴 상세 |
+| md/ui/component-patterns.md | UI 패턴 |
+| md/ui/component-patterns-modal.md | 모달 패턴 상세 |
 | md/ui/uxui.md | UI 스타일·토큰 |
-| md/ui/ux-principles.md | UX 설계 원칙 |
+| md/ui/ux-rules.md | UX 설계 원칙 |
 
 ### 5-4. 도메인 층 — 계획·설계
 

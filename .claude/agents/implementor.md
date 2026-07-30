@@ -13,7 +13,7 @@ tools:
 역할: 탐색 에이전트 요약을 기반으로 구현 + 빌드.
 작업 순서:
   1. 탐색 에이전트 요약 확인
-  2. rules.md 체크리스트 확인
+  2. coding-rules.md 체크리스트 확인
   3. 구현
   4. 빌드 확인 (npm run build)
   5. /codex:review --wait

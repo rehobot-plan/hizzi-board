@@ -58,7 +58,7 @@ isExpanded → false 전환 시 scrollTop 0 재설정.
 
 ### 1.2b. 능동 scroll 정렬
 
-원칙은 ux-principles.md U13. 본 섹션은 ⋯ 펼쳐보기 handle 맥락의 구체 구현 조건.
+원칙은 ux-rules.md U13. 본 섹션은 ⋯ 펼쳐보기 handle 맥락의 구체 구현 조건.
 
 펼침·접힘 시 패널 상단이 viewport scroll-margin-top 80px에 정렬되도록 능동 scroll 실행:
 
@@ -158,7 +158,7 @@ isExpanded → false 전환 시 scrollTop 0 재설정.
 ### 2.4. 요청 할일 cascade 방어
 
 요청 할일 스와이프 삭제 시:
-- `post soft delete` + `todoRequest.status = 'cancelled'` (flows.md FLOW 1 유지)
+- `post soft delete` + `todoRequest.status = 'cancelled'` (state-flows.md FLOW 1 유지)
 - 1층 토스트 "실행 취소" 탭 시 양쪽 동시 복구
 - 2층·3층 복구 시에도 `todoRequest.status`를 삭제 직전 상태(`pending` 또는 `accepted`)로 cascade 복귀
 
@@ -191,7 +191,7 @@ isExpanded → false 전환 시 scrollTop 0 재설정.
 - `src/store/postStore.ts` (스와이프 처리, 24h 창 쿼리, deletedAt 관리)
 - `src/store/toastStore.ts` (완료/삭제 실행 취소 토스트 통합)
 - 신규: `src/components/RecordModal.tsx` (2탭 모달)
-- flows.md FLOW 1 (요청 cascade 복구 경로 추가)
+- state-flows.md FLOW 1 (요청 cascade 복구 경로 추가)
 
 ---
 
@@ -203,7 +203,7 @@ isExpanded → false 전환 시 scrollTop 0 재설정.
 
 ### 3.2. 완료 알림(U10) 이 범위에서 구현
 
-현재 U10은 ux-principles.md에 🔲 미구현으로 표시. 후순위 #5 알림 센터 이관 고려했으나 기획 일괄 마무리 방침에 따라 본 범위에서 해결:
+현재 U10은 ux-rules.md에 🔲 미구현으로 표시. 후순위 #5 알림 센터 이관 고려했으나 기획 일괄 마무리 방침에 따라 본 범위에서 해결:
 
 - 배지 카운트 확장: `pending` 건수 + 미확인 완료 알림 건수 합산
 - 완료 알림 조건: 내가 보낸 요청이 `completed`로 전환 (`pending|accepted` 어느 단계에서든 — 체크박스 즉시 완료 경로 포함)
@@ -320,7 +320,7 @@ FAB 빠른 추가 모달은 *요청 옵션 부재*. 요청은 채팅 시나리�
 
 ## 6. 홈 채팅 기반 입력 — A안 인라인 확장
 
-원칙: ux-principles.md U14 인라인 대화 원칙. 패턴: patterns.md P9 인라인 확장 대화 패턴. 토큰: uxui.md 4 홈 채팅 입력 토큰.
+원칙: ux-rules.md U14 인라인 대화 원칙. 패턴: component-patterns.md P9 인라인 확장 대화 패턴. 토큰: uxui.md 4 홈 채팅 입력 토큰.
 
 ### 6.1. 결정 — A안 인라인 확장 + B 승격 하이브리드
 
@@ -517,7 +517,7 @@ CreatePost 모달화는 4.2 폼·채팅 분리 구현 시점에 처리 (본 섹�
 
 본 정비로 업데이트되는 원칙·패턴·토큰 문서:
 
-**ux-principles.md:**
+**ux-rules.md:**
 - U6 삭제 원칙 — 스와이프 제스처 + 3층 복구 반영
 - U7 완료 처리 원칙 — 대칭 회수 동선 추가
 - U10 완료 알림 원칙 — 🔲 미구현 해제, 배지 + 모달 섹션 4 강조 로직 확정
@@ -526,7 +526,7 @@ CreatePost 모달화는 4.2 폼·채팅 분리 구현 시점에 처리 (본 섹�
 - U13 능동 scroll 정렬 원칙 — 브라우저 자동 scroll 개입 덮어쓰기 (1.2b 첫 적용)
 - U14 인라인 대화 원칙 — 자연어 입력 AI 응답 같은 스레드 확장 (6 첫 적용)
 
-**patterns.md:**
+**component-patterns.md:**
 - P8 ⋯ 펼쳐보기 handle 패턴 — 2단 wrapper·hasOverflow·능동 scroll·다층 방어·접근성·E2E assertion 원칙
 - P9 인라인 확장 대화 패턴 — 구조·시나리오 분기·B 승격 임계·파싱 프리뷰 원칙·접근성
 - P10 FAB 패턴 (기존 P8) — 위치·context-aware 동작
@@ -547,10 +547,10 @@ CreatePost 모달화는 4.2 폼·채팅 분리 구현 시점에 처리 (본 섹�
 - 5 파일 의존성 맵 — FAB → CreatePost 모달 / RecordModal → postStore / ChatInput → chatInputStore → parseIntent 의존 추가
 - `/mydesk/calendar` 경로 제거
 
-**flows.md:**
+**state-flows.md:**
 - FLOW 1 요청 cascade — 3층 복구 경로(토스트·하단 링크·기록 메뉴) 전부 동일 복구 경로(postStore.restorePost/uncompletePost + todoRequestStore.reactivateRequest) 공유로 자동 커버. 세션 #70 블록 ③-B 완결.
 
-세부 문구는 본 정비 각 섹션 구현 완료 시점에 맞춰 before/after 검수 후 갱신. ux-principles.md U13·U14 · patterns.md P8·P9·P10·P11 재편 · uxui.md 토큰 3블록은 세션 #62에서 복구 완료(세션 #61 설계 · #62 MD 작성).
+세부 문구는 본 정비 각 섹션 구현 완료 시점에 맞춰 before/after 검수 후 갱신. ux-rules.md U13·U14 · component-patterns.md P8·P9·P10·P11 재편 · uxui.md 토큰 3블록은 세션 #62에서 복구 완료(세션 #61 설계 · #62 MD 작성).
 
 ---
 

@@ -640,7 +640,7 @@ export default function Panel({ id, name, ownerEmail, position, categories, vari
           }}
         />
       )}
-      {/* FAB — 패널 우하단 44px 진입점 (main-ux.md §4.1 · patterns.md P10 · uxui.md FAB 토큰).
+      {/* FAB — 패널 우하단 44px 진입점 (main-ux.md §4.1 · component-patterns.md P10 · uxui.md FAB 토큰).
           activeCategory를 CreatePost defaultCategory로 전달해 context-aware 동작.
           달력 탭 FAB prefill은 블록 ⑤(달력 피어 탭) 이후 이관. */}
       {/* ⑤-3 — 타인 패널 달력 탭에서는 쓰기 진입점 전면 차단(admin 포함). FAB 자체 미노출. */}

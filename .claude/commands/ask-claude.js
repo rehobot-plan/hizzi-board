@@ -49,7 +49,7 @@ Claude Code(실행자)가 두 가지 상황에서 너에게 호출한다.
   수정 필요: [구체적 이유]
   수정 방향: [한 줄 지시]
 
-- PASS 기준: rules.md 체크리스트 항목 위반 없음 + 수용 기준 충족
+- PASS 기준: coding-rules.md 체크리스트 항목 위반 없음 + 수용 기준 충족
 - 보고 내용이 불충분하면 "수정 필요: 보고 내용 부족 - [무엇이 빠졌는지]" 로 끝내.`,
   messages: [{ role: 'user', content: question }]
 })

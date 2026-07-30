@@ -208,9 +208,9 @@ Tailwind md breakpoint (768px) 기준.
 
 세션 #37 경고 유지:
 
-1. posts 복원 시 completed 강제 초기화 — rules.md S2 연쇄
+1. posts 복원 시 completed 강제 초기화 — coding-rules.md S2 연쇄
 2. 요청 수락 3단 연쇄 — todoRequests.status='accepted' → posts 생성 + (dueDate 있으면) calendarEvents 생성
-3. flows.md cancel_requested 3건은 세션 #38에서 동기화 완료
+3. state-flows.md cancel_requested 3건은 세션 #38에서 동기화 완료
 
 세션 #43 신규 주의:
 4. 요청확장 카드 메인 숫자와 사이드바 "받은" 뱃지 숫자 정합성 — 둘 다 toEmail=나 + status=pending 기준. 동일 쿼리 재사용 권고 (useTodaySummary 훅 내부 + useSidebarBadges 훅 공유).

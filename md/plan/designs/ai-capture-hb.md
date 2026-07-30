@@ -26,7 +26,7 @@ md/plan/designs/main-ux.md 6 홈 채팅 입력에서 자연어 한 줄을 받아
 **다루지 않는 것**
 
 - UI 시각 토큰 — md/ui/uxui.md 4 홈 채팅 입력 토큰
-- 상호작용 패턴 — md/ui/patterns.md P9
+- 상호작용 패턴 — md/ui/component-patterns.md P9
 - B 승격 사이드 패널 본체 — main-ux.md 6.7 "첫 구현 제외" 항목
 - LLM 엔진 본체 구현 — 2단 부착은 별도 트랙
 - 학습·자율 개인화 — 르호봇 D5 영역, 히찌보드 v1 밖
@@ -38,10 +38,10 @@ md/plan/designs/main-ux.md 6 홈 채팅 입력에서 자연어 한 줄을 받아
 **1층 — 정확도 타협 불가** (르호봇 product.md 헌법 제1조 이식)
 LLM 불확실성을 3단 사용자 질의로 덮되, 정확도를 포기하지 않는다. 확실하지 않으면 묻는다.
 
-**2층 — 인라인 대화 원칙** (md/plan/ux-principles.md U14)
+**2층 — 인라인 대화 원칙** (md/plan/ux-rules.md U14)
 자연어 입력 AI 응답은 같은 스레드 바로 아래 확장. 모달 회피.
 
-**3층 — 파싱 프리뷰 원칙** (md/ui/patterns.md P9)
+**3층 — 파싱 프리뷰 원칙** (md/ui/component-patterns.md P9)
 AI가 추론한 결과는 태그로 먼저 시각화. 텍스트 응답만으로 "뭐가 맞고 뭐가 틀렸나"를 스캔 비용 크게 만들지 않는다.
 
 ---
@@ -413,7 +413,7 @@ export async function parseIntent(
 - **md/core/master.md 7 Firestore Rules 요약** — chatMessages 줄 추가 (`읽기/쓰기 → request.auth != null`)
 - **md/core/master-schema.md** — chatMessages 풀 스키마 기록 (본 문서 5.1 재기술)
 - **md/ui/uxui.md 4 unset 태그 토큰** — 이미 존재 (재명시 불필요)
-- **md/ui/patterns.md P9** — 파싱 프리뷰 원칙 이미 존재 (재명시 불필요)
+- **md/ui/component-patterns.md P9** — 파싱 프리뷰 원칙 이미 존재 (재명시 불필요)
 
 ---
 

@@ -130,7 +130,7 @@ ask-claude 질의 본문에 다음 패턴이 감지되면 질의 자체를 중�
 
 ## 6. MD 컨텍스트
 
-관리자 Code는 도메인 지식(rules.md, flows.md, master.md, patterns.md 등)을 직접 로딩하지 않는다.
+관리자 Code는 도메인 지식(coding-rules.md, state-flows.md, master.md, component-patterns.md 등)을 직접 로딩하지 않는다.
 Claude Code가 CLAUDE.md 경유로 이미 접근하고 있으므로 중복 주입은 불필요.
 
 관리자 Code가 로딩하는 건 이 문서 하나(master-operator.md)다.

@@ -285,7 +285,7 @@ export const useTodoRequestStore = create<TodoRequestState>((set) => ({
       const commentRef = doc(collection(db, 'comments'));
       batch.set(commentRef, systemComment(requestId, actor, 'cancel_approved'));
 
-      // flows.md 연쇄: 관련 posts 존재 시 soft delete
+      // state-flows.md 연쇄: 관련 posts 존재 시 soft delete
       if (req) {
         const { getDocs, query, collection: col, where } = await import('firebase/firestore');
         const postsSnap = await getDocs(

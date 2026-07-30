@@ -1,6 +1,6 @@
 # 히찌보드 — UI 패턴 (모달 상세: M1, M2, M3)
 
-> patterns.md에서 분리. 팝업/모달 구현 시 참조.
+> component-patterns.md에서 분리. 팝업/모달 구현 시 참조.
 
 ---
 
@@ -123,5 +123,5 @@ maxWidth: 860px
 요청자+수신자 (기본값) → visibleTo = [fromEmail, ...toEmails]
 전체공개               → visibleTo = []
 특정                   → visibleTo = [fromEmail, ...toEmails, ...추가인원]
-캘린더 체크박스 없음 — 수락 시 자동 등록 (flows.md FLOW 1)
+캘린더 체크박스 없음 — 수락 시 자동 등록 (state-flows.md FLOW 1)
 ```

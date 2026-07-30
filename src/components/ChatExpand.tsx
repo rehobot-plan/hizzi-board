@@ -1,7 +1,7 @@
 'use client';
 
 // src/components/ChatExpand.tsx
-// uxui.md §4 홈 채팅 입력 토큰 · patterns.md P9 · ux-principles.md U14.
+// uxui.md §4 홈 채팅 입력 토큰 · component-patterns.md P9 · ux-rules.md U14.
 // 시나리오 3(공개범위 칩 질의) + 시나리오 4(복수 항목 카드) 대응.
 
 import { useEffect, useRef } from 'react';

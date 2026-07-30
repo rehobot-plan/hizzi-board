@@ -78,7 +78,7 @@ export const tagColors = {
   dueSoonLight: '#F4C0D1',
 } as const;
 
-// ─── z-index 계층 (rules-detail.md R8.4) ────────────────
+// ─── z-index 계층 (coding-rules-detail.md R8.4) ────────────────
 
 export const zIndex = {
   panel: 10,
