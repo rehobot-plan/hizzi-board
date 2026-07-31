@@ -24,7 +24,7 @@
 
 ## 거버넌스 층
 
-이 앱의 규칙은 이 폴더에 없다. 거버넌스는 앱과 별개이고 부모 폴더(`dev/`)의 저장소에 산다. 본체 다섯 — `CLAUDE.md` · `md/core/studio.md` · `md/core/harness.md` · `md/core/rules.md` · `md/core/session-close.md`. 부속 둘이 딸린다 — `md/ops/projects.md`(앱 목록·방문 공정) · `md/ops/lanes.md`(레인 원장).
+이 앱의 규칙은 이 폴더에 없다. 거버넌스는 앱과 별개이고 부모 폴더(`dev/`)의 저장소에 산다. 본체 여섯 — `CLAUDE.md` · `md/core/studio.md` · `md/core/harness.md` · `md/core/rules.md` · `md/core/session-close.md` · `md/ops/projects.md`(앱 목록·라우팅·방문 공정). 부속 하나가 딸린다 — `md/ops/lanes.md`(레인 원장).
 
 **이름이 겹치지 않게 둔다** — 이 폴더의 `coding-rules`·`board-principles`·`state-flows`·`component-patterns`·`ux-rules` 는 거버넌스와 겹치던 이름을 내용을 가리키는 쪽으로 개명한 것이다(2026-07-31). 옛 이름으로 부르지 않는다.
 
