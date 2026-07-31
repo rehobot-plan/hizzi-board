@@ -36,10 +36,12 @@
 ## 3. 경로
 
 ```
-프로젝트 루트:     D:\Dropbox\Dropbox\hizzi-board
+프로젝트 루트:     {dev}\hizzi-board      (환경별 dev 주소는 거버넌스 CLAUDE.md 4-5)
 Firebase 프로젝트: hizzi-board
-serviceAccount:    D:\Dropbox\Dropbox\serviceAccount.json
+serviceAccount:    {dev} 바깥 · 오너 로컬
 ```
+
+**절대경로를 못 박지 않는다** — 오너가 세 기계(D·C·맥)를 오가고 2026-07-31 에 폴더 층이 `dev/` 아래로 옮겨졌다. 환경별 주소의 단일 출처는 거버넌스 진입점이다.
 
 ---
 
@@ -108,15 +110,16 @@ tests/
 
 실측 기준: 2026-04-24. 재실측은 세션 시작 시 필요 판단에 따라 Code에 요청.
 
-### 5-1. 거버넌스 층 (session.md 3번)
+### 5-1. 오너 승인 후 고치는 문서
+
+**거버넌스 층은 이 폴더에 없다** — 부모 폴더(`dev/`)의 저장소에 있고, 이 폴더의 MD는 전부 도메인 층이다(거버넌스 `rules.md` 4-2). 아래 셋만 앱의 규약을 담아 자율 수정 대상이 아니다.
 
 | 경로 | 역할 |
 |---|---|
-| CLAUDE.md | 진입점·역할·소통 원칙·파일 지도 |
-| md/core/session.md | 세션 경계 절차 (시작·종료) |
-| (앱 안에 없음) | 공장 6단계·검증·배포 절차는 **거버넌스 하네스**가 단일 출처다 — 앱 문서로 복제하지 않는다 |
+| CLAUDE.md | 앱 진입점 — 한 줄 목적·폴더 트리·거버넌스 층 이름 |
+| md/core/session.md | 세션 시작에 읽는 것 (종료 절차는 거버넌스가 단일 출처) |
 | md/core/board-principles.md | 근본 원칙 |
-| .harness/MEMORY.md | 사례 박제 (헤더 규약·운영 조항만 거버넌스) |
+| .harness/MEMORY.md | 사례 기록 (헤더 규약·운영 조항만 승인 대상) |
 
 ### 5-2. 도메인 층 — 코어
 

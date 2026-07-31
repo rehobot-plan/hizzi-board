@@ -60,7 +60,7 @@ master-operator.md 5-4절 준수. 다음은 자동 실행 금지, 필요 시 오
 
 ## 파일시스템 범위
 
-D:\Dropbox\Dropbox\hizzi-board 이탈 금지. `../` 상위 디렉토리 탐색 금지 (master-operator.md 5-5).
+이 앱 폴더 이탈 금지. `../` 상위 디렉토리 탐색 금지 — 예외는 부모 폴더의 거버넌스 층 읽기뿐이다 (master-operator.md 5-5).
 
 ## 최종 보고 형식
 
