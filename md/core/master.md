@@ -36,7 +36,7 @@
 ## 3. 경로
 
 ```
-프로젝트 루트:     {dev}\hizzi-board      (환경별 dev 주소는 거버넌스 CLAUDE.md 4-5)
+프로젝트 루트:     {dev}\hizzi-board      (환경별 dev 주소는 거버넌스 CLAUDE.md 3-2-(2))
 Firebase 프로젝트: hizzi-board
 serviceAccount:    {dev} 바깥 · 오너 로컬
 ```
