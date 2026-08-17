@@ -99,6 +99,13 @@ const tools = fs
 const [tool, ...rest] = process.argv.slice(2)
 
 if (!tool || tool === '--list' || tool === '-l') {
+  // 목록의 실물은 층 도구다 — 여기에 두면 목록을 손볼 때마다 다리 다섯 벌을 함께 고쳐야 하고,
+  // 하나를 빠뜨리면 tools-check 가 게이트 사슬 밖이라 조용히 갈린다(findpath 2026-08-17).
+  if (tools.includes('tools-list')) {
+    const r = spawnSync(process.execPath, [path.join(dir, 'tools-list.mjs')], { stdio: 'inherit' })
+    process.exit(tool ? (r.status ?? 1) : 1)
+  }
+  // 실물이 없으면 옛 모양으로 떨어진다 — 목록은 읽기라 못 내는 것보다 이름만이라도 내는 쪽이 낫다.
   console.log(`[gov] 층 ${root}`)
   console.log('[gov] 부를 수 있는 도구:')
   for (const t of tools) console.log(`  ${t}`)
