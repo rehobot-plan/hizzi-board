@@ -269,6 +269,17 @@ gh api "{위에서 받은 statuses_url}" --jq '.[0] | {state, environment_url}'
 
 **`state` 를 먼저 본다.** `success` 가 아니면 그 배포에는 볼 것이 없다 — 주소는 응답에 실려 오지만 빌드가 실패한 자리라 열리지 않는다. 주소만 읽고 지나가면 실패를 미리보기로 착각한다.
 
+**그 자리를 실제로 밟았다 (buildfail 2026-08-18 실측).** 지금까지 선 Preview **넷이 전부 `failure`** 이고 같은 날 Production **셋은 전부 `success`** 다. 코드가 아니라 환경이 갈랐다 — Preview 빌드 로그 넷이 다 `FirebaseError: auth/invalid-api-key` 로 프리렌더에서 죽었고(전수 확인), 그 프로젝트의 환경변수가 **Production 여섯 · Development 다섯 · Preview 0** 이다. **Preview 에 변수가 하나도 없어 그 대상 빌드는 원리상 안 선다.**
+
+**빌드 로그는 GitHub 에 안 실린다** — 배포 상태의 `log_url` 이 배포 주소 자체이고, 사유는 그 응답의 `description` 이 부르는 줄로 읽는다.
+
+```bash
+gh api "{statuses_url}" --jq '.[0].description'   # dpl_… 를 얻는다
+npx vercel inspect {dpl_id} --logs --scope rehobot
+```
+
+**`--scope` 만 주면 이어 두지 않아도 읽힌다** — 이 저장소에는 `.vercel/` 이 없다(무시 대상이라 기계마다 따로 선다). 환경변수를 볼 때만 `--project hizzi-board` 를 함께 준다.
+
 **그 주소가 어느 커밋인지는 판번호로 묻는다.**
 
 ```bash
