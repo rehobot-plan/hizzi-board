@@ -251,6 +251,34 @@ git add . && git commit -m "message" && npx vercel --prod  # 배포
 npx firebase-tools deploy --only firestore:rules --project hizzi-board  # rules만
 ```
 
+### 미리보기 — 주소를 어떻게 받나 (2026-08-18)
+
+공정 1-6 은 미리보기까지이고, 고객 배포는 그 뒤 오너가 승인하는 자리다.
+
+**세울 것은 없다 — 가지를 push 하면 Preview 가 스스로 선다.** Vercel Git 연동이 살아 있고 `vercel.json` 이 없어 막는 줄도 없다(2026-08-18 실측). 남은 것은 그 주소를 받는 줄 하나다.
+
+```bash
+SHA=$(git rev-parse HEAD)   # 방금 push 한 그 커밋
+gh api "repos/rehobot-plan/hizzi-board/deployments?environment=Preview&sha=$SHA&per_page=1" --jq '.[0].statuses_url'
+gh api "{위에서 받은 statuses_url}" --jq '.[0] | {state, environment_url}'
+```
+
+뒤 줄이 내는 `environment_url` 이 미리보기 주소다(실측 왕복 확인 · 형태는 `https://hizzi-board-{빌드id}-rehobot.vercel.app`).
+
+**`sha` 를 반드시 건다.** 안 걸면 저장소에서 **가장 최근** Preview 가 오는데, 레인 병렬이 기본이라 그것이 남의 가지 배포일 수 있다 — 자기 것으로 읽으면 안 바뀐 화면을 보고 통과로 적는다(Vercel 이 배포의 `ref` 에 가지 이름이 아니라 커밋 해시를 넣으므로 `sha` 로 건다).
+
+**`state` 를 먼저 본다.** `success` 가 아니면 그 배포에는 볼 것이 없다 — 주소는 응답에 실려 오지만 빌드가 실패한 자리라 열리지 않는다. 주소만 읽고 지나가면 실패를 미리보기로 착각한다.
+
+**그 주소가 어느 커밋인지는 판번호로 묻는다.**
+
+```bash
+curl {미리보기주소}/version.txt      # {커밋해시 앞 12자}-{빌드 시각}
+```
+
+`prebuild`(`scripts/stamp-version.js`)가 빌드마다 찍고, 그 파일은 git 추적 밖이다(`.gitignore`). 시각을 섞는 것은 **같은 커밋을 다시 배포하거나 되돌린 자리를 해시만으로는 못 가르기** 때문이다.
+
+**`dev-…` 로 오면 git 커밋이 부른 배포가 아니다** — Vercel 은 그 자리에서 `VERCEL_GIT_COMMIT_SHA` 를 빈 문자열로 준다(CLI 로 손수 올린 배포·로컬 빌드가 그렇다).
+
 ---
 
 ## 11. 로드맵

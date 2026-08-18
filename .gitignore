@@ -16,6 +16,9 @@ tests/screenshots/
 /.next/
 /out/
 
+# 빌드마다 새로 찍는 판번호 (scripts/stamp-version.js)
+/public/version.txt
+
 # production
 /build
 
@@ -61,5 +64,6 @@ md/log/log.md
 
 # 세션 플래그·로그·로컬 설정
 .harness/session-started.flag
+.harness/*.log
 .playwright-mcp/
 .claude/settings.local.json
