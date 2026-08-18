@@ -77,6 +77,7 @@
 
 ## 미해결
 
+- **미리보기 배포 — 보류** (2026-08-18 오너 결정 · 이 앱을 다시 만질 때 함께 정리한다). 통로와 판번호는 섰고 **막힌 것 하나가 대시보드 자리라 저장소에서 못 닫는다** — Vercel `Settings → Environment Variables` 에서 이미 있는 여섯을 하나씩 열어 **Preview 를 함께 체크**하면 된다(값은 프로덕션과 같은 것). 그전까지 Preview 대상 빌드는 원리상 안 선다(환경변수 0개 · Production 6 · Development 5). 곁들여 Development 에 `API_KEY` 하나가 빠져 있다. 채운 뒤 확인은 `md/core/master.md` 미리보기 절대로 — `state` 가 `success` 인지 보고 그다음 `version.txt` 다. **아직 못 잰 것** — 미리보기 대상의 Vercel 보호 여부(프로덕션은 꺼져 있으나 그 둘은 따로 설정된다) · 그 대상에서 판번호가 찍히는지.
 - 실 Chrome 스크롤 jump handle
 - DevTools Performance 워크플로우
 - post-request cascade divergence
