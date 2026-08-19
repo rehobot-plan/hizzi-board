@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "b=\"$VERCEL_GIT_PREVIOUS_SHA\"; [ -n \"$b\" ] || exit 1; git cat-file -e \"$b^{commit}\" 2>/dev/null || exit 1; f=$(git diff --name-only \"$b\" HEAD 2>/dev/null) || exit 1; [ -n \"$f\" ] || exit 1; printf '%s\\n' \"$f\" | grep -qvE '^(md/.+\\.md|[^/]+\\.md)$' && exit 1; exit 0"
+  "ignoreCommand": "node scripts/vercel-should-build.mjs"
 }
