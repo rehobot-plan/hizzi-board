@@ -244,18 +244,32 @@ users:
 
 ## 10. CLI 명령어
 
-```powershell
-npm run build                                          # 기본 빌드
-Remove-Item -Recurse -Force .next; npm run build       # 클린 빌드
-git add . && git commit -m "message" && npx vercel --prod  # 배포
-npx firebase-tools deploy --only firestore:rules --project hizzi-board  # rules만
+```bash
+npm run build       # 빌드 — prebuild 가 public/version.txt 를 먼저 찍는다
+npm run lint        # 정적 검사
+npm run test:unit   # 단위 검사 (vitest)
+npx firebase-tools deploy --only firestore:rules --project hizzi-board   # rules 만
 ```
+
+**위 셋이 공정 1-3 이고 하나씩 단독으로 부른다** — 파이프에 물리면 종료값이 뒤엣것 것으로 바뀌어 붉음이 조용히 삼켜진다.
+
+**여기 배포 줄을 두지 않는다.** 배포는 두 걸음이고 사이에 오너 승인이 서므로 아래 두 절이 자리다 — 한 줄로 묶으면 그 승인 자리가 없어진다.
+
+**옛 줄 둘을 걷었다 (2026-08-19 hizzifix).** `git add . && git commit && npx vercel --prod` 과 `Remove-Item -Recurse -Force .next` 다. 걷은 사유는 낡아서가 아니라 **공장이 원리상 못 치는 줄이어서**다:
+
+- `git add .` 은 층 floor 밴드(`harness.md` 2-5)가 막는다 — 커밋은 pathspec 으로 한다(`git commit <경로>`). 남의 미커밋까지 섞인 커밋이 그렇게 났다.
+- `Remove-Item -Recurse -Force` 는 층 3-5 가 이름으로 막는다(정션을 따라가 링크 **원본**을 지운다). bash 로 옮겨 적은 `rm -rf .next` 도 deny floor라 같은 자리다.
+- `npx vercel --prod` 는 아래 고객 배포 절이 받는다.
+
+**그래서 클린 빌드는 이 문서가 명령으로 주지 않는다.** 공장이 칠 수 있는 대체 경로를 아직 안 쟀다 — **오너 손이거나 도구를 세울 자리**이고, 세우기 전에는 "없다"가 아니라 **"아직 통로가 없다"**다.
 
 ### 미리보기 — 주소를 어떻게 받나 (2026-08-18)
 
 공정 1-6 은 미리보기까지이고, 고객 배포는 그 뒤 오너가 승인하는 자리다.
 
-**세울 것은 없다 — 가지를 push 하면 Preview 가 스스로 선다.** Vercel Git 연동이 살아 있고 `vercel.json` 이 없어 막는 줄도 없다(2026-08-18 실측). 남은 것은 그 주소를 받는 줄 하나다.
+**방아쇠는 세울 것이 없다 — 가지를 push 하면 Vercel 이 Preview 를 스스로 건다.** Git 연동이 살아 있고 `vercel.json` 이 없어 막는 줄도 없다(2026-08-18 실측).
+
+**그런데 지금 그 빌드는 안 선다** — 걸리는 자리가 방아쇠가 아니라 환경변수이고, 아래 buildfail 문단이 그 값을 든다. **이 절은 통로를 적어 두는 자리이지 지금 된다는 뜻이 아니다.** 통로부터 적는다.
 
 ```bash
 SHA=$(git rev-parse HEAD)   # 방금 push 한 그 커밋
@@ -267,7 +281,15 @@ gh api "{위에서 받은 statuses_url}" --jq '.[0] | {state, environment_url}'
 
 **`sha` 를 반드시 건다.** 안 걸면 저장소에서 **가장 최근** Preview 가 오는데, 레인 병렬이 기본이라 그것이 남의 가지 배포일 수 있다 — 자기 것으로 읽으면 안 바뀐 화면을 보고 통과로 적는다(Vercel 이 배포의 `ref` 에 가지 이름이 아니라 커밋 해시를 넣으므로 `sha` 로 건다).
 
-**`state` 를 먼저 본다.** `success` 가 아니면 그 배포에는 볼 것이 없다 — 주소는 응답에 실려 오지만 빌드가 실패한 자리라 열리지 않는다. 주소만 읽고 지나가면 실패를 미리보기로 착각한다.
+**`state` 를 먼저 본다.** `success` 가 아니면 그 배포에는 볼 것이 없다. **그런데 그 주소는 열린다 — 이것이 이 절에서 가장 무는 자리다.**
+
+**실패한 배포도 200 을 낸다 (2026-08-19 hizzifix 실측).** 지금까지 선 Preview 넷(아래 buildfail 문단이 그 넷을 든다) 중 가장 최근 것(`https://hizzi-board-65qpsr8u4-rehobot.vercel.app`)에서 `/` **200** · `/version.txt` **200** 이고, 둘 다 이 앱 화면이 아니라 **Vercel 이 세우는 자리표 HTML** 이다(본문이 `instant-preview-site.vercel.app` 의 자산을 부른다). 열리지 않는 것이 아니라 **다른 것이 열린다.**
+
+**그래서 상태 코드로는 못 가른다.** `curl -o /dev/null -w '%{http_code}'` 만 보면 실패한 배포가 성한 배포와 같은 값을 낸다. `state` 를 먼저 보라는 위 줄이 지금 이 자리를 막는 **유일한 것**이다.
+
+**판번호도 같은 자리에서 거짓으로 통과한다.** 아래 `curl {주소}/version.txt` 는 그 자리에서 200 과 함께 HTML 을 돌려준다 — **부르는 쪽이 "응답이 왔다"로 읽으면 통과가 된다.** 그러므로 **받은 것이 판번호인지 본문으로 묻는다**: `{해시 12자}-{숫자}` 나 `dev-{숫자}` 꼴 한 줄인가. `<` 로 시작하면 그것은 판번호가 아니라 화면이다.
+
+**같은 모양이 르호봇에서 이미 났다** — `check-deploy.mjs` 가 **로그인 화면(200·본문 있음)을 판번호로 세고** 있었다. 그때 고친 자리는 "인증벽 무늬를 늘리기"가 아니라 **"본문이 판번호인지 먼저 묻기"** 였다. **이 앱은 그 검사를 기계가 안 지고 손으로 `curl` 을 치는 통로라, 묻는 몫이 사람에게 있다** — 그래서 이 문단이 그 몫을 대신 진다.
 
 **그 자리를 실제로 밟았다 (buildfail 2026-08-18 실측).** 지금까지 선 Preview **넷이 전부 `failure`** 이고 같은 날 Production **셋은 전부 `success`** 다. 코드가 아니라 환경이 갈랐다 — Preview 빌드 로그 넷이 다 `FirebaseError: auth/invalid-api-key` 로 프리렌더에서 죽었고(전수 확인), 그 프로젝트의 환경변수가 **Production 여섯 · Development 다섯 · Preview 0** 이다. **Preview 에 변수가 하나도 없어 그 대상 빌드는 원리상 안 선다.**
 
@@ -289,6 +311,43 @@ curl {미리보기주소}/version.txt      # {커밋해시 앞 12자}-{빌드 �
 `prebuild`(`scripts/stamp-version.js`)가 빌드마다 찍고, 그 파일은 git 추적 밖이다(`.gitignore`). 시각을 섞는 것은 **같은 커밋을 다시 배포하거나 되돌린 자리를 해시만으로는 못 가르기** 때문이다.
 
 **`dev-…` 로 오면 git 커밋이 부른 배포가 아니다** — Vercel 은 그 자리에서 `VERCEL_GIT_COMMIT_SHA` 를 빈 문자열로 준다(CLI 로 손수 올린 배포·로컬 빌드가 그렇다).
+
+### 고객 배포 — 언제, 무엇으로 (2026-08-19)
+
+**오너 승인 뒤에만 돈다.** 미리보기 주소를 들고 "이대로 고객 배포할까요"를 묻고 멈춘다. 묻지 않고 넘어가지 않는다(층 `harness.md` 1-6).
+
+**이 앱의 기본 가지는 `master` 다.** `main` 이라는 가지는 이 저장소에 로컬에도 원격에도 없다(2026-08-19 실측 — `git rev-parse --verify main` 종료값 128 · `git ls-remote --heads origin` 이 `refs/heads/master` 한 줄).
+
+```bash
+git push origin master     # 이 push 가 곧 고객 배포다 (Vercel Git 연동)
+```
+
+**Vercel CLI 를 부르지 않는다.** `npx vercel --prod` 는 같은 것을 손으로 한 번 더 하는 것이고, 그 자리는 Git 연동이 이미 진다 — 실측으로 2026-08-18 Production 배포 여섯의 `ref` 가 전부 `master` 커밋 해시였다. **CLI 는 연동이 끊겼을 때의 비상 통로로만 남긴다.**
+
+**나간 것이 무엇인지는 판번호로 묻는다** — `curl https://hizzi-board.vercel.app/version.txt` 의 앞 12자가 그 커밋인지 본다(2026-08-19 실측 — `362bfd4741db-1787048347649` 이고 앞 12자가 그때 `HEAD` 와 같았다). **여기서도 받은 것이 판번호인지 본문으로 먼저 묻는다**(위 미리보기 절).
+
+**MD 만 바뀐 회차는 배포 걸음을 안 밟는다** (오너 결정 2026-08-19). 공정 6단계는 그대로 다 밟되 이 절이 비해당이다. **완료 보고에는 "비해당 — MD 전용"으로 적고 빈칸으로 두지 않는다.**
+
+### 1-5 E2E — 자산은 있고 부르는 줄이 없다 (2026-08-19)
+
+**층 `harness.md` 3-7 표가 이 앱의 1-5 를 "없음"으로 적는다. 그 "없음"은 부르는 줄이 없다는 뜻이지 자산이 없다는 뜻이 아니다** — 읽는 쪽이 자산으로 읽으면 이 폴더를 안 열고 지나간다(2026-08-19 에 실제로 그렇게 읽혔다).
+
+**이 저장소에 있는 것 (2026-08-19 실측 · 값)**
+
+| 무엇 | 자리 | 수 |
+|---|---|---|
+| Playwright 설정 | `playwright.config.ts` | 1 |
+| E2E spec | `tests/e2e/` (`chat-input-s6` · `h1-route-group` · `mydesk-phase2/` 4 · `mydesk-phase3/` 1) | 7 |
+| smoke spec | `tests/smoke/` | 25 |
+| 단위 검사 | `tests/unit/` (vitest — 1-3 이 부른다) | 7 |
+
+**없는 것은 부르는 줄 하나다.** `package.json` 의 `scripts` 아홉(`dev`·`prebuild`·`build`·`start`·`lint`·`copy-time-pad`·`clear-posts`·`test:unit`·`test:unit:watch`)에 playwright 항목이 없고, 르호봇 `run-e2e.mjs`·하나교회 `tests/e2e_check.py` 에 해당하는 러너도 이 저장소에 없다.
+
+**여기 그 줄을 지어 적지 않는다.** 러너를 세울지는 오너 자리이고, 세우기 전에 문서가 명령을 먼저 적으면 **다음 사람이 그것을 있는 통로로 읽는다**(이 문서가 방금 걷어 낸 옛 배포 줄이 정확히 그 모양이었다).
+
+**설정 하나를 함께 적어 둔다** — `playwright.config.ts` 의 `baseURL` 기본값이 **프로덕션 라이브 주소**(`https://hizzi-board.vercel.app`)다. 층 `harness.md` 1-5 는 *"대상은 로컬호스트 프로덕션 빌드 서버 … dev 서버·라이브 URL 대상 금지"* 라고 적는다. **둘이 어긋나 보이지만 지금은 부딪히지 않는다** — 이 앱의 1-5 가 공정에 안 서 있어서다. **러너를 세우는 회차가 그 자리를 먼저 갈라야 한다.**
+
+**`playwright-login.spec.js` 는 저장소 루트에 있고 `testDir: './tests'` 밖이라 어느 줄로도 안 돌아간다**(2026-08-19 실측). 이 사실은 살아 있고, 그것을 지목하던 원장 항목의 **지목 대상**만 사라졌다(`md/log/todo.md` 그 줄이 이 회차에 고쳐졌다).
 
 ---
 

@@ -50,10 +50,10 @@
 - (거버넌스 잔여) CLAUDE.md [6] 경계 사례 문구 보강
 - (거버넌스 잔여) MEMORY 박제 임계 D안 정식화 (환원 불가능한 것만 박제)
 - (거버넌스 잔여) MEMORY 잔존 5건 환원 재검토
-- (거버넌스 잔여) done.md 자기참조 케이스 포맷 규약 — harness.md 3-6 한 줄 추가
+- (거버넌스 잔여) done.md 자기참조 케이스 포맷 규약 — harness.md 1-6 한 줄 추가
 - (거버넌스 잔여) session.md 세션 종료 2단계 제약에 "단계 2 갱신 제안 '없음' 3건은 drift 아닌 정상" 명시 조항 추가 — 2026-04-24 시운전 관찰
-- (거버넌스 잔여) rules-detail.md dangling 참조 정리 — "CLAUDE.md [4-2]·[4-3]·[4-4]·[2]" 거버넌스 재설계 이전부터 부정확. 4번이 하위 항목 없는 단일 단락이라 [4-2]·[4-3]·[4-4]는 처음부터 유효 위치 없음, [2]는 [3] 잘못 가리킴 — 2026-04-25 비교표 3 검수 중 발견
-- (거버넌스 잔여) harness.md 3 "현재 spec: playwright-login.spec.js" 문구 실측 반영 — 해당 파일 testDir 밖이라 표준 명령 실행 불가 (2026-04-24 블록 ④ 1-5 관찰)
+- (거버넌스 잔여) `CLAUDE.md [N]` 대괄호 dangling 참조 정리 — **지목 10줄 · 파일 다섯**(2026-08-19 hizzifix 실측 · 무늬 `CLAUDE.md \[[0-9]` · 범위는 추적 파일 전수에서 `md/archive/`·`md/log/done.md` 제외 · 이 항목 자신의 인용은 안 셌다): `md/core/coding-rules-detail.md` 4([4-2]·[2]·[4-3]·[4-4]) · `md/core/coding-rules.md` 2([1] 둘) · `md/core/inbox-additions-session7.md` 2([4-2] 둘) · `md/log/todo.md` 1(위 [6] 줄) · `md/plan/designs/profile.md` 1([6]). **옛 등재가 `rules-detail.md` 한 파일만 들고 있었는데 그 이름의 파일은 이 저장소에 없다**(2026-07-31 개명 — `coding-rules-detail.md`) — 그 등재를 믿고 한 파일만 열면 나머지 넷이 안 보인다. 지목 대상이 앱 `CLAUDE.md` 이고 그 문서에 번호 절이 없어 [4-2]·[4-3]·[4-4]는 처음부터 유효 위치 없음, [2]는 [3] 잘못 가리킴 — 2026-04-25 비교표 3 검수 중 발견
+- `playwright-login.spec.js` 가 어느 줄로도 안 돌아간다 — 저장소 루트에 있고 `playwright.config.ts` 의 `testDir: './tests'` 밖이다(2026-08-19 hizzifix 실측). **살릴지 옮길지 지울지 정하는 자리.** ~~(거버넌스 잔여) harness.md 3 "현재 spec: …" 문구 실측 반영~~ — **그 지목은 죽었다**: 층 `harness.md` 에 `playwright-login` 0건(2026-08-19 `grep -c` 실측). **일은 남고 지목만 걷었다** — 거버넌스 잔여가 아니라 이 저장소 몫이다
 - (거버넌스 잔여) session.md 2번 "종료 판단 기준" 한 줄 추가 — 개발 의도 전환 / 콘텍스트 포화 / 오너 명시적 지시 중 하나 발생 시 종료. 거버넌스 층 수정이라 별도 세션에서 before/after 비교표 검수 필요 — 2026-04-24 종료 시점 판단 기준 공백 관찰
 
 ## 현재상태
