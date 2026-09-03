@@ -1,8 +1,0 @@
-tool=run-codex-review
-repo=/Users/chillkim/hizzi-board-wt/nameptr
-exit=0
-reason=done
-at=2026-09-03T02:41:26.617Z
-
-# 이 파일은 리뷰가 실제로 돌았다는 증거다. 조각과 함께 커밋하고 함께 접는다.
-# 빠뜨리면 slice-check 가 「조각은 리뷰를 들었다는데 영수증이 없다」로 낸다.
